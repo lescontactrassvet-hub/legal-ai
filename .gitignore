@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*.env
+.env
+.venv/
+*.log
+
+# Node.js
+node_modules/
+dist/
+build/
+
+# System
+.DS_Store
+
+# Docker
+*.pid
