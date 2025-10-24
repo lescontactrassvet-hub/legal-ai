@@ -1,10 +1,8 @@
-# Re-export FastAPI app from the application package
-# This file allows running `uvicorn backend.main:app` to start the application
-from .app.main import app  # noqa: F401
 """
 Entry point for the LegalAI backend.
-This file re-exports the FastAPI app defined in backend/app/main.py so that
-running `uvicorn backend.main:app` will launch the application.
+
+This module re-exports the FastAPI application defined in backend/app/main.py,
+allowing you to run the app via `uvicorn backend.main:app`.
 """
 
-from .app.main import app  
+from .app.main import app
