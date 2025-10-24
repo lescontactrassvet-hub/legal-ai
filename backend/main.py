@@ -1,10 +1,10 @@
-from fastapi import FastAPI
-from routers import user
+# Re-export FastAPI app from the application package
+# This file allows running `uvicorn backend.main:app` to start the application
+from .app.main import app  # noqa: F401
+"""
+Entry point for the LegalAI backend.
+This file re-exports the FastAPI app defined in backend/app/main.py so that
+running `uvicorn backend.main:app` will launch the application.
+"""
 
-app = FastAPI()
-
-app.include_router(user.router)
-
-@app.get("/")
-def root():
-    return {"message": "LegalAI backend is running"}
+from .app.main import app  
