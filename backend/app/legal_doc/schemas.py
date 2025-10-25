@@ -13,26 +13,10 @@ class TemplateCreate(TemplateBase):
     file: UploadFile
 
 
-class Template(TemplateBase):
+class Template(BaseModel):
     id: int
     file_path: str
     owner_id: int
-
-    class Config:
-        orm_mode = True
-
-
-class DocumentCreate(BaseModel):
-    template_id: int
-    values: Dict[str, str]
-
-
-class Document(BaseModel):
-    id: int
-    template_id: int
-    user_id: int
-    file_path: str
-    created_at: datetime
 
     class Config:
         orm_mode = True
@@ -44,6 +28,23 @@ class TemplateOut(BaseModel):
     description: Optional[str] = None
     file_path: str
     owner_id: int
+
+    class Config:
+        orm_mode = True
+
+
+class DocumentCreate(BaseModel):
+    template_id: int
+    values: Dict[str, str]
+    generate_pdf: bool = False
+
+
+class Document(BaseModel):
+    id: int
+    template_id: int
+    user_id: int
+    file_path: str
+    created_at: datetime
 
     class Config:
         orm_mode = True
