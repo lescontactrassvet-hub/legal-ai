@@ -86,7 +86,18 @@ All authentication endpoints are prefixed with `/auth`.
     "password": "string"
   }
   ```
-- **Description:** Creates a new user in the database after hashing their password. Returns the created user.
+- ## AI Integration and Deployment Plan
+
+This repository now includes an experimental AI assistant for legal consultations. To deploy and integrate it safely, follow these guidelines:
+
+- **Directory structure**: All AI‑related modules live in `backend/ai/` with subpackages for retrieval (`rag`), generators (`generators`), verifiers (`verifiers`) and session memory (`memory`). API routes for the assistant are defined in `backend/routes/ai.py` and are included in `backend/app/main.py`.
+- **Setup**: Create a Python 3.12+ virtual environment and install dependencies from `backend/requirements.txt`. Configure your `.env` file with the new feature flags (`AI_FALLBACKS`, `AI_ROUTING_POLICY`, `AI_REQUIRE_CITATIONS`, `EMBEDDINGS_BACKEND`, etc.) and API keys if external services are enabled.
+- **Deployment**: Use the provided systemd unit and Nginx reverse‑proxy configuration for prod. The helper script `scripts/ai_integration_setup.sh` bootstraps a local or stage environment. The scripts `scripts/backup.sh` and `scripts/rollback_ai.sh` help create backups and restore the previous state in case of problems.
+- **RAG & generation**: The retrieval layer combines SQLite FTS and optional vector embeddings; ranking and citation normalization are isolated under `backend/ai/rag/`. Generation first uses a local model; external providers like GigaChat or GPT are used only as fallbacks when allowed by feature flags.
+- **Testing and monitoring**: Populate the legal knowledge base with `backend/tasks/update_laws.py` and fine‑tune models via other tasks. Monitor latency and fallback rates via Prometheus metrics and log files. Evaluate answer faithfulness and source coverage before disabling fallbacks.
+
+For a comprehensive checklist (from infrastructure preparation to metrics of readiness), refer to the AI integration plan in the project documentation.
+**Description:** Creates a new user in the database after hashing their password. Returns the created user.
 
 #### Login
 
