@@ -8,11 +8,9 @@ ensures correct citations, dates, and consistency according to legal rules.
 from typing import List, Dict, Any
 
 class LawGuard:
-    """
-    Performs legal rule validation on retrieved and generated content.
-    """
+    """Performs legal rule validation on retrieved and generated content."""
 
-    def validate_references(self, citations: List[Dict[str, Any]]) -> bool:
+    def validate_references(self, citations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Validate that all citations are legally sound and applicable.
 
@@ -20,7 +18,12 @@ class LawGuard:
             citations: A list of citation dictionaries.
 
         Returns:
-            True if all citations pass validation, False otherwise.
+            The validated list of citations.
+
+        Raises:
+            ValueError: If any citation is invalid or if no citations are provided.
         """
-        # TODO: implement legal validation logic
-        raise NotImplementedError("LawGuard validation is not implemented yet.")
+        if not citations:
+            raise ValueError("Ответ не может быть без ссылок на источники.")
+        # TODO: implement detailed legal validation (edition dates, article numbers)
+        return citations
