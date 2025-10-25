@@ -10,6 +10,8 @@ from backend.ai.verifiers.law_guard import LawGuard
 from backend.ai.verifiers.safety import SafetyVerifier
 
 
+from backend.ai.verifiers.risk_checker import RiskChecker
+
 class ConsultantCore:
     """Orchestrator for the LegalAI consultant.
 
@@ -27,6 +29,8 @@ class ConsultantCore:
         generator: Optional[LocalGenerator] = None,
         law_guard: Optional[LawGuard] = None,
         safety: Optional[SafetyVerifier] = None,
+                    risk_checker: Optional[RiskChecker] = None,
+
     ) -> None:
         # Initialize sub components; allow dependency injection for testing.
         self.intent_classifier = intent_classifier or RuBERTIntentClassifier()
@@ -36,10 +40,14 @@ class ConsultantCore:
         self.generator = generator or LocalGenerator()
         self.law_guard = law_guard or LawGuard()
         self.safety = safety or SafetyVerifier()
+                self.risk_checker = risk_checker or RiskChecker()
+
 
     async def ask(self, query: str, *, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Process an incoming question and return an AI response with citations."""
         if not query:
+         
+
             raise ValueError("Query must not be empty")
 
         # 1. Intent classification to determine how to handle the query.
@@ -55,9 +63,19 @@ class ConsultantCore:
         citations = self.citation_normalizer.normalize(ranked_docs)
 
         # 5. Generate a draft answer using the local generator.
-        answer = await self.generator.generate(query, ranked_docs, intent=intent)
+          a
+                answer = await self.generator.generate(query, ranked_docs, intent=intent)
 
-        # 6. Validate references and safety.
+        # Validate answer safety. Raise error if content is unsafe.
+        if not self.safety.verify(answer):
+            raise ValueError("Generated content failed safety verification")
+        # Validate citations and ensure references are present.
+        citations = self.law_guard.validate_references(citations)
+        # Analyze risks in the generated answer.
+        risk_info = self.risk_checker.analyze(answer)
+
+        return {"answer": answer, "citations": citations, "intent": intent, "risk": risk_info}
+ate references and safety.
         # Filter out unsafe or invalid content.
         answer = self.safety.verify(answer)
         citations = self.law_guard.validate_references(citations)
