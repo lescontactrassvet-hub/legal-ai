@@ -23,15 +23,15 @@ class DocumentRetriever:
         """
         self.top_k = top_k
 
-    async def retrieve(self, query: str) -> List[Tuple[str, Any]]:
-        """
-        Retrieve top_k relevant documents for the query.
+       async def retrieve(self, query: str) -> List[Tuple[str, Any]]:
+        """Retrieve top_k relevant documents for the given query.
 
         Args:
-            query: The user question.
+            query: The user question string.
 
         Returns:
-            A list of tuples with document identifier and content.
+            A list of tuples (identifier, content) representing retrieved documents.
         """
-        # TODO: implement retrieval logic (FTS5 + embeddings)
-        raise NotImplementedError("Document retrieval is not implemented yet.")
+        # TODO: implement retrieval logic (FTS + embeddings) in future versions
+        return []
+
