@@ -1,0 +1,192 @@
+{
+  "info": {
+    "_postman_id": "legaldoc-api-collection",
+    "name": "LegalDoc API",
+    "description": "Postman collection for testing the LegalDoc document constructor endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Upload Template",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "name",
+              "value": "Example Template",
+              "type": "text"
+            },
+            {
+              "key": "description",
+              "value": "Sample template description",
+              "type": "text"
+            },
+            {
+              "key": "file",
+              "type": "file",
+              "src": "{{templateFile}}"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/docs/templates",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "docs",
+            "templates"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Templates",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/docs/templates",
+          "host": ["{{baseUrl}}"],
+          "path": ["docs", "templates"]
+        }
+      }
+    },
+    {
+      "name": "Get Template Fields",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/docs/templates/{{templateId}}/fields",
+          "host": ["{{baseUrl}}"],
+          "path": ["docs", "templates", "{{templateId}}", "fields"]
+        }
+      }
+    },
+    {
+      "name": "Generate Document",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"template_id\": {{templateId}},\n  \"values\": {\n    \"Field1\": \"Value1\"\n  },\n  \"generate_pdf\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/docs/documents",
+          "host": ["{{baseUrl}}"],
+          "path": ["docs", "documents"]
+        }
+      }
+    },
+    {
+      "name": "List Documents",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/docs/documents",
+          "host": ["{{baseUrl}}"],
+          "path": ["docs", "documents"]
+        }
+      }
+    },
+    {
+      "name": "Download Document",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/docs/documents/{{documentId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["docs", "documents", "{{documentId}}"]
+        }
+      }
+    },
+    {
+      "name": "Download Document PDF",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/docs/documents/{{documentId}}/pdf",
+          "host": ["{{baseUrl}}"],
+          "path": ["docs", "documents", "{{documentId}}", "pdf"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "token",
+      "value": "<YOUR_JWT_TOKEN>"
+    },
+    {
+      "key": "templateId",
+      "value": 1
+    },
+    {
+      "key": "documentId",
+      "value": 1
+    },
+    {
+      "key": "templateFile",
+      "value": "path/to/template.docx"
+    }
+  ]
+}
