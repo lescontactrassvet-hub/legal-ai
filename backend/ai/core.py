@@ -63,24 +63,20 @@ class ConsultantCore:
         citations = self.citation_normalizer.normalize(ranked_docs)
 
         # 5. Generate a draft answer using the local generator.
-          a
-                answer = await self.generator.generate(query, ranked_docs, intent=intent)
-
-        # Validate answer safety. Raise error if content is unsafe.
-        if not self.safety.verify(answer):
+         
+         answer = await self.generator.generate(query, ranked_docs, intent=intent)
+        
+ if     ot self.safety.verify(answer):
+     
             raise ValueError("Generated content failed safety verification")
         # Validate citations and ensure references are present.
         citations = self.law_guard.validate_references(citations)
         # Analyze risks in the generated answer.
         risk_info = self.risk_checker.analyze(answer)
+      
+return {"answer": answer, "citations": citations, "intent": intent, "risk_info": risk_info}
 
-        return {"answer": answer, "citations": citations, "intent": intent, "risk": risk_info}
-ate references and safety.
-        # Filter out unsafe or invalid content.
-        answer = self.safety.verify(answer)
-        citations = self.law_guard.validate_references(citations)
-
-        return {"answer": answer, "citations": citations, "intent": intent}
+  
 
     async def check(self, text: str, *, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Perform a legal check of a provided document or statement."""
