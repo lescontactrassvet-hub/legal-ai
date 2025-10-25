@@ -3,8 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .db import Base, engine
 from .auth.routes import router as auth_router
+from .legal_doc.routes import router as legal_doc_router
 
-# Create all database tables
+
+
 Base.metadata.create_all(bind=engine)
 
 # Instantiate FastAPI application
@@ -28,3 +30,4 @@ def read_root():
 
 # Include authentication routes
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(legal_doc_router, prefix="/docs", tags=["Documents"])
