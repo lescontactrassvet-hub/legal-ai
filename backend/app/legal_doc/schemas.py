@@ -1,3 +1,4 @@
+from fastapi import UploadFile
 from pydantic import BaseModel
 from typing import Optional, Dict
 from datetime import datetime
@@ -9,7 +10,7 @@ class TemplateBase(BaseModel):
 
 
 class TemplateCreate(TemplateBase):
-    pass
+    file: UploadFile
 
 
 class Template(TemplateBase):
@@ -23,7 +24,7 @@ class Template(TemplateBase):
 
 class DocumentCreate(BaseModel):
     template_id: int
-    fields: Dict[str, str]
+    values: Dict[str, str]
 
 
 class Document(BaseModel):
@@ -31,6 +32,36 @@ class Document(BaseModel):
     template_id: int
     user_id: int
     file_path: str
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+class TemplateOut(BaseModel):
+    id: int
+    name: str
+    description: Optional[str] = None
+    file_path: str
+    owner_id: int
+
+    class Config:
+        orm_mode = True
+
+
+class DocumentOut(BaseModel):
+    id: int
+    name: str
+    file_path: str
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+class DocumentListItem(BaseModel):
+    id: int
+    name: str
     created_at: datetime
 
     class Config:
