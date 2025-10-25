@@ -3,35 +3,36 @@ Module for retrieving documents for RAG.
 
 This module implements a DocumentRetriever class that uses
 full-text search and embeddings to fetch relevant documents
-for a given query. It forms part of the Retrieval-Augmented
-Generation pipeline.
+fGeneration pipeline.
 """
 
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Optional
 
 class DocumentRetriever:
     """
-    A placeholder retriever that combines BM25 and embedding search.
+    Retrieves top-k relevant documents for a query. In this
+    simplified implementation, the retriever returns an empty
+    list because there is no law database connected.
     """
 
     def __init__(self, top_k: int = 5) -> None:
-        """
-        Initialize the retriever with desired number of top results.
-
-        Args:
-            top_k: Number of top documents to return.
-        """
         self.top_k = top_k
 
-       async def retrieve(self, query: str) -> List[Tuple[str, Any]]:
-        """Retrieve top_k relevant documents for the given query.
+    async def retrieve(self, query: str, top_k: Optional[int] = None) -> List[Tuple[str, Any]]:
+        """
+        Retrieve top-k relevant documents for the given query.
 
         Args:
             query: The user question string.
+            top_k: Optional number of top documents to return. If not provided,
+                   the default configured value is used.
 
         Returns:
-            A list of tuples (identifier, content) representing retrieved documents.
+            A list of tuples (document_id, content) representing retrieved documents.
         """
-        # TODO: implement retrieval logic (FTS + embeddings) in future versions
-        return []
+        # Determine how many documents to retrieve
+        k = top_k or self.top_k
 
+        # TODO: Implement actual retrieval logic (FTS5 + embeddings) in future
+        # For now, return an empty list as placeholder
+        return []
