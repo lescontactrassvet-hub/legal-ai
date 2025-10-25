@@ -14,20 +14,21 @@ class DocumentRanker:
     """
 
     def __init__(self) -> None:
-        """
-        Initialize the ranker.
-        """
+        """Initialize the ranker."""
         pass
 
-    def rank(self, documents: List[Tuple[str, Any]]) -> List[Tuple[str, Any]]:
+    def rank(self, query: str, documents: List[Tuple[str, Any]]) -> List[Tuple[str, Any]]:
         """
         Rank the retrieved documents.
 
+        For now, this simple ranker returns the documents as is. In future versions,
+        relevance scoring based on embeddings or domain heuristics should be applied.
+
         Args:
+            query: The original user query string.
             documents: A list of (document_id, document_content) tuples.
 
         Returns:
             The ranked list of documents.
         """
-        # TODO: implement ranking logic (e.g., rerank by proximity/importance).
-        raise NotImplementedError("Document ranking is not implemented yet.")
+        return documents
