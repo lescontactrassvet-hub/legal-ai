@@ -1,0 +1,164 @@
+/* Basic styling for LegalAI frontend */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f5f7fa;
+  color: #333;
+}
+
+.container {
+  max-width: 600px;
+  margin: 50px auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.subtitle {
+  margin-top: -10px;
+  margin-bottom: 20px;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.auth-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.auth-box {
+  width: 260px;
+  margin: 0 10px;
+}
+
+.auth-box h2 {
+  margin-bottom: 10px;
+}
+
+.auth-box input {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.auth-box button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  background-color: #4c51bf;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.auth-box button:hover {
+  background-color: #3c3fa2;
+}
+
+.message {
+  margin-top: 10px;
+  font-size: 0.85rem;
+}
+
+.message a {
+  color: #4c51bf;
+  text-decoration: none;
+}
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #2c5282;
+  padding: 10px 20px;
+}
+
+.brand {
+  color: #fff;
+  margin: 0;
+}
+
+.nav-links {
+  list-style: none;
+  display: flex;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-links li {
+  margin-left: 20px;
+}
+
+.nav-links a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.nav-links a.active {
+  border-bottom: 2px solid #fff;
+}
+
+main {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.page {
+  display: none;
+}
+
+.page.active {
+  display: block;
+}
+
+textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  resize: vertical;
+}
+
+.response {
+  background-color: #f0f4f8;
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 10px;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+}
+
+.list li {
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+button {
+  padding: 10px 15px;
+  background-color: #2c5282;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #1a365d;
+}
