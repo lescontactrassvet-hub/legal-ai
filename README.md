@@ -22,7 +22,16 @@ legal-ai/
 │   │   └── user.py            # Example Pydantic schema (placeholder)
 │   ├── config.py              # Settings and configuration
 │   ├── main.py                # Re-exports the app from `app/main.py` for uvicorn
-│   ├── requirements.txt       # Python dependencies
+│   ├──
+├── frontend/
+│   └── dist/
+│       ├── index.html         # Authentication page
+│       ├── dashboard.html      # Dashboard interface
+│       ├── css/
+│       │   └── styles.css      # Styling for the frontend
+│       └── js/
+│           └── app.js         # Frontend logic and API interactions
+ requirements.txt       # Python dependencies
 │   ├── Dockerfile             # Optional Dockerfile (not used in tests)
 │   └── __init__.py
 ├── docker-compose.yml         # Compose file for future services
