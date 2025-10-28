@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LegalAI - Authentication</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>LegalAI</h1>
+    <p class="subtitle">Welcome! Please log in or register to continue.</p>
+    <div class="auth-wrapper">
+      <div class="auth-box" id="login-box">
+        <h2>Login</h2>
+        <input type="text" id="login-username" placeholder="Username or Email" required>
+        <input type="password" id="login-password" placeholder="Password" required>
+        <button id="login-btn">Login</button>
+        <p class="message">Don't have an account? <a href="#" id="show-register">Register</a></p>
+      </div>
+      <div class="auth-box" id="register-box" style="display:none;">
+        <h2>Register</h2>
+        <input type="text" id="register-username" placeholder="Username" required>
+        <input type="email" id="register-email" placeholder="Email" required>
+        <input type="password" id="register-password" placeholder="Password" required>
+        <button id="register-btn">Register</button>
+        <p class="message">Already registered? <a href="#" id="show-login">Login</a></p>
+      </div>
+    </div>
+  </div>
+  <script src="js/app.js"></script>
+</body>
+</html>
