@@ -1,91 +1,69 @@
 name: Deploy to Production (SSH)
-
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    env:
-      SSH_HOST: ${{ secrets.SSH_HOST }}
-      SSH_USER: ${{ secrets.SSH_USER }}
-      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      # Умная установка Node.js — ТОЛЬКО если есть frontend/package.json
-      - name: Setup Node.js 20 (if frontend has package.json)
-        if: hashFiles('frontend/package.json') != ''
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Detect frontend presence
+        id: detect-fe
+        run: |
+          if [ -f "frontend/package.json" ]; then
+            echo "has_fe=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_fe=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Node (only if FE)
+        if: steps.detect-fe.outputs.has_fe == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
 
-      # Билдим фронтенд только если реально есть Node-проект
-      - name: Build frontend (only if package.json exists)
-        if: hashFiles('frontend/package.json') != ''
-        working-directory: frontend
+      - name: Install and build FE
+        if: steps.detect-fe.outputs.has_fe == 'true'
         run: |
+          cd frontend
           npm ci
           npm run build
 
-      - name: Add SSH key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_KEY }}
-
-      - name: Add server to known_hosts
+      - name: Deploy to server
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
         run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/id_ed25519" \
+            ./backend ./frontend/dist \
+            ${SSH_USER}@${SSH_HOST}:/srv/legal-ai/
 
-      - name: Upload project to server (rsync)
-        run: |
-          rsync -az --delete \
-            --exclude='.git' \
-            --exclude='.github' \
-            ./ ${SSH_USER}@${SSH_HOST}:/srv/legal-ai/repo/
+          ssh -i ~/.ssh/id_ed25519 ${SSH_USER}@${SSH_HOST} "bash -s" << EOF
+            set -e
 
-      - name: Run deploy commands via SSH (native, stable)
-        run: |
-          ssh -o StrictHostKeyChecking=no \
-            ${SSH_USER}@${SSH_HOST} \
-            "SENTRY_DSN='${SENTRY_DSN}' bash -s" << 'EOF'
+            echo "Обновляем .env..."
+            sed -i "s|SENTRY_DSN=.*|SENTRY_DSN=${SENTRY_DSN}|" /srv/legal-ai/backend/.env || true
 
-            set -euo pipefail
+            echo "Перезапуск legalai.service..."
+            sudo systemctl daemon-reload
+            sudo systemctl restart legalai.service
+            sleep 3
 
-            echo '📌 Sync backend'
-            rsync -az --delete /srv/legal-ai/repo/backend/ /srv/legal-ai/backend/
-
-            echo '📌 Sync frontend'
-            rsync -az --delete /srv/legal-ai/repo/frontend/ /srv/legal-ai/frontend/
-
-            echo '📌 Ensure SENTRY_DSN in .env'
-            cd /srv/legal-ai/backend
-            touch .env
-            if grep -q '^SENTRY_DSN=' .env; then
-              sed -i "s#^SENTRY_DSN=.*#SENTRY_DSN=${SENTRY_DSN}#g" .env
-            else
-              echo "SENTRY_DSN=${SENTRY_DSN}" >> .env
-            fi
-
-            echo '📌 Setup backend venv and install deps'
-            if [ ! -d ".venv" ]; then python3 -m venv .venv; fi
-            source .venv/bin/activate
-            pip install -r requirements.txt
-
-            echo '📌 Restart FastAPI service'
-            systemctl daemon-reload
-            systemctl restart legalai.service
-            sleep 2
-            systemctl status legalai.service -n 20 || true
-
-            echo '📌 Health checks'
-            curl -sk https://api.legalai.su/health || true
-            curl -sk -o /dev/null -w "%{http_code}\n" https://api.legalai.su/debug-sentry || true
-
-EOF
+            echo "Проверка /health..."
+            curl -k -s -o /dev/null -w "%{http_code}" https://api.legalai.su/health
+            
+ EOF
