@@ -1,3 +1,54 @@
+name: Deploy to Production (SSH)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Умная установка Node — ТОЛЬКО если есть package.json
+      - name: Setup Node.js 20 (if frontend has package.json)
+        if: hashFiles('frontend/package.json') != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build frontend (only if package.json exists)
+        if: hashFiles('frontend/package.json') != ''
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
+
+      - name: Upload project to server (rsync)
+        run: |
+          rsync -az --delete \
+            --exclude='.git' \
+            --exclude='.github' \
+            ./ ${SSH_USER}@${SSH_HOST}:/srv/legal-ai/repo/
+
       - name: Run deploy commands via SSH (native, stable)
         run: |
           ssh -o StrictHostKeyChecking=no \
