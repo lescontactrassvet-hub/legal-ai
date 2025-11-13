@@ -47,10 +47,10 @@ jobs:
           npm run build
 
       # 3. Настраиваем SSH
-      - name: Setup SSH key and known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
+      - name: Setup SSH key and known_hosts       
+              run: |
+              mkdir -p ~/.ssh
+       echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
@@ -96,7 +96,7 @@ jobs:
             sleep 3
 
             echo "[REMOTE] Проверка /health..."
-            CODE=$(curl -k -s -o /dev/null -w "%{http_code}" https://api.legalai.su/health || echo "000")
+            CODE=$(curl -k -s -o /dev/null -w "%{http_codeX}" https://api.legalai.su/ || echo "000")
             echo "HTTP code: $CODE"
 
             if [ "$CODE" != "200" ]; then
