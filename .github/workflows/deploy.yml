@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 concurrency:
   group: deploy-legalai
@@ -16,6 +17,7 @@ jobs:
     env:
       SSH_HOST: ${{ secrets.SSH_HOST }}
       SSH_USER: ${{ secrets.SSH_USER }}
+      SSH_KEY: ${{ secrets.SSH_KEY }}
       SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
 
     steps:
@@ -41,20 +43,20 @@ jobs:
 
       - name: Install & build frontend
         if: steps.detect-fe.outputs.has_fe == 'true'
+        working-directory: frontend
         run: |
-          cd frontend
           npm ci
           npm run build
 
       # 3. Настраиваем SSH
-      - name: Setup SSH key and known_hosts       
+      - name: Setup SSH key and known_hosts
         run: |
-         mkdir -p ~/.ssh
-         echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
-      # 4. Rsync backend + frontend build на сервер
+      # 4. Rsync backend на сервер
       - name: Rsync backend
         run: |
           rsync -az --delete \
@@ -64,44 +66,60 @@ jobs:
             ./backend/ \
             "${SSH_USER}@${SSH_HOST}:/srv/legal-ai/backend/"
 
+      # 4b. Rsync frontend (если есть)
       - name: Rsync frontend (если есть)
         if: steps.detect-fe.outputs.has_fe == 'true'
-        run:   |
-          rsy  nc -az --delete \
-            .  /frontend/dist/ \
-            "  ${SSH_USER}@${SSH_HOST}:/srv/legal-ai/frontend/dist/"
+        run: |
+          rsync -az --delete \
+            ./frontend/dist/ \
+            "${SSH_USER}@${SSH_HOST}:/srv/legal-ai/frontend/dist/"
 
       # 5. Обновляем .env, перезапускаем сервис и делаем health-check
       - name: Remote update env, restart service, health-check
         run: |
-          ssh -i ~/.ssh/id_ed25519 "${SSH_USER}@${SSH_HOST}" 'bash -s' << "EOSSH"
-            set -e
+          # Передаём значение SENTRY_DSN внутрь удалённой сессии
+          ssh -i ~/.ssh/id_ed25519 "${SSH_USER}@${SSH_HOST}" "SENTRY_DSN='${SENTRY_DSN}' bash -s" << 'EOSSH'
+          set -e
 
-            cd /srv/legal-ai
+          cd /srv/legal-ai
 
-            echo "[REMOTE] Обновляем SENTRY_DSN..."
-            if [ -n "${SENTRY_DSN}" ]; then
-              if grep -q '^SENTRY_DSN=' backend/.env 2>/dev/null; then
-                sed -i "s|^SENTRY_DSN=.*|SENTRY_DSN=${SENTRY_DSN}|" backend/.env
-              else
-                echo "SENTRY_DSN=${SENTRY_DSN}" >> backend/.env
-              fi
+          echo "[REMOTE] Обновляем SENTRY_DSN в backend/.env..."
+          if [ -n "${SENTRY_DSN:-}" ]; then
+            if grep -q '^SENTRY_DSN=' backend/.env 2>/dev/null; then
+              sed -i "s|^SENTRY_DSN=.*|SENTRY_DSN=${SENTRY_DSN}|" backend/.env
             else
-              echo "[REMOTE] ПРЕДУПРЕЖДЕНИЕ: SENTRY_DSN пуст, ничего не обновлено."
+              echo "SENTRY_DSN=${SENTRY_DSN}" >> backend/.env
+            fi
+          else
+            echo "[REMOTE] ПРЕДУПРЕЖДЕНИЕ: SENTRY_DSN пуст, ничего не обновлено."
+          fi
+
+          echo "[REMOTE] Перезапуск legalai.service..."
+          sudo systemctl daemon-reload
+          sudo systemctl restart legalai.service
+
+          echo "[REMOTE] Ожидание запуска сервиса..."
+          sleep 5
+
+          HEALTH_URL="https://api.legalai.su/health"
+          ATTEMPTS=10
+          DELAY=5
+
+          echo "[REMOTE] Проверка ${HEALTH_URL} ..."
+          i=1
+          while [ "$i" -le "$ATTEMPTS" ]; do
+            CODE=$(curl -k -s -o /dev/null -w "%{http_code}" "$HEALTH_URL" || echo "000")
+            echo "Попытка ${i}/${ATTEMPTS}: HTTP code: ${CODE}"
+
+            if [ "$CODE" = "200" ]; then
+              echo "[REMOTE] Health-check OK."
+              exit 0
             fi
 
-            echo "[REMOTE] Перезапуск legalai.service..."
-            sudo systemctl daemon-reload
-            sudo systemctl restart legalai.service
-            sleep 3
-            echo "[REMOTE] Проверка корневой URL..."
-            CODE=$(curl -k -s -o /dev/null -w "%{http_code}" https://api.legalai.su/ || echo "000")
-            echo "HTTP code: $CODE"
+            i=$((i + 1))
+            sleep "$DELAY"
+          done
 
-            if [ "$CODE" != "200" ]; then
-              echo "Health-check FAILED"
-              exit 1
-            fi
-
-            echo "[REMOTE] Deploy OK."
-            EOSSH
+          echo "[REMOTE] Health-check FAILED после ${ATTEMPTS} попыток."
+          exit 1
+          EOSSH
