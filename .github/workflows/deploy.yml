@@ -18,15 +18,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Умный шаг: ставим Node.js только если в repo есть frontend/package.json
+      # Умная установка Node — ТОЛЬКО если есть package.json
       - name: Setup Node.js 20 (if frontend has package.json)
         if: hashFiles('frontend/package.json') != ''
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # Умный шаг: билд фронтенда только если есть package.json
-      - name: Build frontend (npm ci && npm run build)
+      - name: Build frontend (only if package.json exists)
         if: hashFiles('frontend/package.json') != ''
         working-directory: frontend
         run: |
@@ -38,7 +37,6 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_KEY }}
 
-      # Добавляем сервер в known_hosts, чтобы rsync не ругался
       - name: Add server to known_hosts
         run: |
           mkdir -p ~/.ssh
@@ -51,22 +49,18 @@ jobs:
             --exclude='.github' \
             ./ ${SSH_USER}@${SSH_HOST}:/srv/legal-ai/repo/
 
-      - name: Run deploy commands on server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          script_stop: true
-          script: |
+      - name: Run deploy commands via SSH (native, stable)
+        run: |
+          ssh ${SSH_USER}@${SSH_HOST} << 'EOF'
             set -euo pipefail
 
             echo "📌 Sync backend"
             rsync -az --delete /srv/legal-ai/repo/backend/ /srv/legal-ai/backend/
 
-            echo "📌 Sync frontend (static dist/)"
+            echo "📌 Sync frontend"
             rsync -az --delete /srv/legal-ai/repo/frontend/ /srv/legal-ai/frontend/
 
-            echo "📌 Ensure .env exists and SENTRY_DSN is set"
+            echo "📌 Ensure SENTRY_DSN"
             cd /srv/legal-ai/backend
             touch .env
             if grep -q '^SENTRY_DSN=' .env; then
@@ -75,12 +69,12 @@ jobs:
               echo "SENTRY_DSN=${SENTRY_DSN}" >> .env
             fi
 
-            echo "📌 Setup backend venv and install deps"
+            echo "📌 Backend venv install"
             if [ ! -d ".venv" ]; then python3 -m venv .venv; fi
             source .venv/bin/activate
             pip install -r requirements.txt
 
-            echo "📌 Restart FastAPI service"
+            echo "📌 Restart FastAPI"
             systemctl daemon-reload
             systemctl restart legalai.service
             sleep 2
@@ -89,3 +83,5 @@ jobs:
             echo "📌 Health checks"
             curl -sk https://api.legalai.su/health || true
             curl -sk -o /dev/null -w "%{http_code}\\n" https://api.legalai.su/debug-sentry || true
+
+          EOF
