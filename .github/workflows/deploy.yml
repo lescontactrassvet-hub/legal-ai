@@ -18,13 +18,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Умная установка Node — ТОЛЬКО если есть package.json
+      # Умная установка Node.js — ТОЛЬКО если есть frontend/package.json
       - name: Setup Node.js 20 (if frontend has package.json)
         if: hashFiles('frontend/package.json') != ''
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      # Билдим фронтенд только если реально есть Node-проект
       - name: Build frontend (only if package.json exists)
         if: hashFiles('frontend/package.json') != ''
         working-directory: frontend
@@ -63,7 +64,7 @@ jobs:
             echo '📌 Sync frontend'
             rsync -az --delete /srv/legal-ai/repo/frontend/ /srv/legal-ai/frontend/
 
-            echo '📌 Ensure SENTRY_DSN'
+            echo '📌 Ensure SENTRY_DSN in .env'
             cd /srv/legal-ai/backend
             touch .env
             if grep -q '^SENTRY_DSN=' .env; then
@@ -72,12 +73,12 @@ jobs:
               echo "SENTRY_DSN=${SENTRY_DSN}" >> .env
             fi
 
-            echo '📌 Backend venv install'
+            echo '📌 Setup backend venv and install deps'
             if [ ! -d ".venv" ]; then python3 -m venv .venv; fi
             source .venv/bin/activate
             pip install -r requirements.txt
 
-            echo '📌 Restart FastAPI'
+            echo '📌 Restart FastAPI service'
             systemctl daemon-reload
             systemctl restart legalai.service
             sleep 2
