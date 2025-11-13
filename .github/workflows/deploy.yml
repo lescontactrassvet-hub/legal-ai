@@ -1,69 +1,107 @@
-name: Deploy to Production (SSH)
+name: Deploy LegalAI
+
 on:
   push:
     branches:
       - main
 
+concurrency:
+  group: deploy-legalai
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    env:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
-
-      - name: Detect frontend presence
+      # ---------------------------
+      # 1. Проверяем, есть ли фронт
+      # ---------------------------
+      - name: Detect frontend
         id: detect-fe
         run: |
           if [ -f "frontend/package.json" ]; then
-            echo "has_fe=true" >> $GITHUB_OUTPUT
+            echo "has_fe=true" >> "$GITHUB_OUTPUT"
           else
-            echo "has_fe=false" >> $GITHUB_OUTPUT
+            echo "has_fe=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Setup Node (only if FE)
+      # ---------------------------
+      # 2. Сборка фронтенда (если есть)
+      # ---------------------------
+      - name: Setup Node.js
         if: steps.detect-fe.outputs.has_fe == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install and build FE
+      - name: Install & build frontend
         if: steps.detect-fe.outputs.has_fe == 'true'
         run: |
           cd frontend
           npm ci
           npm run build
 
-      - name: Deploy to server
-        env:
-          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
+      # ---------------------------
+      # 3. Настраиваем SSH
+      # ---------------------------
+      - name: Setup SSH key and known_hosts
         run: |
-          rsync -avz --delete \
-            -e "ssh -i ~/.ssh/id_ed25519" \
-            ./backend ./frontend/dist \
-            ${SSH_USER}@${SSH_HOST}:/srv/legal-ai/
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
-          ssh -i ~/.ssh/id_ed25519 ${SSH_USER}@${SSH_HOST} "bash -s" << EOF
+      # ---------------------------
+      # 4. Деплой на сервер
+      # ---------------------------
+      - name: Rsync backend + built frontend
+        run: |
+          rsync -az --delete \
+            --exclude '.git' \
+            --exclude '.venv' \
+            --exclude 'node_modules' \
+            ./backend ./frontend/dist \
+            "${SSH_USER}@${SSH_HOST}:/srv/legal-ai/"
+
+      - name: Remote update env, restart service, health-check
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "${SSH_USER}@${SSH_HOST}" << EOF
             set -e
 
-            echo "Обновляем .env..."
-            sed -i "s|SENTRY_DSN=.*|SENTRY_DSN=${SENTRY_DSN}|" /srv/legal-ai/backend/.env || true
+            cd /srv/legal-ai
 
-            echo "Перезапуск legalai.service..."
+            echo "[REMOTE] Обновляем SENTRY_DSN в backend/.env..."
+            if [ -n "${SENTRY_DSN}" ]; then
+              if grep -q '^SENTRY_DSN=' backend/.env 2>/dev/null; then
+                sed -i "s|^SENTRY_DSN=.*|SENTRY_DSN=${SENTRY_DSN}|" backend/.env
+              else
+                echo "SENTRY_DSN=${SENTRY_DSN}" >> backend/.env
+              fi
+            else
+              echo "[REMOTE] Предупреждение: SENTRY_DSN пуст, строка не изменена."
+            fi
+
+            echo "[REMOTE] Перезапуск legalai.service..."
             sudo systemctl daemon-reload
             sudo systemctl restart legalai.service
             sleep 3
 
-            echo "Проверка /health..."
-            curl -k -s -o /dev/null -w "%{http_code}" https://api.legalai.su/health
-            
- EOF
+            echo "[REMOTE] Проверка /health..."
+            CODE=\$(curl -k -s -o /dev/null -w "%{http_code}" https://api.legalai.su/health || echo "000")
+            echo "HTTP code: \$CODE"
+            if [ "\$CODE" != "200" ]; then
+              echo "Health-check FAILED"
+              exit 1
+            fi
+
+            echo "[REMOTE] Deploy OK."
+EOF
