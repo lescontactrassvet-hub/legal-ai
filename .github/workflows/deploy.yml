@@ -94,9 +94,8 @@ jobs:
             sudo systemctl daemon-reload
             sudo systemctl restart legalai.service
             sleep 3
-
-            echo "[REMOTE] Проверка /health..."
-            CODE=$(curl -k -s -o /dev/null -w "%{http_codeX}" https://api.legalai.su/ || echo "000")
+      echo "[REMOTE] Проверка корневой URL..."
+            CODE=$(curl -k -s -o /dev/null -w "%{http_code}" https://api.legalai.su/ || echo "000")
             echo "HTTP code: $CODE"
 
             if [ "$CODE" != "200" ]; then
