@@ -1,0 +1,85 @@
+name: Deploy to Production (SSH)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      - name: Copy files to server via rsync
+        run: |
+          RSYNC_OPTS="-az --delete --exclude='.git' --exclude='.github' --exclude='node_modules'"
+          rsync $RSYNC_OPTS ./ ${SSH_USER}@${SSH_HOST}:/srv/legal-ai/repo/
+
+      - name: Remote deploy steps
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /srv/legal-ai/repo
+
+            # Backend install
+            cd backend
+            if [ ! -d ".venv" ]; then python3 -m venv .venv; fi
+            source .venv/bin/activate
+            pip install -r requirements.txt
+            pip install "sentry-sdk[fastapi]>=2,<3" || true
+
+            # Ensure .env exists and contains SENTRY_DSN
+            touch .env
+            if grep -q '^SENTRY_DSN=' .env; then
+              sed -i "s#^SENTRY_DSN=.*#SENTRY_DSN=${SENTRY_DSN}#g" .env
+            else
+              echo "SENTRY_DSN=${SENTRY_DSN}" >> .env
+            fi
+
+            # Sync repo → live
+            rsync -az --delete /srv/legal-ai/repo/backend/ /srv/legal-ai/backend/
+            rsync -az --delete /srv/legal-ai/repo/frontend/ /srv/legal-ai/frontend/
+
+            # Build frontend on server (safety)
+            cd /srv/legal-ai/frontend
+            if [ -f package.json ]; then
+              npm ci || true
+              npm run build || true
+            fi
+
+            # Restart backend service
+            systemctl daemon-reload
+            systemctl restart legalai.service
+            sleep 2
+            systemctl status legalai.service -n 20 --no-pager || true
+
+            # Health checks
+            curl -sk https://api.legalai.su/health || true
+            curl -sk -o /dev/null -w "%{http_code}\\n" https://api.legalai.su/debug-sentry || true
