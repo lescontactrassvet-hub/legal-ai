@@ -22,9 +22,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ---------------------------
-      # 1. Проверяем, есть ли фронт
-      # ---------------------------
+      # 1. Проверяем, есть ли фронтенд
       - name: Detect frontend
         id: detect-fe
         run: |
@@ -34,9 +32,7 @@ jobs:
             echo "has_fe=false" >> "$GITHUB_OUTPUT"
           fi
 
-      # ---------------------------
       # 2. Сборка фронтенда (если есть)
-      # ---------------------------
       - name: Setup Node.js
         if: steps.detect-fe.outputs.has_fe == 'true'
         uses: actions/setup-node@v4
@@ -50,9 +46,7 @@ jobs:
           npm ci
           npm run build
 
-      # ---------------------------
       # 3. Настраиваем SSH
-      # ---------------------------
       - name: Setup SSH key and known_hosts
         run: |
           mkdir -p ~/.ssh
@@ -60,18 +54,24 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
-      # ---------------------------
-      # 4. Деплой на сервер
-      # ---------------------------
-      - name: Rsync backend + built frontend
+      # 4. Rsync backend + frontend build на сервер
+      - name: Rsync backend
         run: |
           rsync -az --delete \
             --exclude '.git' \
             --exclude '.venv' \
             --exclude 'node_modules' \
-            ./backend ./frontend/dist \
-            "${SSH_USER}@${SSH_HOST}:/srv/legal-ai/"
+            ./backend/ \
+            "${SSH_USER}@${SSH_HOST}:/srv/legal-ai/backend/"
 
+      - name: Rsync frontend (если есть)
+        if: steps.detect-fe.outputs.has_fe == 'true'
+        run: |
+          rsync -az --delete \
+            ./frontend/dist/ \
+            "${SSH_USER}@${SSH_HOST}:/srv/legal-ai/frontend/dist/"
+
+      # 5. Обновляем .env, перезапускаем сервис и делаем health-check
       - name: Remote update env, restart service, health-check
         run: |
           ssh -i ~/.ssh/id_ed25519 "${SSH_USER}@${SSH_HOST}" << EOF
