@@ -1,66 +1,18 @@
-name: Deploy to Production (SSH)
-
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    env:
-      SSH_HOST: ${{ secrets.SSH_HOST }}
-      SSH_USER: ${{ secrets.SSH_USER }}
-      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      # Умная установка Node — ТОЛЬКО если есть package.json
-      - name: Setup Node.js 20 (if frontend has package.json)
-        if: hashFiles('frontend/package.json') != ''
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Build frontend (only if package.json exists)
-        if: hashFiles('frontend/package.json') != ''
-        working-directory: frontend
-        run: |
-          npm ci
-          npm run build
-
-      - name: Add SSH key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_KEY }}
-
-      - name: Add server to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
-
-      - name: Upload project to server (rsync)
-        run: |
-          rsync -az --delete \
-            --exclude='.git' \
-            --exclude='.github' \
-            ./ ${SSH_USER}@${SSH_HOST}:/srv/legal-ai/repo/
-
       - name: Run deploy commands via SSH (native, stable)
         run: |
-          ssh ${SSH_USER}@${SSH_HOST} << 'EOF'
+          ssh -o StrictHostKeyChecking=no \
+            ${SSH_USER}@${SSH_HOST} \
+            "SENTRY_DSN='${SENTRY_DSN}' bash -s" << 'EOF'
+
             set -euo pipefail
 
-            echo "📌 Sync backend"
+            echo '📌 Sync backend'
             rsync -az --delete /srv/legal-ai/repo/backend/ /srv/legal-ai/backend/
 
-            echo "📌 Sync frontend"
+            echo '📌 Sync frontend'
             rsync -az --delete /srv/legal-ai/repo/frontend/ /srv/legal-ai/frontend/
 
-            echo "📌 Ensure SENTRY_DSN"
+            echo '📌 Ensure SENTRY_DSN'
             cd /srv/legal-ai/backend
             touch .env
             if grep -q '^SENTRY_DSN=' .env; then
@@ -69,19 +21,19 @@ jobs:
               echo "SENTRY_DSN=${SENTRY_DSN}" >> .env
             fi
 
-            echo "📌 Backend venv install"
+            echo '📌 Backend venv install'
             if [ ! -d ".venv" ]; then python3 -m venv .venv; fi
             source .venv/bin/activate
             pip install -r requirements.txt
 
-            echo "📌 Restart FastAPI"
+            echo '📌 Restart FastAPI'
             systemctl daemon-reload
             systemctl restart legalai.service
             sleep 2
             systemctl status legalai.service -n 20 || true
 
-            echo "📌 Health checks"
+            echo '📌 Health checks'
             curl -sk https://api.legalai.su/health || true
-            curl -sk -o /dev/null -w "%{http_code}\\n" https://api.legalai.su/debug-sentry || true
+            curl -sk -o /dev/null -w "%{http_code}\n" https://api.legalai.su/debug-sentry || true
 
-          EOF
+EOF
