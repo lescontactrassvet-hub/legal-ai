@@ -66,10 +66,10 @@ jobs:
 
       - name: Rsync frontend (если есть)
         if: steps.detect-fe.outputs.has_fe == 'true'
-        run: |
-          rsync -az --delete \
-            ./frontend/dist/ \
-            "${SSH_USER}@${SSH_HOST}:/srv/legal-ai/frontend/dist/"
+        run:   |
+          rsy  nc -az --delete \
+            .  /frontend/dist/ \
+            "  ${SSH_USER}@${SSH_HOST}:/srv/legal-ai/frontend/dist/"
 
       # 5. Обновляем .env, перезапускаем сервис и делаем health-check
       - name: Remote update env, restart service, health-check
