@@ -74,12 +74,12 @@ jobs:
       # 5. Обновляем .env, перезапускаем сервис и делаем health-check
       - name: Remote update env, restart service, health-check
         run: |
-          ssh -i ~/.ssh/id_ed25519 "${SSH_USER}@${SSH_HOST}" << EOF
+          ssh -i ~/.ssh/id_ed25519 "${SSH_USER}@${SSH_HOST}" 'bash -s' << "EOSSH"
             set -e
 
             cd /srv/legal-ai
 
-            echo "[REMOTE] Обновляем SENTRY_DSN в backend/.env..."
+            echo "[REMOTE] Обновляем SENTRY_DSN..."
             if [ -n "${SENTRY_DSN}" ]; then
               if grep -q '^SENTRY_DSN=' backend/.env 2>/dev/null; then
                 sed -i "s|^SENTRY_DSN=.*|SENTRY_DSN=${SENTRY_DSN}|" backend/.env
@@ -87,7 +87,7 @@ jobs:
                 echo "SENTRY_DSN=${SENTRY_DSN}" >> backend/.env
               fi
             else
-              echo "[REMOTE] Предупреждение: SENTRY_DSN пуст, строка не изменена."
+              echo "[REMOTE] ПРЕДУПРЕЖДЕНИЕ: SENTRY_DSN пуст, ничего не обновлено."
             fi
 
             echo "[REMOTE] Перезапуск legalai.service..."
@@ -96,12 +96,13 @@ jobs:
             sleep 3
 
             echo "[REMOTE] Проверка /health..."
-            CODE=\$(curl -k -s -o /dev/null -w "%{http_code}" https://api.legalai.su/health || echo "000")
-            echo "HTTP code: \$CODE"
-            if [ "\$CODE" != "200" ]; then
+            CODE=$(curl -k -s -o /dev/null -w "%{http_code}" https://api.legalai.su/health || echo "000")
+            echo "HTTP code: $CODE"
+
+            if [ "$CODE" != "200" ]; then
               echo "Health-check FAILED"
               exit 1
             fi
 
             echo "[REMOTE] Deploy OK."
-EOF
+            EOSSH
