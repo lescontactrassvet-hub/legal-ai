@@ -50,7 +50,7 @@ jobs:
       - name: Setup SSH key and known_hosts       
               run: |
               mkdir -p ~/.ssh
-       echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
+         echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
