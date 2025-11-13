@@ -18,14 +18,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Умный шаг: Node устанавливаем ТОЛЬКО если в репо есть frontend/package.json
+      # Умный шаг: ставим Node.js только если в repo есть frontend/package.json
       - name: Setup Node.js 20 (if frontend has package.json)
         if: hashFiles('frontend/package.json') != ''
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # Умный шаг: билд фронтенда ТОЛЬКО если есть package.json
+      # Умный шаг: билд фронтенда только если есть package.json
       - name: Build frontend (npm ci && npm run build)
         if: hashFiles('frontend/package.json') != ''
         working-directory: frontend
@@ -37,6 +37,12 @@ jobs:
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      # Добавляем сервер в known_hosts, чтобы rsync не ругался
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
 
       - name: Upload project to server (rsync)
         run: |
