@@ -30,13 +30,28 @@ jobs:
       - name: Set PYTHONPATH to repository root
         run: echo "PYTHONPATH=$(pwd)" >> $GITHUB_ENV
 
-      - name: Debug python-multipart
+      - name: Debug CI environment
         run: |
-          bash ./ci_debug_python_multipart.sh
-
-      - name: Debug python-multipart
-        run: |
-          bash ./ci_debug_python_multipart.sh
+          echo "==== GITHUB ACTIONS WORKSPACE ===="
+          pwd
+          echo
+          echo "==== FILE TREE (root) ===="
+          ls
+          echo
+          echo "==== CHECK backend/ ===="
+          ls -la backend || echo "NO backend folder"
+          echo
+          echo "==== backend/requirements.txt ===="
+          cat backend/requirements.txt || echo "NO requirements"
+          echo
+          echo "==== CHECK python-multipart in pip ===="
+          pip list | grep -i multipart || echo "python-multipart NOT INSTALLED"
+          echo
+          echo "==== sys.path ===="
+          python - << 'EOF'
+          import sys
+          print("\n".join(sys.path))
+          EOF
 
       - name: Run tests
         run: |
