@@ -1,20 +1,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .db import Base, engine
-from .auth.routes import router as auth_router
-from .legal_doc.routes import router as legal_doc_router
-from backend.routers.ai import router as ai_router
+from app.config import get_settings
+from app.db import Base, engine
+from app.legal_doc.routes import router as legal_doc_router
+from app.auth.routes import router as auth_router
+from routers.ai import router as ai_router  # AI-консультант
 
-
-
-
+# Создание таблиц в БД
 Base.metadata.create_all(bind=engine)
 
-# Instantiate FastAPI application
-app = FastAPI(title="LegalAI Backend", version="0.1.0")
+app = FastAPI(title="LegalAI API")
 
-# Enable CORS middleware (allow all origins for simplicity)
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,17 +21,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Root endpoint for health check
-@app.get("/")
-def read_root():
-    return {"message": "LegalAI backend is running"}
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
-
-
-# Include authentication routes
-app.include_router(auth_router, prefix="/auth", tags=["auth"])
+# Роутеры
+app.include_router(auth_router, prefix="/auth", tags=["Auth"])
+app.include_router(legal_doc_router, prefix="/docs", tags=["Docs"])
 app.include_router(ai_router, prefix="/ai", tags=["AI"])
-app.include_router(legal_doc_router, prefix="/docs", tags=["Documents"])
-
-
-app.include_router(legal_doc_router, prefix="/docs", tags=["Documents"])
