@@ -1,0 +1,19 @@
+{
+  "timestamp": "2025-10-22T12:19:23+03:00",
+  "auto_fix": true,
+  "fixed_actions": [
+  ],
+  "still_missing": [
+    "termux-change-repo",
+    "pip:fastapi",
+    "pip:uvicorn[standard]",
+    "pip:pydantic>=2",
+    "pip:python-dotenv",
+    "pip:sqlalchemy",
+    "pip:aiosqlite",
+    "pip:passlib[bcrypt]",
+    "pip:python-jose[cryptography]",
+    "pip:pyotp",
+    "pip:httpx"
+  ]
+}

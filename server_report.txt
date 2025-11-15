@@ -1,0 +1,6 @@
+=== 🔍 LegalAI Server Diagnostic Report (Mon Oct 27 19:54:28 MSK 2025) ===
+
+[SSH and GitHub connectivity]
+u0_a270
+localhost
+❌ SSH: GitHub key not accepted
