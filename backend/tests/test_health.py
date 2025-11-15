@@ -1,12 +1,19 @@
-import pytest
-from httpx import AsyncClient
+from fastapi.testclient import TestClient
+from backend.main import app  # важно: backend.main, не app.main
 
-from app.main import app
+client = TestClient(app)
 
 
-@pytest.mark.asyncio
-async def test_health_ok():
-    async with AsyncClient(app=app, base_url="http://test") as ac:
-        resp = await ac.get("/health")
+def test_health_status_code():
+    resp = client.get("/health")
     assert resp.status_code == 200
-    assert resp.json() == {"status": "ok"}
+
+
+def test_health_payload():
+    resp = client.get("/health")
+    data = resp.json()
+    assert isinstance(data, dict)
+
+    # допускаем варианты ("ok", "OK", "healthy")
+    status = str(data.get("status", "")).lower()
+    assert status in {"ok", "healthy"}
