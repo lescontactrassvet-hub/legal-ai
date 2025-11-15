@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 concurrency:
   group: deploy-legalai
@@ -34,92 +33,87 @@ jobs:
             echo "has_fe=false" >> "$GITHUB_OUTPUT"
           fi
 
-      # 2. Сборка фронтенда (если есть)
-      - name: Setup Node.js
+      # 2. Если фронтенд есть — ставим Node и собираем
+      - name: Setup Node
         if: steps.detect-fe.outputs.has_fe == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
-      - name: Install & build frontend
+      - name: Build frontend
         if: steps.detect-fe.outputs.has_fe == 'true'
-        working-directory: frontend
+        working-directory: ./frontend
         run: |
           npm ci
           npm run build
 
-      # 3. Настраиваем SSH
-      - name: Setup SSH key and known_hosts
+      # 3. Готовим SSH (ключ + known_hosts)
+      - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          echo "$SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
+
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
 
-      # 4. Rsync backend на сервер
-      - name: Rsync backend
+      # 4. Деплой кода на сервер через rsync
+      - name: Rsync project to server
         run: |
           rsync -az --delete \
-            --exclude '.git' \
-            --exclude '.venv' \
-            --exclude 'node_modules' \
-            ./backend/ \
-            "${SSH_USER}@${SSH_HOST}:/srv/legal-ai/backend/"
+            --exclude=".git" \
+            --exclude=".github" \
+            -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=yes" \
+            ./ "${SSH_USER}@${SSH_HOST}:/srv/legal-ai/"
 
-      # 4b. Rsync frontend (если есть)
-      - name: Rsync frontend (если есть)
-        if: steps.detect-fe.outputs.has_fe == 'true'
+      # 5. Обновление .env, рестарт сервиса и health-check
+      - name: Remote deploy script
         run: |
-          rsync -az --delete \
-            ./frontend/dist/ \
-            "${SSH_USER}@${SSH_HOST}:/srv/legal-ai/frontend/dist/"
-
-      # 5. Обновляем .env, перезапускаем сервис и делаем health-check
-      - name: Remote update env, restart service, health-check
-        run: |
-          # Передаём значение SENTRY_DSN внутрь удалённой сессии
-          ssh -i ~/.ssh/id_ed25519 "${SSH_USER}@${SSH_HOST}" "SENTRY_DSN='${SENTRY_DSN}' bash -s" << 'EOSSH'
-          set -e
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=yes \
+            "${SSH_USER}@${SSH_HOST}" \
+            "SENTRY_DSN='${SENTRY_DSN}' bash -s" << 'EOF'
+          set -euo pipefail
 
           cd /srv/legal-ai
 
-          echo "[REMOTE] Обновляем SENTRY_DSN в backend/.env..."
-          if [ -n "${SENTRY_DSN:-}" ]; then
-            if grep -q '^SENTRY_DSN=' backend/.env 2>/dev/null; then
-              sed -i "s|^SENTRY_DSN=.*|SENTRY_DSN=${SENTRY_DSN}|" backend/.env
-            else
-              echo "SENTRY_DSN=${SENTRY_DSN}" >> backend/.env
-            fi
-          else
-            echo "[REMOTE] ПРЕДУПРЕЖДЕНИЕ: SENTRY_DSN пуст, ничего не обновлено."
+          # Гарантируем .env
+          if [ ! -f ".env" ]; then
+            touch .env
           fi
 
-          echo "[REMOTE] Перезапуск legalai.service..."
-          sudo systemctl daemon-reload
-          sudo systemctl restart legalai.service
+          # Обновляем или добавляем SENTRY_DSN в .env
+          if grep -q '^SENTRY_DSN=' .env; then
+            sed -i "s|^SENTRY_DSN=.*$|SENTRY_DSN=${SENTRY_DSN}|" .env
+          else
+            echo "SENTRY_DSN=${SENTRY_DSN}" >> .env
+          fi
 
-          echo "[REMOTE] Ожидание запуска сервиса..."
+          # При необходимости можно обновить зависимости backend/frontend:
+          # cd backend && .venv/bin/pip install -r requirements.txt || true
+          # cd /srv/legal-ai/frontend && npm ci && npm run build || true
+          cd /srv/legal-ai
+
+          # Рестарт backend
+          systemctl restart legalai.service
+
+          echo "Waiting for backend to come up..."
           sleep 5
 
-          HEALTH_URL="https://api.legalai.su/health"
-          ATTEMPTS=10
-          DELAY=5
+          # Health-check API
+          if ! curl -k -f https://api.legalai.su/health >/dev/null 2>&1; then
+            echo "ERROR: /health failed, showing last logs:"
+            journalctl -u legalai.service -n 50 || true
+            exit 1
+          fi
 
-          echo "[REMOTE] Проверка ${HEALTH_URL} ..."
-          i=1
-          while [ "$i" -le "$ATTEMPTS" ]; do
-            CODE=$(curl -k -s -o /dev/null -w "%{http_code}" "$HEALTH_URL" || echo "000")
-            echo "Попытка ${i}/${ATTEMPTS}: HTTP code: ${CODE}"
+          echo "/health OK"
 
-            if [ "$CODE" = "200" ]; then
-              echo "[REMOTE] Health-check OK."
-              exit 0
-            fi
+          # Мягкая проверка debug-sentry (если включено)
+          if curl -k -f https://api.legalai.su/debug-sentry >/dev/null 2>&1; then
+            echo "/debug-sentry OK"
+          else
+            echo "debug-sentry not available (non-fatal)"
+          fi
 
-            i=$((i + 1))
-            sleep "$DELAY"
-          done
-
-          echo "[REMOTE] Health-check FAILED после ${ATTEMPTS} попыток."
-          exit 1
-          EOSSH
+          echo "Deploy completed successfully."
+          EOF
