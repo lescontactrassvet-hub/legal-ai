@@ -30,6 +30,10 @@ jobs:
       - name: Set PYTHONPATH to repository root
         run: echo "PYTHONPATH=$(pwd)" >> $GITHUB_ENV
 
+      - name: Debug python-multipart
+        run: |
+          bash ./ci_debug_python_multipart.sh
+
       - name: Run tests
         run: |
           pytest -q
