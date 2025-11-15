@@ -1,55 +1,29 @@
 #!/bin/bash
 set -e
 
-echo "=== CI BACKEND DEBUG: python-multipart & env ==="
-echo
+echo "=== CI DEBUG REPORT ==="
+echo "[A] PWD: $(pwd)"
 
-echo "[1] PWD:"
-pwd
-echo
+echo "[B] List repo root:"
+ls -la
 
-echo "[2] Files in repo root:"
-ls
-echo
+echo "[C] backend folder:"
+ls -la backend || echo 'NO backend folder'
 
-echo "[3] backend directory:"
-if [ -d backend ]; then
-  ls backend
-else
-  echo "backend/ NOT FOUND"
-fi
-echo
+echo "[D] backend/requirements.txt:"
+cat backend/requirements.txt || echo 'requirements missing'
 
-echo "[4] backend/requirements.txt:"
-if [ -f backend/requirements.txt ]; then
-  echo "---- backend/requirements.txt ----"
-  cat backend/requirements.txt
-  echo "----------------------------------"
-else
-  echo "backend/requirements.txt NOT FOUND"
-fi
-echo
+echo "[E] python-multipart:"
+pip list | grep multipart || echo 'NO python-multipart'
 
-echo "[5] pip list | grep multipart:"
-python -m pip list | grep -i multipart || echo "no multipart packages installed"
-echo
+echo "[F] PYTHONPATH:"
+echo "$PYTHONPATH"
 
-echo "[6] pip show python-multipart:"
-if python -m pip show python-multipart >/dev/null 2>&1; then
-  python -m pip show python-multipart
-else
-  echo "python-multipart is NOT installed (pip show failed)"
-fi
-echo
-
-echo "[7] PYTHONPATH and sys.path:"
-echo "PYTHONPATH: $PYTHONPATH"
-python - << 'PYCODE'
+python - << 'PYEOF'
 import sys
 print("sys.path:")
 for p in sys.path:
-    print("  ", p)
-PYCODE
+    print(" -", p)
+PYEOF
 
-echo
-echo "=== END CI BACKEND DEBUG ==="
+echo "=== END REPORT ==="
