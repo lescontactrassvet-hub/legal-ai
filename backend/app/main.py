@@ -7,8 +7,28 @@ from app.legal_doc.routes import router as legal_doc_router
 from app.auth.routes import router as auth_router
 from routers.ai import router as ai_router  # AI-консультант
 
+# --- Sentry (опционально) ---
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastAPIIntegration
+except ImportError:
+    sentry_sdk = None
+# --- конец блока Sentry ---
+
+
 # Создание таблиц в БД
 Base.metadata.create_all(bind=engine)
+
+# Настройки приложения
+settings = get_settings()
+
+# Инициализация Sentry ТОЛЬКО если библиотека установлена и DSN задан
+if sentry_sdk and settings.SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        integrations=[FastAPIIntegration()],
+        traces_sample_rate=0.0,  # только ошибки, без перфоманса
+    )
 
 app = FastAPI(title="LegalAI API")
 
@@ -21,9 +41,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/debug-sentry")
+async def debug_sentry():
+    """
+    Тестовый эндпоинт для проверки интеграции Sentry.
+    При обращении специально вызывается ошибка.
+    """
+    1 / 0
+
 
 # Роутеры
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])
