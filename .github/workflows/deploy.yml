@@ -43,7 +43,7 @@ jobs:
     env:
       SSH_HOST: ${{ secrets.SSH_HOST }}
       SSH_USER: ${{ secrets.SSH_USER }}
-      SSH_KEY: ${{ secrets.SSH_KEY }}
+      SSH_KEY:  ${{ secrets.SSH_KEY }}
       SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
 
     steps:
@@ -84,7 +84,7 @@ jobs:
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
       # Бэкап проекта на сервере ДО rsync (на всякий случай)
-      # Выполняется НА СЕРВЕРЕ, директория /srv/legal-ai
+      # ВАЖНО: выполняется НА СЕРВЕРЕ (Ubuntu, /srv/legal-ai)
       - name: Backup project on server (pre-rsync)
         run: |
           ssh "${SSH_USER}@${SSH_HOST}" 'bash -s' << 'EOF'
@@ -98,9 +98,11 @@ jobs:
           if [ -d "$PROJECT_ROOT" ]; then
             echo "[BACKUP] Создаём бэкап проекта в ${BACKUP_ROOT}/legal-ai_${TIMESTAMP}.tar.gz"
             tar -czf "${BACKUP_ROOT}/legal-ai_${TIMESTAMP}.tar.gz" \
+              --ignore-failed-read \
+              --warning=no-file-changed \
               --exclude='./backups' \
               --exclude='./deploy_logs' \
-              -C /srv legal-ai
+              -C /srv legal-ai || true
           else
             echo "[BACKUP] Каталог ${PROJECT_ROOT} не найден, бэкап не требуется."
           fi
