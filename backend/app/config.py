@@ -5,6 +5,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """Application settings loaded from .env or environment variables."""
+
     # Конфиг pydantic v2
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -12,10 +14,10 @@ class Settings(BaseSettings):
         extra="allow",
     )
 
-    # База данных (по умолчанию SQLite + aiosqlite в корне backend)
+    # База данных (по умолчанию SQLite в корне backend)
     DATABASE_URL: str = "sqlite:///./legalai.db"
 
-    # Секрет для JWT / сессий (обязательно переопредели в .env)
+    # Секрет для JWT / сессий (обязательно переопределим в .env)
     SECRET_KEY: str = "CHANGE_ME_PLEASE"
 
     # Алгоритм для JWT
@@ -25,10 +27,11 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
 
-    # Sentry (может быть пустым)
+    # Sentry (может быть пустым; если None или "", Sentry не активируется)
     SENTRY_DSN: Optional[str] = None
 
 
 @lru_cache
 def get_settings() -> "Settings":
+    """Возвращает кэшированный экземпляр настроек."""
     return Settings()
