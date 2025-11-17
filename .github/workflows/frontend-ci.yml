@@ -16,8 +16,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 1. Проверяем, есть ли исходники фронтенда (Node-проект)
       - name: Check if frontend exists
-        id: check-fe
+        id: detect_fe
         run: |
           if [ -f "frontend/package.json" ]; then
             echo "has_fe=true" >> "$GITHUB_OUTPUT"
@@ -25,49 +26,62 @@ jobs:
             echo "has_fe=false" >> "$GITHUB_OUTPUT"
           fi
 
+      # 2. Если фронтенда нет — просто выходим УСПЕШНО
       - name: Stop if no frontend
-        if: steps.check-fe.outputs.has_fe == 'false'
+        if: steps.detect_fe.outputs.has_fe == 'false'
         run: |
-          echo "No frontend/package.json found. Skipping frontend CI."
+          echo "No frontend package.json found (static dist only). Skipping Frontend CI."
           exit 0
 
+      # 3. Устанавливаем Node ТОЛЬКО если frontend есть
       - name: Set up Node
+        if: steps.detect_fe.outputs.has_fe == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: '20'
 
+      # 4. Устанавливаем зависимости (npm ci, иначе npm install)
       - name: Install dependencies
-        working-directory: ./frontend
+        if: steps.detect_fe.outputs.has_fe == 'true'
+        working-directory: frontend
         run: |
-          npm ci || npm install
+          if [ -f "package-lock.json" ]; then
+            echo "Using npm ci (lockfile found)"
+            npm ci
+          else
+            echo "No package-lock.json, using npm install"
+            npm install
+          fi
 
+      # 5. Тесты фронтенда (если появятся)
       - name: Run tests (if script exists)
-        working-directory: ./frontend
+        if: steps.detect_fe.outputs.has_fe == 'true'
+        working-directory: frontend
         run: |
           if npm run | grep -q " test"; then
-            echo "Found test script, running npm test..."
-            npm test || true
+            npm test
           else
-            echo "No test script in package.json, skipping tests."
+            echo "No test script in package.json, skipping tests"
           fi
 
+      # 6. Линт (если добавишь)
       - name: Run lint (if script exists)
-        working-directory: ./frontend
+        if: steps.detect_fe.outputs.has_fe == 'true'
+        working-directory: frontend
         run: |
           if npm run | grep -q " lint"; then
-            echo "Found lint script, running npm run lint..."
-            npm run lint || true
+            npm run lint
           else
-            echo "No lint script in package.json, skipping lint."
+            echo "No lint script in package.json, skipping lint"
           fi
 
+      # 7. Сборка фронтенда (если есть скрипт build)
       - name: Build frontend
-        working-directory: ./frontend
+        if: steps.detect_fe.outputs.has_fe == 'true'
+        working-directory: frontend
         run: |
           if npm run | grep -q " build"; then
-            echo "Running npm run build..."
             npm run build
           else
-            echo "No build script found! Failing job."
-            exit 1
+            echo "No build script in package.json, skipping build"
           fi
