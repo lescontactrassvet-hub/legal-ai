@@ -1,0 +1,75 @@
+name: Frontend CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check if frontend exists
+        id: check-fe
+        run: |
+          if [ -f "frontend/package.json" ]; then
+            echo "has_fe=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_fe=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Stop if no frontend
+        if: steps.check-fe.outputs.has_fe == 'false'
+        run: |
+          echo "No frontend/package.json found. Skipping frontend CI."
+          exit 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: |
+          npm ci
+
+      - name: Run tests (if script exists)
+        working-directory: ./frontend
+        run: |
+          if npm run | grep -q " test"; then
+            echo "Found test script, running npm test..."
+            npm test
+          else
+            echo "No test script in package.json, skipping tests."
+          fi
+
+      - name: Run lint (if script exists)
+        working-directory: ./frontend
+        run: |
+          if npm run | grep -q " lint"; then
+            echo "Found lint script, running npm run lint..."
+            npm run lint
+          else
+            echo "No lint script in package.json, skipping lint."
+          fi
+
+      - name: Build frontend
+        working-directory: ./frontend
+        run: |
+          if npm run | grep -q " build"; then
+            echo "Running npm run build..."
+            npm run build
+          else
+            echo "No build script found! Failing job."
+            exit 1
+          fi
