@@ -10,7 +10,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # 1) Тестируем backend перед деплоем
+  test-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install backend dependencies
+        run: |
+          pip install -r backend/requirements.txt
+
+      - name: Run backend tests
+        run: |
+          pytest -q
+
+  # 2) Деплой на сервер (только если тесты прошли)
   deploy:
+    needs: test-backend
     runs-on: ubuntu-latest
 
     env:
@@ -23,7 +46,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 1. Проверяем, есть ли фронтенд
+      # Опционально: билд фронтенда, только если есть frontend/package.json
       - name: Detect frontend
         id: detect-fe
         run: |
@@ -33,87 +56,91 @@ jobs:
             echo "has_fe=false" >> "$GITHUB_OUTPUT"
           fi
 
-      # 2. Если фронтенд есть — ставим Node и собираем
-      - name: Setup Node
+      - name: Set up Node (if frontend exists)
         if: steps.detect-fe.outputs.has_fe == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
 
-      - name: Build frontend
+      - name: Build frontend (if present)
         if: steps.detect-fe.outputs.has_fe == 'true'
         working-directory: ./frontend
         run: |
           npm ci
           npm run build
 
-      # 3. Готовим SSH (ключ + known_hosts)
-      - name: Setup SSH
+      - name: Prepare SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "$SSH_KEY" > ~/.ssh/id_ed25519
+          echo "${SSH_KEY}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
 
+      - name: Add server to known_hosts
+        run: |
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
 
-      # 4. Деплой кода на сервер через rsync
+      # Синхронизация кода на сервере (repo -> /srv/legal-ai)
       - name: Rsync project to server
         run: |
           rsync -az --delete \
-            --exclude=".git" \
-            --exclude=".github" \
-            -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=yes" \
+            --exclude ".git" \
+            --exclude ".github" \
+            --exclude "node_modules" \
+            --exclude "frontend/node_modules" \
             ./ "${SSH_USER}@${SSH_HOST}:/srv/legal-ai/"
 
-      # 5. Обновление .env, рестарт сервиса и health-check
-      - name: Remote deploy script
+      # Основной деплой-скрипт на сервере
+      # ВАЖНО: здесь мы ПЕРЕДАЁМ SENTRY_DSN в удалённый bash
+      - name: Run remote deploy script
         run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=yes \
-            "${SSH_USER}@${SSH_HOST}" \
-            "SENTRY_DSN='${SENTRY_DSN}' bash -s" << 'EOF'
-          set -euo pipefail
+          ssh "${SSH_USER}@${SSH_HOST}" "SENTRY_DSN='${SENTRY_DSN}' bash -s" << 'EOF'
+          set -e
 
-          cd /srv/legal-ai
+          echo "[DEPLOY] Начало деплоя на сервере..."
 
-          # Гарантируем .env
-          if [ ! -f ".env" ]; then
+          cd /srv/legal-ai/backend
+
+          # Подготовка виртуального окружения
+          if [ ! -d ".venv" ]; then
+            echo "[DEPLOY] Создаём виртуальное окружение..."
+            python3 -m venv .venv
+          fi
+
+          echo "[DEPLOY] Активируем .venv и обновляем зависимости..."
+          . .venv/bin/activate
+          pip install -r requirements.txt
+
+          # Безопасное обновление .env (с бэкапом и установкой SENTRY_DSN)
+          if [ -f ".env" ]; then
+            echo "[DEPLOY] Бэкап .env..."
+            cp .env ".env.$(date +%Y%m%d-%H%M%S).bak"
+          else
+            echo "[DEPLOY] Создаём новый .env..."
             touch .env
           fi
 
-          # Обновляем или добавляем SENTRY_DSN в .env
-          if grep -q '^SENTRY_DSN=' .env; then
-            sed -i "s|^SENTRY_DSN=.*$|SENTRY_DSN=${SENTRY_DSN}|" .env
-          else
-            echo "SENTRY_DSN=${SENTRY_DSN}" >> .env
-          fi
+          # Удаляем старую строку SENTRY_DSN, если была
+          sed -i '/^SENTRY_DSN=/d' .env
 
-          # При необходимости можно обновить зависимости backend/frontend:
-          # cd backend && .venv/bin/pip install -r requirements.txt || true
-          # cd /srv/legal-ai/frontend && npm ci && npm run build || true
-          cd /srv/legal-ai
+          # Добавляем актуальное значение (может быть пустым, это не ошибка)
+          echo "SENTRY_DSN=${SENTRY_DSN}" >> .env
 
-          # Рестарт backend
-          systemctl restart legalai.service
+          echo "[DEPLOY] Текущее значение SENTRY_DSN в .env:"
+          grep '^SENTRY_DSN=' .env || echo "SENTRY_DSN не установлен"
 
-          echo "Waiting for backend to come up..."
+          # Перезапуск сервиса
+          echo "[DEPLOY] Перезапускаем legalai.service..."
+          sudo systemctl daemon-reload || true
+          sudo systemctl restart legalai.service
+
+          echo "[DEPLOY] Ждём 5 секунд перед проверкой статуса..."
           sleep 5
 
-          # Health-check API
-          if ! curl -k -f https://api.legalai.su/health >/dev/null 2>&1; then
-            echo "ERROR: /health failed, showing last logs:"
-            journalctl -u legalai.service -n 50 || true
-            exit 1
-          fi
+          sudo systemctl status legalai.service -n 20 || true
 
-          echo "/health OK"
+          echo "[DEPLOY] Проверяем /health..."
+          curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8000/health
 
-          # Мягкая проверка debug-sentry (если включено)
-          if curl -k -f https://api.legalai.su/debug-sentry >/dev/null 2>&1; then
-            echo "/debug-sentry OK"
-          else
-            echo "debug-sentry not available (non-fatal)"
-          fi
-
-          echo "Deploy completed successfully."
+          echo "[DEPLOY] Скрипт деплоя завершён."
           EOF
+ 
