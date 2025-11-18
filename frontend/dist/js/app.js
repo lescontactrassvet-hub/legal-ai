@@ -208,7 +208,6 @@ function initAuthPage() {
       try {
         const data = await loginUser(username, password);
         localStorage.setItem('token', data.access_token);
-        // Здесь можно позже сохранять план (free/pro) из профиля
         window.location.href = 'dashboard.html';
       } catch (err) {
         console.error(err);
@@ -216,27 +215,57 @@ function initAuthPage() {
     });
   }
 
-  // Handle registration
+  // Handle registration (расширенная форма)
   if (registerBtn) {
     registerBtn.addEventListener('click', async () => {
+      const lastName = document
+        .getElementById('register-lastname')
+        .value.trim();
+      const firstName = document
+        .getElementById('register-firstname')
+        .value.trim();
+      const middleName = document
+        .getElementById('register-middlename')
+        .value.trim();
+      const phone = document
+        .getElementById('register-phone')
+        .value.trim();
+      const country = document
+        .getElementById('register-country')
+        .value.trim();
       const username = document
         .getElementById('register-username')
         .value.trim();
-      const email = document.getElementById('register-email').value.trim();
+      const email = document
+        .getElementById('register-email')
+        .value.trim();
       const password = document
         .getElementById('register-password')
         .value.trim();
 
-      if (!username || !email || !password) {
-        showAlert('Please fill out all fields');
+      if (!lastName || !firstName || !username || !email || !password) {
+        showAlert('Пожалуйста, заполните обязательные поля.');
         return;
       }
+
+      const extraProfile = {
+        lastName,
+        firstName,
+        middleName,
+        phone,
+        country
+      };
+      localStorage.setItem(
+        'pending_profile_extra',
+        JSON.stringify(extraProfile)
+      );
+
       try {
         await registerUser(username, email, password);
-        // Auto-login after registration
         const data = await loginUser(username, password);
         localStorage.setItem('token', data.access_token);
-        window.location.href = 'dashboard.html';
+        localStorage.setItem('plan', 'free');
+        window.location.href = 'welcome-free.html';
       } catch (err) {
         console.error(err);
       }
@@ -349,7 +378,6 @@ function initDashboardPage() {
       try {
         const profile = await apiFetch('/auth/profile');
         profileInfo.textContent = `Username: ${profile.username} | Email: ${profile.email}`;
-        // TODO: здесь позже можно показать план (free/pro) и кнопки апгрейда
       } catch (err) {
         console.error(err);
         showAlert(err.message);
