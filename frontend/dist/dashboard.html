@@ -1,53 +1,138 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LegalAI Dashboard</title>
-  <link rel="stylesheet" href="css/styles.css">
-</head>
-<body>
-  <nav class="navbar">
-    <h1 class="brand">LegalAI Dashboard</h1>
-    <ul class="nav-links">
-      <li><a href="#" data-page="ai" class="active">AI</a></li>
-      <li><a href="#" data-page="documents">Documents</a></li>
-      <li><a href="#" data-page="cases">Cases</a></li>
-      <li><a href="#" data-page="profile">Profile</a></li>
-      <li><a href="#" id="logout-link">Logout</a></li>
-    </ul>
-  </nav>
+<html lang="ru" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>LegalAI Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <div class="header-left">
+          <a href="/dashboard.html" class="logo">LegalAI</a>
+          <button
+            id="theme-toggle"
+            class="theme-toggle-btn"
+            type="button"
+          >
+            ☀ Светлая
+          </button>
+        </div>
+        <nav class="header-nav">
+          <a href="/pricing.html">Тарифы</a>
+          <a href="/partners.html">Партнёрам</a>
+          <a href="/legal-notice.html">Правовая информация</a>
+        </nav>
+      </header>
 
-  <main id="content">
-    <!-- AI page -->
-    <section id="page-ai" class="page active">
-      <h2>Ask LegalAI</h2>
-      <textarea id="ai-query" placeholder="Enter your legal question here" rows="4"></textarea>
-      <button id="ai-ask-btn">Ask</button>
-      <div id="ai-response" class="response"></div>
-    </section>
+      <main class="dashboard-shell">
+        <div class="dashboard-grid">
+          <nav class="navbar">
+            <h1>LegalAI Dashboard</h1>
+            <ul class="nav-links">
+              <li>
+                <a href="#" data-page="ai" class="active">AI</a>
+              </li>
+              <li>
+                <a href="#" data-page="documents">Документы</a>
+              </li>
+              <li>
+                <a href="#" data-page="cases">Дела</a>
+              </li>
+              <li>
+                <a href="#" data-page="profile">Профиль</a>
+              </li>
+              <li>
+                <a href="#" id="logout-link">Выйти</a>
+              </li>
+            </ul>
+          </nav>
 
-    <!-- Documents page -->
-    <section id="page-documents" class="page">
-      <h2>Legal Documents</h2>
-      <button id="load-templates-btn">Load Templates</button>
-      <ul id="templates-list" class="list"></ul>
-    </section>
+          <main id="content">
+            <!-- AI page -->
+            <section id="page-ai" class="page active">
+              <h2>Задать юридический вопрос</h2>
+              <textarea
+                id="ai-query"
+                placeholder="Опишите вашу ситуацию или задайте вопрос..."
+                rows="4"
+              ></textarea>
+              <button id="ai-ask-btn">Спросить</button>
+              <div id="ai-response" class="response"></div>
+            </section>
 
-    <!-- Cases page -->
-    <section id="page-cases" class="page">
-      <h2>Legal Cases</h2>
-      <button id="load-cases-btn">Load Cases</button>
-      <ul id="cases-list" class="list"></ul>
-    </section>
+            <!-- Documents page -->
+            <section id="page-documents" class="page">
+              <h2>Юридические документы</h2>
+              <button id="load-templates-btn">
+                Загрузить шаблоны документов
+              </button>
+              <ul id="templates-list" class="list"></ul>
+            </section>
 
-    <!-- Profile page -->
-    <section id="page-profile" class="page">
-      <h2>User Profile</h2>
-      <div id="profile-info" class="response"></div>
-    </section>
-  </main>
+            <!-- Cases page -->
+            <section id="page-cases" class="page">
+              <h2>Юридические дела</h2>
+              <button id="load-cases-btn">
+                Загрузить список дел
+              </button>
+              <ul id="cases-list" class="list"></ul>
+            </section>
 
-  <script src="js/app.js"></script>
-</body>
+            <!-- Profile page -->
+            <section id="page-profile" class="page">
+              <h2>Профиль пользователя</h2>
+              <div id="profile-info" class="response">
+                Загрузка профиля...
+              </div>
+            </section>
+          </main>
+
+          <aside class="dashboard-aside">
+            <div
+              class="ad-slot"
+              id="ad-slot-main"
+              data-position="dashboard"
+            ></div>
+            <div class="info-card">
+              <strong>Советы по использованию LegalAI:</strong>
+              <ul>
+                <li>
+                  Формулируйте вопросы максимально конкретно,
+                  указывайте юрисдикцию.
+                </li>
+                <li>
+                  Используйте раздел «Документы» для генерации
+                  шаблонов.
+                </li>
+                <li>
+                  Подробнее о возможностях – на странице
+                  <a href="/pricing.html">Тарифы</a>.
+                </li>
+              </ul>
+            </div>
+          </aside>
+        </div>
+      </main>
+
+      <footer class="site-footer">
+        <div class="footer-links">
+          <a href="/legal-notice.html"
+            >Правовая информация и ответственность</a
+          >
+          <a href="/partners.html">Партнёрам</a>
+          <a href="/pricing.html">Тарифы и подписки</a>
+        </div>
+        <div class="footer-copy">
+          © LegalAI, Береску Н., 2025. Все права защищены.
+        </div>
+      </footer>
+    </div>
+
+    <script src="js/app.js"></script>
+  </body>
 </html>
