@@ -1,33 +1,163 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LegalAI - Authentication</title>
-  <link rel="stylesheet" href="css/styles.css">
-</head>
-<body>
-  <div class="container">
-    <h1>LegalAI</h1>
-    <p class="subtitle">Welcome! Please log in or register to continue.</p>
-    <div class="auth-wrapper">
-      <div class="auth-box" id="login-box">
-        <h2>Login</h2>
-        <input type="text" id="login-username" placeholder="Username or Email" required>
-        <input type="password" id="login-password" placeholder="Password" required>
-        <button id="login-btn">Login</button>
-        <p class="message">Don't have an account? <a href="#" id="show-register">Register</a></p>
-      </div>
-      <div class="auth-box" id="register-box" style="display:none;">
-        <h2>Register</h2>
-        <input type="text" id="register-username" placeholder="Username" required>
-        <input type="email" id="register-email" placeholder="Email" required>
-        <input type="password" id="register-password" placeholder="Password" required>
-        <button id="register-btn">Register</button>
-        <p class="message">Already registered? <a href="#" id="show-login">Login</a></p>
-      </div>
+<html lang="ru" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>LegalAI – Вход и регистрация</title>
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <div class="header-left">
+          <a href="/index.html" class="logo">LegalAI</a>
+          <button
+            id="theme-toggle"
+            class="theme-toggle-btn"
+            type="button"
+          >
+            ☀ Светлая
+          </button>
+        </div>
+        <nav class="header-nav">
+          <a href="/pricing.html">Тарифы</a>
+          <a href="/partners.html">Партнёрам</a>
+          <a href="/legal-notice.html">Правовая информация</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="auth-layout">
+          <div class="auth-info">
+            <h1>LegalAI – ваш юридический помощник</h1>
+            <p>
+              Создавайте юридические документы, анализируйте ситуации и
+              получайте подсказки с помощью искусственного интеллекта.
+            </p>
+            <ul>
+              <li>Быстрая генерация документов</li>
+              <li>Личный кабинет и история запросов</li>
+              <li>Партнёрские программы и монетизация</li>
+            </ul>
+            <p class="subtitle">
+              Вся информация носит справочный характер и не заменяет
+              консультацию юриста. Право собственности на код и систему
+              защищены Береску Н.
+            </p>
+          </div>
+
+          <div class="auth-card">
+            <div class="auth-tabs">
+              <button
+                id="tab-login"
+                type="button"
+                class="auth-tab active"
+              >
+                Вход
+              </button>
+              <button
+                id="tab-register"
+                type="button"
+                class="auth-tab"
+              >
+                Регистрация
+              </button>
+            </div>
+
+            <p class="subtitle">
+              Войдите в аккаунт или создайте новый, чтобы начать работу с
+              LegalAI.
+            </p>
+
+            <div class="auth-wrapper">
+              <div class="auth-box" id="login-box">
+                <h2>Вход</h2>
+                <input
+                  type="text"
+                  id="login-username"
+                  placeholder="Имя пользователя или email"
+                  required
+                />
+                <input
+                  type="password"
+                  id="login-password"
+                  placeholder="Пароль"
+                  required
+                />
+                <button id="login-btn">Войти</button>
+                <p class="message">
+                  Ещё нет аккаунта?
+                  <a href="#" id="show-register">Создать аккаунт</a>
+                </p>
+              </div>
+
+              <div
+                class="auth-box"
+                id="register-box"
+                style="display: none"
+              >
+                <h2>Регистрация</h2>
+                <input
+                  type="text"
+                  id="register-username"
+                  placeholder="Имя пользователя"
+                  required
+                />
+                <input
+                  type="email"
+                  id="register-email"
+                  placeholder="Email"
+                  required
+                />
+                <input
+                  type="password"
+                  id="register-password"
+                  placeholder="Пароль"
+                  required
+                />
+                <button id="register-btn">Зарегистрироваться</button>
+                <p class="message">
+                  Уже есть аккаунт?
+                  <a href="#" id="show-login">Войти</a>
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Рекламный слот для бесплатных аккаунтов -->
+        <section class="dashboard-shell">
+          <div class="dashboard-grid">
+            <div></div>
+            <div></div>
+            <aside class="dashboard-aside">
+              <div
+                class="ad-slot"
+                id="ad-slot-main"
+                data-position="auth"
+              ></div>
+            </aside>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <div class="footer-links">
+          <a href="/legal-notice.html"
+            >Правовая информация и ответственность</a
+          >
+          <a href="/partners.html">Партнёрам</a>
+          <a href="/pricing.html">Тарифы и подписки</a>
+        </div>
+        <div class="footer-copy">
+          © LegalAI, Береску Н., 2025. Все права защищены.
+        </div>
+      </footer>
     </div>
-  </div>
-  <script src="js/app.js"></script>
-</body>
+
+    <script src="js/app.js"></script>
+  </body>
 </html>
