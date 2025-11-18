@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>LegalAI – Партнёрская программа</title>
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <div class="header-left">
+          <a href="/index.html" class="logo">LegalAI</a>
+          <button
+            id="theme-toggle"
+            class="theme-toggle-btn"
+            type="button"
+          >
+            ☀ Светлая
+          </button>
+        </div>
+        <nav class="header-nav">
+          <a href="/pricing.html">Тарифы</a>
+          <a href="/partners.html">Партнёрам</a>
+          <a href="/legal-notice.html">Правовая информация</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="page-content">
+          <h1>Партнёрская программа LegalAI</h1>
+          <p>
+            Мы открыты к сотрудничеству с юристами, адвокатскими
+            бюро, IT-компаниями, интеграторами и образовательными
+            проектами.
+          </p>
+
+          <h2>Типы партнёрства</h2>
+          <div class="partner-types">
+            <div class="partner-card">
+              <h3>Referral-партнёр</h3>
+              <p>Приводите клиентов и получайте % от оплаченных подписок.</p>
+            </div>
+            <div class="partner-card">
+              <h3>Интеграционный партнёр</h3>
+              <p>
+                Встраивайте LegalAI в свои решения и продукты, расширяя
+                функционал для ваших клиентов.
+              </p>
+            </div>
+            <div class="partner-card">
+              <h3>White-label / корпоративный</h3>
+              <p>
+                Решения под бренд заказчика с отдельной инфраструктурой и
+                условиями.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            Детальные условия описаны на странице
+            <a href="/partner-terms.html">«Условия партнёрства»</a>.
+          </p>
+
+          <h2>Оставить заявку на партнёрство</h2>
+          <p>
+            Заполните форму ниже — главный администратор рассмотрит
+            заявку и свяжется с вами.
+          </p>
+
+          <form class="form-grid">
+            <div>
+              <label for="partner-name">Имя / Компания</label>
+              <input
+                id="partner-name"
+                type="text"
+                placeholder="Например: Адвокат Иванов или LegalTech LLC"
+              />
+            </div>
+            <div>
+              <label for="partner-email">Email для связи</label>
+              <input
+                id="partner-email"
+                type="email"
+                placeholder="you@example.com"
+              />
+            </div>
+            <div>
+              <label for="partner-type">Тип партнёрства</label>
+              <select id="partner-type">
+                <option value="">Выберите вариант</option>
+                <option value="referral">Referral-партнёр</option>
+                <option value="integration">Интеграционный партнёр</option>
+                <option value="white-label">White-label / корпоративный</option>
+              </select>
+            </div>
+            <div>
+              <label for="partner-comment">Комментарий</label>
+              <textarea
+                id="partner-comment"
+                rows="3"
+                placeholder="Опишите ваши идеи и формат сотрудничества"
+              ></textarea>
+            </div>
+            <div>
+              <button type="button">
+                Отправить заявку (логика будет подключена через API
+                админ-панели)
+              </button>
+            </div>
+          </form>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <div class="footer-links">
+          <a href="/legal-notice.html"
+            >Правовая информация и ответственность</a
+          >
+          <a href="/partners.html">Партнёрам</a>
+          <a href="/pricing.html">Тарифы и подписки</a>
+        </div>
+        <div class="footer-copy">
+          © LegalAI, Береску Н., 2025. Все права защищены.
+        </div>
+      </footer>
+    </div>
+
+    <script src="js/app.js"></script>
+  </body>
+</html>
