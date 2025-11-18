@@ -68,8 +68,8 @@
             </div>
 
             <p class="subtitle">
-              Войдите в аккаунт или создайте новый, чтобы начать работу с
-              LegalAI.
+              Войдите в аккаунт или создайте новый, чтобы начать работу
+              с LegalAI. Все данные обрабатываются конфиденциально.
             </p>
 
             <div class="auth-wrapper">
@@ -92,6 +92,10 @@
                   Ещё нет аккаунта?
                   <a href="#" id="show-register">Создать аккаунт</a>
                 </p>
+                <p class="message">
+                  Забыли пароль?
+                  <a href="/reset.html">Восстановить доступ</a>
+                </p>
               </div>
 
               <div
@@ -100,10 +104,39 @@
                 style="display: none"
               >
                 <h2>Регистрация</h2>
+
+                <input
+                  type="text"
+                  id="register-lastname"
+                  placeholder="Фамилия"
+                  required
+                />
+                <input
+                  type="text"
+                  id="register-firstname"
+                  placeholder="Имя"
+                  required
+                />
+                <input
+                  type="text"
+                  id="register-middlename"
+                  placeholder="Отчество / Организация"
+                />
+                <input
+                  type="tel"
+                  id="register-phone"
+                  placeholder="Телефон"
+                />
+                <input
+                  type="text"
+                  id="register-country"
+                  placeholder="Страна"
+                />
+
                 <input
                   type="text"
                   id="register-username"
-                  placeholder="Имя пользователя"
+                  placeholder="Имя пользователя (логин)"
                   required
                 />
                 <input
@@ -118,7 +151,10 @@
                   placeholder="Пароль"
                   required
                 />
-                <button id="register-btn">Зарегистрироваться</button>
+                <button id="register-btn">
+                  Зарегистрироваться и пробовать бесплатно
+                </button>
+
                 <p class="message">
                   Уже есть аккаунт?
                   <a href="#" id="show-login">Войти</a>
