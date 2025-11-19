@@ -1,82 +1,174 @@
 <!DOCTYPE html>
-<html lang="ru" data-theme="light">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
-    <title>LegalAI – Восстановление доступа</title>
-    <link rel="stylesheet" href="css/styles.css" />
-  </head>
-  <body>
-    <div class="page-shell">
-      <header class="site-header">
-        <div class="header-left">
-          <a href="/index.html" class="logo">LegalAI</a>
-          <button
-            id="theme-toggle"
-            class="theme-toggle-btn"
-            type="button"
-          >
-            ☀ Светлая
-          </button>
-        </div>
-        <nav class="header-nav">
-          <a href="/pricing.html">Тарифы</a>
-          <a href="/partners.html">Партнёрам</a>
-          <a href="/legal-notice.html">Правовая информация</a>
-        </nav>
-      </header>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Восстановление доступа — LegalAI</title>
 
-      <main>
-        <section class="page-content">
-          <h1>Восстановление доступа</h1>
-          <p>
-            Укажите email или имя пользователя. После подключения
-            backend-модуля восстановления вы сможете получать ссылку или
-            код для сброса пароля.
-          </p>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #E7F1FF;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
 
-          <form class="form-grid">
-            <div>
-              <label for="reset-identifier"
-                >Email или имя пользователя</label
-              >
-              <input
-                id="reset-identifier"
+        .card {
+            background: white;
+            width: 400px;
+            max-width: 95%;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0px 6px 20px rgba(0,0,0,0.15);
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+            color: #1A4C91;
+            text-align: center;
+        }
+
+        p.subtitle {
+            margin: 0 0 20px 0;
+            font-size: 14px;
+            color: #4B6C9A;
+            text-align: center;
+        }
+
+        label {
+            font-size: 14px;
+            color: #1A4C91;
+            display: block;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            margin-top: 6px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            border: 1px solid #D2E3FF;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 70px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #3A7AFE;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #2E63D4;
+        }
+
+        .links {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .links a {
+            text-decoration: underline;
+            color: #1A4C91;
+            display: inline-block;
+            margin: 2px 4px;
+        }
+
+        .error {
+            color: #B3261E;
+            font-size: 13px;
+            margin-bottom: 8px;
+            display: none;
+        }
+
+        .success {
+            color: #1B5E20;
+            font-size: 13px;
+            margin-top: 10px;
+            display: none;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Восстановление доступа</h1>
+        <p class="subtitle">
+            Укажите email или номер телефона, который вы использовали при регистрации.
+        </p>
+
+        <div id="error" class="error"></div>
+
+        <form id="reset-form">
+            <label>Email или телефон</label>
+            <input
+                id="identifier"
                 type="text"
-                placeholder="you@example.com или логин"
-              />
-            </div>
-            <div>
-              <button type="button">
-                Отправить запрос на восстановление
-              </button>
-            </div>
-          </form>
+                name="identifier"
+                placeholder="Например, you@example.com или +7 900 000-00-00"
+                required
+            >
 
-          <p class="subtitle">
-            Логика фактического сброса пароля и подтверждения почты /
-            телефона будет подключена на backend-этапе (Stage 10.B/C/D).
-          </p>
-        </section>
-      </main>
+            <label>Комментарий (по желанию)</label>
+            <textarea
+                name="comment"
+                placeholder="Кратко опишите проблему, если нужно (забыли пароль, нет доступа к email и т.п.)"
+            ></textarea>
 
-      <footer class="site-footer">
-        <div class="footer-links">
-          <a href="/legal-notice.html"
-            >Правовая информация и ответственность</a
-          >
-          <a href="/partners.html">Партнёрам</a>
-          <a href="/pricing.html">Тарифы и подписки</a>
+            <button type="submit">Отправить запрос</button>
+        </form>
+
+        <div id="success" class="success">
+            Если такой аккаунт существует, мы отправим инструкции по восстановлению
+            на указанный email или телефон.
         </div>
-        <div class="footer-copy">
-          © LegalAI, Береску Н., 2025. Все права защищены.
+
+        <div class="links">
+            <a href="/login.html">Вернуться к входу</a> •
+            <a href="/register.html">Создать новый аккаунт</a>
         </div>
-      </footer>
     </div>
 
-    <script src="js/app.js"></script>
-  </body>
+    <script>
+        const form = document.getElementById('reset-form');
+        const identifier = document.getElementById('identifier');
+        const errorBlock = document.getElementById('error');
+        const successBlock = document.getElementById('success');
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault(); // пока не отправляем на сервер, только сообщение
+
+            errorBlock.style.display = 'none';
+            successBlock.style.display = 'none';
+
+            if (!identifier.value.trim()) {
+                errorBlock.textContent = 'Пожалуйста, укажите email или телефон.';
+                errorBlock.style.display = 'block';
+                return;
+            }
+
+            // Здесь позже можно будет добавить реальный запрос к backend.
+            successBlock.style.display = 'block';
+            form.reset();
+        });
+    </script>
+</body>
 </html>
