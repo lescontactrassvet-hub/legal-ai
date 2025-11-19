@@ -14,12 +14,13 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
         }
 
         .card {
             background: white;
-            width: 360px;
+            width: 400px;
+            max-width: 95%;
             padding: 30px;
             border-radius: 16px;
             box-shadow: 0px 6px 20px rgba(0,0,0,0.15);
@@ -35,16 +36,18 @@
         label {
             font-size: 14px;
             color: #1A4C91;
+            display: block;
         }
 
-        input {
+        input, select {
             width: 100%;
-            padding: 12px;
+            padding: 10px 12px;
             margin-top: 6px;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             border-radius: 10px;
             border: 1px solid #D2E3FF;
             font-size: 15px;
+            box-sizing: border-box;
         }
 
         button {
@@ -74,6 +77,35 @@
             text-decoration: underline;
             color: #1A4C91;
         }
+
+        .terms {
+            font-size: 12px;
+            color: #1A4C91;
+            margin-top: 6px;
+        }
+
+        .terms a {
+            color: #1A4C91;
+            text-decoration: underline;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-top: 8px;
+            margin-bottom: 10px;
+        }
+
+        .checkbox-row input[type="checkbox"] {
+            margin-top: 3px;
+        }
+
+        .error {
+            color: #B3261E;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
     </style>
 
 </head>
@@ -81,15 +113,74 @@
     <div class="card">
         <h1>Регистрация</h1>
 
-        <form action="/auth/register" method="POST">
-            <label>Логин</label>
-            <input name="username" type="text" placeholder="Введите логин" required>
+        <!-- ВАЖНО: action оставляем /auth/register, backend просто получит больше полей -->
+        <form id="register-form" action="/auth/register" method="POST">
+            <label>Фамилия</label>
+            <input name="last_name" type="text" placeholder="Введите фамилию" required>
+
+            <label>Имя</label>
+            <input name="first_name" type="text" placeholder="Введите имя" required>
+
+            <label>Отчество (при наличии)</label>
+            <input name="middle_name" type="text" placeholder="Введите отчество (если есть)">
+
+            <label>Год рождения</label>
+            <input
+                name="birth_year"
+                type="number"
+                placeholder="Например, 1985"
+                min="1900"
+                max="2025"
+                required
+            >
 
             <label>Email</label>
             <input name="email" type="email" placeholder="Введите email" required>
 
+            <label>Телефон</label>
+            <input
+                id="phone"
+                name="phone"
+                type="tel"
+                placeholder="+7 900 000-00-00"
+                pattern="^\+?[0-9\s\-]{7,20}$"
+                required
+            >
+
+            <label>Подтвердите телефон</label>
+            <input
+                id="phone_confirm"
+                name="phone_confirm"
+                type="tel"
+                placeholder="Повторите номер телефона"
+                pattern="^\+?[0-9\s\-]{7,20}$"
+                required
+            >
+
+            <label>Страна</label>
+            <input name="country" type="text" placeholder="Страна" required>
+
+            <label>Город / район</label>
+            <input name="city" type="text" placeholder="Город или район" required>
+
+            <label>Логин</label>
+            <input name="username" type="text" placeholder="Придумайте логин" required>
+
             <label>Пароль</label>
             <input name="password" type="password" placeholder="Придумайте пароль" required>
+
+            <div id="error-message" class="error" style="display:none;"></div>
+
+            <div class="checkbox-row">
+                <input type="checkbox" id="agree" name="agree" required>
+                <div class="terms">
+                    Я подтверждаю, что ознакомился(ась) и согласен(на) со всеми условиями
+                    и правилами сервиса LegalAI, а также с обработкой моих персональных данных.
+                    <br>
+                    <a href="/legal-notice.html" target="_blank">Правила и условия</a> •
+                    <a href="/privacy.html" target="_blank">Политика конфиденциальности</a>
+                </div>
+            </div>
 
             <button type="submit">Создать аккаунт</button>
         </form>
@@ -99,5 +190,24 @@
             <a href="/login">Войти</a>
         </div>
     </div>
+
+    <script>
+        const form = document.getElementById('register-form');
+        const phone = document.getElementById('phone');
+        const phoneConfirm = document.getElementById('phone_confirm');
+        const errorBlock = document.getElementById('error-message');
+
+        form.addEventListener('submit', function (e) {
+            errorBlock.style.display = 'none';
+            errorBlock.textContent = '';
+
+            if (phone.value.trim() !== phoneConfirm.value.trim()) {
+                e.preventDefault();
+                errorBlock.textContent = 'Телефон и подтверждение телефона не совпадают.';
+                errorBlock.style.display = 'block';
+                return;
+            }
+        });
+    </script>
 </body>
 </html>
