@@ -1,138 +1,1117 @@
 <!DOCTYPE html>
-<html lang="ru" data-theme="light">
-  <head>
+<html lang="ru">
+<head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
-    <title>LegalAI Dashboard</title>
-    <link rel="stylesheet" href="css/styles.css" />
-  </head>
-  <body>
-    <div class="page-shell">
-      <header class="site-header">
-        <div class="header-left">
-          <a href="/dashboard.html" class="logo">LegalAI</a>
-          <button
-            id="theme-toggle"
-            class="theme-toggle-btn"
-            type="button"
-          >
-            ☀ Светлая
-          </button>
-        </div>
-        <nav class="header-nav">
-          <a href="/pricing.html">Тарифы</a>
-          <a href="/partners.html">Партнёрам</a>
-          <a href="/legal-notice.html">Правовая информация</a>
-        </nav>
-      </header>
+    <title>LegalAI — Панель управления</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-      <main class="dashboard-shell">
-        <div class="dashboard-grid">
-          <nav class="navbar">
-            <h1>LegalAI Dashboard</h1>
-            <ul class="nav-links">
-              <li>
-                <a href="#" data-page="ai" class="active">AI</a>
-              </li>
-              <li>
-                <a href="#" data-page="documents">Документы</a>
-              </li>
-              <li>
-                <a href="#" data-page="cases">Дела</a>
-              </li>
-              <li>
-                <a href="#" data-page="profile">Профиль</a>
-              </li>
-              <li>
-                <a href="#" id="logout-link">Выйти</a>
-              </li>
-            </ul>
-          </nav>
+    <!-- Базовые стили проекта (если есть) -->
+    <link rel="stylesheet" href="/css/styles.css" />
 
-          <main id="content">
-            <!-- AI page -->
-            <section id="page-ai" class="page active">
-              <h2>Задать юридический вопрос</h2>
-              <textarea
-                id="ai-query"
-                placeholder="Опишите вашу ситуацию или задайте вопрос..."
-                rows="4"
-              ></textarea>
-              <button id="ai-ask-btn">Спросить</button>
-              <div id="ai-response" class="response"></div>
-            </section>
+    <style>
+        :root {
+            --bg-light: #e6f2ff;           /* светло-голубой фон */
+            --bg-light-elevated: #ffffff;
+            --bg-dark: #081a33;            /* тёмно-синий фон */
+            --bg-dark-elevated: #10264a;
+            --accent: #2563eb;             /* яркий синий */
+            --accent-soft: #3b82f6;
+            --accent-muted: rgba(37, 99, 235, 0.15);
+            --danger: #ef4444;
+            --success: #22c55e;
+            --text-main-light: #0f172a;
+            --text-muted-light: #64748b;
+            --text-main-dark: #e5e7eb;
+            --text-muted-dark: #9ca3af;
+            --border-soft-light: rgba(15, 23, 42, 0.08);
+            --border-soft-dark: rgba(148, 163, 184, 0.3);
+            --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.16);
+            --radius-xl: 18px;
+            --radius-2xl: 26px;
+            --transition-fast: 0.18s ease-out;
+        }
 
-            <!-- Documents page -->
-            <section id="page-documents" class="page">
-              <h2>Юридические документы</h2>
-              <button id="load-templates-btn">
-                Загрузить шаблоны документов
-              </button>
-              <ul id="templates-list" class="list"></ul>
-            </section>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+            "Segoe UI", sans-serif;
+            background: radial-gradient(circle at top left, #eff6ff 0, #e0f2fe 38%, #e6f2ff 100%);
+            color: var(--text-main-light);
+        }
 
-            <!-- Cases page -->
-            <section id="page-cases" class="page">
-              <h2>Юридические дела</h2>
-              <button id="load-cases-btn">
-                Загрузить список дел
-              </button>
-              <ul id="cases-list" class="list"></ul>
-            </section>
+        body.dark {
+            background: radial-gradient(circle at top left, #020617 0, #020617 45%, #020617 100%);
+            color: var(--text-main-dark);
+        }
 
-            <!-- Profile page -->
-            <section id="page-profile" class="page">
-              <h2>Профиль пользователя</h2>
-              <div id="profile-info" class="response">
-                Загрузка профиля...
-              </div>
-            </section>
-          </main>
+        .dashboard-shell {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
 
-          <aside class="dashboard-aside">
-            <div
-              class="ad-slot"
-              id="ad-slot-main"
-              data-position="dashboard"
-            ></div>
-            <div class="info-card">
-              <strong>Советы по использованию LegalAI:</strong>
-              <ul>
-                <li>
-                  Формулируйте вопросы максимально конкретно,
-                  указывайте юрисдикцию.
-                </li>
-                <li>
-                  Используйте раздел «Документы» для генерации
-                  шаблонов.
-                </li>
-                <li>
-                  Подробнее о возможностях – на странице
-                  <a href="/pricing.html">Тарифы</a>.
-                </li>
-              </ul>
+        .dashboard-main {
+            display: grid;
+            grid-template-columns: 260px minmax(0, 1fr);
+            gap: 18px;
+            padding: 18px;
+            max-width: 1400px;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 960px) {
+            .dashboard-main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Top bar */
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            backdrop-filter: blur(18px);
+            background: linear-gradient(to right, rgba(226, 239, 255, 0.92), rgba(219, 234, 254, 0.88));
+            border-bottom: 1px solid var(--border-soft-light);
+            padding: 10px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        body.dark .topbar {
+            background: linear-gradient(to right, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.9));
+            border-bottom-color: var(--border-soft-dark);
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-pill {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 30% 20%, #60a5fa 0, #2563eb 35%, #1d4ed8 70%, #0f172a 100%);
+            box-shadow: 0 12px 25px rgba(37, 99, 235, 0.55);
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .topbar-title {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .topbar-title-main {
+            font-weight: 650;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+
+        .topbar-title-sub {
+            font-size: 11px;
+            color: var(--text-muted-light);
+        }
+
+        body.dark .topbar-title-sub {
+            color: var(--text-muted-dark);
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 11px;
+            border: 1px solid var(--border-soft-light);
+            background: rgba(255, 255, 255, 0.85);
+            color: var(--text-muted-light);
+        }
+
+        body.dark .pill {
+            border-color: var(--border-soft-dark);
+            background: rgba(15, 23, 42, 0.9);
+            color: var(--text-muted-dark);
+        }
+
+        .status-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 999px;
+            background: var(--success);
+            box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
+        }
+
+        .status-dot.bad {
+            background: var(--danger);
+            box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2);
+        }
+
+        .btn {
+            border-radius: 999px;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 6px 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background var(--transition-fast), color var(--transition-fast),
+            transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-soft));
+            color: white;
+            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.35);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 16px 32px rgba(37, 99, 235, 0.45);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-soft-light);
+            color: var(--text-main-light);
+        }
+
+        body.dark .btn-outline {
+            border-color: var(--border-soft-dark);
+            color: var(--text-main-dark);
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .btn-icon {
+            padding: 6px;
+            border-radius: 999px;
+            width: 30px;
+            height: 30px;
+            justify-content: center;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            border-radius: var(--radius-2xl);
+            padding: 14px 14px 18px;
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid var(--border-soft-light);
+            box-shadow: var(--shadow-soft);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        body.dark .sidebar {
+            background: rgba(15, 23, 42, 0.92);
+            border-color: var(--border-soft-dark);
+        }
+
+        .sidebar-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--text-muted-light);
+            margin-bottom: 6px;
+        }
+
+        body.dark .sidebar-section-title {
+            color: var(--text-muted-dark);
+        }
+
+        .nav-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .nav-item {
+            border-radius: 999px;
+            padding: 7px 12px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            color: var(--text-main-light);
+            text-decoration: none;
+            background: transparent;
+            border: 1px solid transparent;
+            transition: background var(--transition-fast), border-color var(--transition-fast),
+            transform var(--transition-fast), box-shadow var(--transition-fast), color var(--transition-fast);
+        }
+
+        body.dark .nav-item {
+            color: var(--text-main-dark);
+        }
+
+        .nav-item span.label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-item span.badge {
+            font-size: 10px;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: var(--accent-muted);
+            color: var(--accent);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.96), rgba(59, 130, 246, 0.96));
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 12px 30px rgba(37, 99, 235, 0.6);
+        }
+
+        .nav-item:hover {
+            border-color: var(--accent-soft);
+            background: rgba(37, 99, 235, 0.08);
+            transform: translateY(-1px);
+        }
+
+        .nav-item.active span.badge {
+            background: rgba(15, 23, 42, 0.6);
+            color: #e5e7eb;
+        }
+
+        /* Main content */
+        .main-area {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .hero-card {
+            border-radius: var(--radius-2xl);
+            padding: 16px 18px 16px;
+            background: radial-gradient(circle at top left, rgba(37, 99, 235, 0.16), rgba(255, 255, 255, 0.94));
+            border: 1px solid var(--border-soft-light);
+            box-shadow: var(--shadow-soft);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        body.dark .hero-card {
+            background: radial-gradient(circle at top left, rgba(37, 99, 235, 0.35), rgba(15, 23, 42, 0.96));
+            border-color: var(--border-soft-dark);
+        }
+
+        .hero-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .hero-title-block {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .hero-title {
+            font-size: 16px;
+            font-weight: 650;
+        }
+
+        .hero-subtitle {
+            font-size: 12px;
+            color: var(--text-muted-light);
+        }
+
+        body.dark .hero-subtitle {
+            color: var(--text-muted-dark);
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .hero-meta-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+
+        .mini-pill {
+            border-radius: 999px;
+            padding: 4px 9px;
+            font-size: 11px;
+            border: 1px dashed rgba(148, 163, 184, 0.8);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-muted-light);
+            background: rgba(255, 255, 255, 0.72);
+        }
+
+        body.dark .mini-pill {
+            background: rgba(15, 23, 42, 0.9);
+            color: var(--text-muted-dark);
+            border-color: rgba(148, 163, 184, 0.7);
+        }
+
+        .dot-soft {
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+            background: #a855f7;
+        }
+
+        /* Cards grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        @media (max-width: 1120px) {
+            .cards-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 720px) {
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            border-radius: var(--radius-xl);
+            padding: 12px 13px 13px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid var(--border-soft-light);
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 120px;
+        }
+
+        body.dark .card {
+            background: rgba(15, 23, 42, 0.96);
+            border-color: var(--border-soft-dark);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.85);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .card-title {
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .card-subtitle {
+            font-size: 11px;
+            color: var(--text-muted-light);
+        }
+
+        body.dark .card-subtitle {
+            color: var(--text-muted-dark);
+        }
+
+        .card-body {
+            font-size: 12px;
+            color: var(--text-muted-light);
+        }
+
+        body.dark .card-body {
+            color: var(--text-muted-dark);
+        }
+
+        .card-footer {
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chips-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .chip {
+            font-size: 10px;
+            padding: 3px 7px;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.15);
+            color: var(--text-muted-light);
+        }
+
+        body.dark .chip {
+            background: rgba(148, 163, 184, 0.2);
+            color: var(--text-muted-dark);
+        }
+
+        /* AI Request mini panel */
+        .ai-mini-input {
+            width: 100%;
+            margin-top: 6px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.6);
+            padding: 6px 8px;
+            font-size: 12px;
+            resize: vertical;
+            min-height: 42px;
+            max-height: 120px;
+            font-family: inherit;
+            box-sizing: border-box;
+            background: rgba(248, 250, 252, 0.95);
+        }
+
+        body.dark .ai-mini-input {
+            background: rgba(15, 23, 42, 0.9);
+            border-color: rgba(148, 163, 184, 0.7);
+            color: var(--text-main-dark);
+        }
+
+        .ai-mini-output {
+            margin-top: 6px;
+            padding: 6px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            line-height: 1.45;
+            background: rgba(219, 234, 254, 0.9);
+            color: #0f172a;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        body.dark .ai-mini-output {
+            background: rgba(30, 64, 175, 0.9);
+            color: #e5e7eb;
+        }
+
+        .ai-mini-output.empty {
+            opacity: 0.7;
+            font-style: italic;
+        }
+
+        .status-pill {
+            font-size: 11px;
+            padding: 3px 7px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(22, 163, 74, 0.08);
+            color: var(--success);
+        }
+
+        .status-pill.error {
+            background: rgba(239, 68, 68, 0.08);
+            color: var(--danger);
+        }
+
+        .status-dot-mini {
+            width: 7px;
+            height: 7px;
+            border-radius: 999px;
+            background: currentColor;
+        }
+
+        /* Footer */
+        .dashboard-footer {
+            padding: 10px 18px 16px;
+            font-size: 11px;
+            color: var(--text-muted-light);
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            max-width: 1400px;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+
+        body.dark .dashboard-footer {
+            color: var(--text-muted-dark);
+        }
+
+        .link-muted {
+            color: inherit;
+            text-decoration: none;
+            border-bottom: 1px dashed rgba(148, 163, 184, 0.6);
+        }
+
+        .link-muted:hover {
+            border-bottom-style: solid;
+        }
+
+        /* Small helpers */
+        .kbd {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 11px;
+            padding: 1px 5px;
+            border-radius: 4px;
+            border: 1px solid rgba(148, 163, 184, 0.7);
+            background: rgba(248, 250, 252, 0.9);
+        }
+
+        body.dark .kbd {
+            background: rgba(15, 23, 42, 0.9);
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard-shell">
+    <!-- TOP BAR -->
+    <header class="topbar">
+        <div class="topbar-left">
+            <div class="logo-pill">L</div>
+            <div class="topbar-title">
+                <div class="topbar-title-main">LegalAI</div>
+                <div class="topbar-title-sub">Юридический ИИ-ассистент · Stage 10</div>
             </div>
-          </aside>
         </div>
-      </main>
+        <div class="topbar-right">
+            <div class="pill" id="health-pill">
+                <span class="status-dot" id="health-dot"></span>
+                <span id="health-label">Проверяем backend…</span>
+            </div>
+            <button class="btn btn-outline btn-icon" id="theme-toggle" title="Переключить тему">
+                🌓
+            </button>
+            <button class="btn btn-primary" onclick="window.location.href = '/login';">
+                Войти
+            </button>
+        </div>
+    </header>
 
-      <footer class="site-footer">
-        <div class="footer-links">
-          <a href="/legal-notice.html"
-            >Правовая информация и ответственность</a
-          >
-          <a href="/partners.html">Партнёрам</a>
-          <a href="/pricing.html">Тарифы и подписки</a>
-        </div>
-        <div class="footer-copy">
-          © LegalAI, Береску Н., 2025. Все права защищены.
-        </div>
-      </footer>
-    </div>
+    <!-- MAIN -->
+    <main class="dashboard-main">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div>
+                <div class="sidebar-section-title">Навигация</div>
+                <ul class="nav-list">
+                    <li>
+                        <a href="/" class="nav-item">
+                            <span class="label">🏠 Главная</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/dashboard" class="nav-item active">
+                            <span class="label">📊 Панель управления</span>
+                            <span class="badge">now</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/login" class="nav-item">
+                            <span class="label">🔐 Вход</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/register" class="nav-item">
+                            <span class="label">🧾 Регистрация</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
 
-    <script src="js/app.js"></script>
-  </body>
+            <div>
+                <div class="sidebar-section-title">Backend API</div>
+                <ul class="nav-list">
+                    <li>
+                        <button class="nav-item" type="button" onclick="openSwagger()">
+                            <span class="label">📚 Swagger /docs</span>
+                            <span class="badge">API</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-item" type="button" onclick="openEndpoint('/health')">
+                            <span class="label">💚 /health</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-item" type="button" onclick="openEndpoint('/ai/ask')">
+                            <span class="label">🤖 /ai/ask</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-item" type="button" onclick="openEndpoint('/legal-cases/search')">
+                            <span class="label">⚖️ /legal-cases/search</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div>
+                <div class="sidebar-section-title">Подсказка</div>
+                <div class="card-body" style="font-size: 11px;">
+                    • Для работы с защищёнными роутами сначала войдите через
+                    <span class="kbd">/login</span>.<br />
+                    • Если backend недоступен, проверьте
+                    <span class="kbd">systemctl status legalai.service</span>.
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN AREA -->
+        <section class="main-area">
+            <!-- HERO -->
+            <section class="hero-card">
+                <div class="hero-header">
+                    <div class="hero-title-block">
+                        <div class="hero-title">Общий статус системы</div>
+                        <div class="hero-subtitle">
+                            Здесь видно, жив ли backend, как работают ключевые модули и что запущено.
+                        </div>
+                    </div>
+                    <div class="hero-actions">
+                        <button class="btn btn-outline" type="button" onclick="runHealthCheck(true)">
+                            Повторить проверку
+                        </button>
+                        <button class="btn btn-primary" type="button" onclick="openSwagger()">
+                            Открыть документацию API
+                        </button>
+                    </div>
+                </div>
+                <div class="hero-meta-row">
+                    <div class="mini-pill">
+                        <span class="dot-soft"></span>
+                        Backend: <span id="backend-url-label"></span>
+                    </div>
+                    <div class="mini-pill" id="health-last-check-pill">
+                        ⏱ Последняя проверка: <span id="health-last-check">—</span>
+                    </div>
+                    <div class="mini-pill">
+                        ⚙️ Модули: auth · docs · ai · cases
+                    </div>
+                </div>
+            </section>
+
+            <!-- GRID CARDS -->
+            <section class="cards-grid">
+                <!-- Card: Backend / Health -->
+                <article class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            💡 Состояние backend
+                        </div>
+                        <div id="backend-status-pill" class="status-pill">
+                            <span class="status-dot-mini"></span>
+                            <span id="backend-status-label">Неизвестно</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="health-message">
+                            Выполняется начальная проверка /health…
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="chips-row">
+                            <span class="chip">FastAPI</span>
+                            <span class="chip">Uvicorn</span>
+                            <span class="chip">Nginx + SSL</span>
+                        </div>
+                        <button class="btn btn-outline" type="button" onclick="openEndpoint('/health')">
+                            Открыть /health
+                        </button>
+                    </div>
+                </article>
+
+                <!-- Card: LegalDocAI -->
+                <article class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            📄 Шаблоны и документы
+                        </div>
+                        <span class="card-subtitle">LegalDocAI · генерация договоров</span>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            Работает через эндпоинты
+                            <span class="kbd">/docs/templates</span> и
+                            <span class="kbd">/docs/documents</span>. Для работы требуется авторизация.
+                        </p>
+                        <p id="docs-note" style="margin-top: 4px;">
+                            Быстрый просмотр пока доступен только через Swagger.
+                        </p>
+                    </div>
+                    <div class="card-footer">
+                        <div class="chips-row">
+                            <span class="chip">DOCX/PDF</span>
+                            <span class="chip">Meta-данные</span>
+                            <span class="chip">LegalDocAI</span>
+                        </div>
+                        <button class="btn btn-outline" type="button" onclick="openEndpoint('/docs')">
+                            Открыть /docs
+                        </button>
+                    </div>
+                </article>
+
+                <!-- Card: AI mini console -->
+                <article class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            🤖 Быстрый вопрос ИИ
+                        </div>
+                        <span class="card-subtitle">Мини-консоль для /ai/ask (демо)</span>
+                    </div>
+                    <div class="card-body">
+                        <textarea id="ai-query" class="ai-mini-input"
+                                  placeholder="Напишите короткий тестовый вопрос (без персональных данных)…"></textarea>
+                        <div class="card-footer" style="margin-top: 6px;">
+                            <button class="btn btn-outline" type="button" onclick="sendAiAsk()">
+                                Отправить запрос
+                            </button>
+                            <span style="font-size: 10px; color: inherit;">
+                                Результат ниже · может требовать backend-настроек
+                            </span>
+                        </div>
+                        <div id="ai-answer" class="ai-mini-output empty">
+                            Ответ ассистента появится здесь.
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Card: Legal cases -->
+                <article class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            ⚖️ Судебная практика
+                        </div>
+                        <span class="card-subtitle">/legal-cases/search</span>
+                    </div>
+                    <div class="card-body">
+                        <p style="margin-bottom: 4px;">
+                            Поиск по базе правовых актов и дел. В продакшне настроен гибридный поиск
+                            (FTS + векторный индекс).
+                        </p>
+                        <p style="font-size: 11px;">
+                            Для реального использования рекомендуется UI-страница, но через dashboard доступны прямые
+                            запросы к API.
+                        </p>
+                    </div>
+                    <div class="card-footer">
+                        <div class="chips-row">
+                            <span class="chip">FTS5</span>
+                            <span class="chip">FAISS/HNSW</span>
+                            <span class="chip">RU / UA / EN</span>
+                        </div>
+                        <button class="btn btn-outline" type="button" onclick="openEndpoint('/legal-cases/search')">
+                            Открыть поиск
+                        </button>
+                    </div>
+                </article>
+
+                <!-- Card: Консультации / загрузки -->
+                <article class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            📥 Файлы и консультации
+                        </div>
+                        <span class="card-subtitle">/consultations/upload</span>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            Модуль AI-консультанта обрабатывает PDF, изображения и аудио.
+                            Для упрощения интерфейса загрузка файлов доступна через отдельные страницы или клиент.
+                        </p>
+                        <p style="font-size: 11px;">
+                            В API предусмотрены:
+                            <span class="kbd">POST /consultations/upload</span>,
+                            <span class="kbd">GET /consultations</span>.
+                        </p>
+                    </div>
+                    <div class="card-footer">
+                        <div class="chips-row">
+                            <span class="chip">PDF</span>
+                            <span class="chip">Images</span>
+                            <span class="chip">Audio · ASR</span>
+                        </div>
+                        <button class="btn btn-outline" type="button" onclick="openSwagger()">
+                            Смотреть в Swagger
+                        </button>
+                    </div>
+                </article>
+
+                <!-- Card: System & CI/CD -->
+                <article class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            🛠 CI/CD и мониторинг
+                        </div>
+                        <span class="card-subtitle">GitHub Actions · Sentry · Prometheus</span>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            Деплой backend настроен через GitHub Actions, health-проверки и
+                            systemd. Sentry и Prometheus помогут отслеживать ошибки и нагрузку.
+                        </p>
+                        <p style="font-size: 11px;">
+                            Подробнее см. README и отчёты Stage 8–9.
+                        </p>
+                    </div>
+                    <div class="card-footer">
+                        <div class="chips-row">
+                            <span class="chip">GitHub Actions</span>
+                            <span class="chip">Sentry</span>
+                            <span class="chip">Prometheus</span>
+                        </div>
+                        <button class="btn btn-outline" type="button" onclick="openSwagger()">
+                            OpenAPI /docs
+                        </button>
+                    </div>
+                </article>
+            </section>
+        </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="dashboard-footer">
+        <div>
+            © <span id="year"></span> LegalAI. Не является юридической консультацией.
+        </div>
+        <div>
+            Подробнее об API см. <a href="https://api.legalai.su/docs" class="link-muted" target="_blank" rel="noreferrer">
+            Swagger-документацию
+        </a>.
+        </div>
+    </footer>
+</div>
+
+<script>
+    (function () {
+        const body = document.body;
+        const THEME_KEY = 'legalai_theme';
+
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                body.classList.add('dark');
+            } else {
+                body.classList.remove('dark');
+            }
+        }
+
+        function toggleTheme() {
+            const current = body.classList.contains('dark') ? 'dark' : 'light';
+            const next = current === 'dark' ? 'light' : 'dark';
+            localStorage.setItem(THEME_KEY, next);
+            applyTheme(next);
+        }
+
+        const savedTheme = localStorage.getItem(THEME_KEY) || 'light';
+        applyTheme(savedTheme);
+
+        const toggleBtn = document.getElementById('theme-toggle');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', toggleTheme);
+        }
+    })();
+
+    // Backend base URL: прод vs локально
+    const API_BASE = (function () {
+        const host = window.location.hostname;
+        if (host.endsWith('legalai.su')) {
+            return 'https://api.legalai.su';
+        }
+        // локальный сценарий разработки
+        return 'http://127.0.0.1:8000';
+    })();
+
+    document.getElementById('backend-url-label').textContent = API_BASE;
+
+    function formatTime(date) {
+        return date.toLocaleTimeString('ru-RU', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    }
+
+    async function runHealthCheck(showAlert) {
+        const pill = document.getElementById('health-pill');
+        const dot = document.getElementById('health-dot');
+        const label = document.getElementById('health-label');
+        const statusPill = document.getElementById('backend-status-pill');
+        const statusLabel = document.getElementById('backend-status-label');
+        const msg = document.getElementById('health-message');
+        const lastCheckElem = document.getElementById('health-last-check');
+
+        pill.classList.remove('error');
+        dot.classList.remove('bad');
+        label.textContent = 'Проверяем backend…';
+        statusPill.classList.remove('error');
+        statusLabel.textContent = 'Проверяем…';
+
+        try {
+            const res = await fetch(API_BASE + '/health', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            const now = new Date();
+            lastCheckElem.textContent = formatTime(now);
+
+            if (!res.ok) {
+                dot.classList.add('bad');
+                pill.classList.add('error');
+                statusPill.classList.add('error');
+                label.textContent = 'Ошибочный ответ: ' + res.status;
+                statusLabel.textContent = 'Ошибка ' + res.status;
+                msg.textContent = 'Backend ответил кодом ' + res.status + '. Проверьте логи systemd и nginx.';
+                if (showAlert) {
+                    alert('Backend ответил кодом ' + res.status);
+                }
+                return;
+            }
+
+            let data = null;
+            try {
+                data = await res.json();
+            } catch (e) {
+                // fallback если /health не возвращает JSON
+            }
+
+            dot.classList.remove('bad');
+            pill.classList.remove('error');
+            statusPill.classList.remove('error');
+            label.textContent = 'Backend онлайн';
+            statusLabel.textContent = 'Работает';
+
+            if (data && (data.status || data.detail)) {
+                msg.textContent = 'Ответ /health: ' + (data.status || data.detail);
+            } else {
+                msg.textContent = 'Ответ /health получен успешно.';
+            }
+        } catch (err) {
+            dot.classList.add('bad');
+            pill.classList.add('error');
+            statusPill.classList.add('error');
+            label.textContent = 'Backend недоступен';
+            statusLabel.textContent = 'Недоступен';
+            document.getElementById('health-message').textContent =
+                'Не удалось подключиться к backend по адресу ' + API_BASE +
+                '. Проверьте подключение к серверу, systemd и nginx.';
+            if (showAlert) {
+                alert('Не удалось подключиться к backend. Подробнее см. текст на панели “Состояние backend”.');
+            }
+        }
+    }
+
+    function openSwagger() {
+        window.open(API_BASE + '/docs', '_blank', 'noopener');
+    }
+
+    function openEndpoint(path) {
+        if (!path.startsWith('/')) {
+            path = '/' + path;
+        }
+        window.open(API_BASE + path, '_blank', 'noopener');
+    }
+
+    async function sendAiAsk() {
+        const textarea = document.getElementById('ai-query');
+        const output = document.getElementById('ai-answer');
+
+        const query = (textarea.value || '').trim();
+        if (!query) {
+            alert('Введите текст вопроса перед отправкой.');
+            return;
+        }
+
+        output.classList.remove('empty');
+        output.textContent = 'Отправляем запрос…';
+
+        try {
+            const res = await fetch(API_BASE + '/ai/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ query: query })
+            });
+
+            if (!res.ok) {
+                let detail = res.status + ' ' + res.statusText;
+                try {
+                    const errJson = await res.json();
+                    if (errJson && errJson.detail) {
+                        detail = errJson.detail;
+                    }
+                } catch (e) {
+                    // ignore
+                }
+                output.textContent =
+                    'Ошибка ответа от /ai/ask: ' + detail +
+                    '. Возможно, требуется авторизация или модуль ИИ временно отключён.';
+                return;
+            }
+
+            let data;
+            try {
+                data = await res.json();
+            } catch (e) {
+                output.textContent = 'Ответ получен, но не удалось прочитать JSON.';
+                return;
+            }
+
+            if (data && (data.answer || data.detail || typeof data === 'string')) {
+                const answer = data.answer || data.detail || data.toString();
+                output.textContent = answer;
+            } else {
+                output.textContent = 'Ответ от ИИ получен, но в нестандартном формате.';
+            }
+        } catch (err) {
+            output.textContent =
+                'Не удалось отправить запрос к /ai/ask. Проверьте, доступен ли backend и разрешён ли CORS.';
+        }
+    }
+
+    // Инициализация
+    document.getElementById('year').textContent = new Date().getFullYear();
+    runHealthCheck(false);
+</script>
+</body>
 </html>
