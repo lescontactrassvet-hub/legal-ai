@@ -157,7 +157,7 @@
                 name="phone"
                 type="tel"
                 placeholder="+7 900 000-00-00"
-                pattern="^\+?[0-9\s\-]{7,20}$"
+                pattern="^\+?[0-9\\s\\-]{7,20}$"
                 required
             >
 
@@ -167,7 +167,7 @@
                 name="phone_confirm"
                 type="tel"
                 placeholder="Повторите номер телефона"
-                pattern="^\+?[0-9\s\-]{7,20}$"
+                pattern="^\+?[0-9\\s\\-]{7,20}$"
                 required
             >
 
@@ -189,14 +189,7 @@
             <button type="submit">Отправить запрос на восстановление</button>
         </form>
 
-        <div id="success" class="success">
-            Если указанные данные совпадают с данными вашего аккаунта,
-            вы получите на email и телефон одноразовую ссылку/код для входа
-            и смены логина и пароля.
-            <br><br>
-            Если данные не совпадут, ваш запрос будет автоматически передан оператору,
-            который свяжется с вами по указанным контактам.
-        </div>
+        <div id="success" class="success"></div>
 
         <div class="links">
             <a href="/login.html">Вернуться к входу</a> •
@@ -211,12 +204,13 @@
         const errorBlock = document.getElementById('error');
         const successBlock = document.getElementById('success');
 
-        form.addEventListener('submit', function (e) {
-            e.preventDefault(); // пока не отправляем на сервер, только имитируем логику
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
 
             errorBlock.style.display = 'none';
             errorBlock.textContent = '';
             successBlock.style.display = 'none';
+            successBlock.textContent = '';
 
             if (phone.value.trim() !== phoneConfirm.value.trim()) {
                 errorBlock.textContent = 'Телефон и подтверждение телефона не совпадают.';
@@ -224,24 +218,54 @@
                 return;
             }
 
-            // ⚠️ Здесь позже будет реальный запрос на backend, который:
-            // 1) сверит все поля с данными аккаунта,
-            // 2) при совпадении отправит одноразовую ссылку/код,
-            // 3) при несовпадении создаст заявку оператору.
-            //
-            // Пример будущего запроса (пока закомментировано):
-            //
-            // fetch('/auth/reset-start', {
-            //   method: 'POST',
-            //   headers: { 'Content-Type': 'application/json' },
-            //   body: JSON.stringify({
-            //     last_name: last_name.value,
-            //     ...
-            //   })
-            // })
+            const payload = {
+                last_name: document.getElementById('last_name').value.trim(),
+                first_name: document.getElementById('first_name').value.trim(),
+                middle_name: document.getElementById('middle_name').value.trim() || null,
+                birth_year: Number(document.getElementById('birth_year').value),
+                email: document.getElementById('email').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                country: document.getElementById('country').value.trim(),
+                city: document.getElementById('city').value.trim(),
+                comment: document.getElementById('comment').value.trim() || null
+            };
 
-            successBlock.style.display = 'block';
-            form.reset();
+            try {
+                const response = await fetch('/auth/reset-start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка на сервере. Попробуйте позже.');
+                }
+
+                const data = await response.json();
+
+                if (data.status === 'ok' && data.token_sent) {
+                    successBlock.textContent =
+                        'Если указанные данные совпадают с данными вашего аккаунта, ' +
+                        'мы отправили на ваш email и телефон одноразовую ссылку/код для входа и смены логина и пароля.';
+                    successBlock.style.display = 'block';
+                    form.reset();
+                } else if (data.status === 'operator' && data.handed_to_operator) {
+                    successBlock.textContent =
+                        'Ваши данные переданы оператору. Если автоматическая проверка не пройдёт, ' +
+                        'оператор свяжется с вами по указанным контактам.';
+                    successBlock.style.display = 'block';
+                    form.reset();
+                } else {
+                    errorBlock.textContent =
+                        'Не удалось автоматически обработать запрос. Попробуйте позже или свяжитесь с поддержкой.';
+                    errorBlock.style.display = 'block';
+                }
+            } catch (err) {
+                errorBlock.textContent = err.message || 'Ошибка соединения с сервером.';
+                errorBlock.style.display = 'block';
+            }
         });
     </script>
 </body>
