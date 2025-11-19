@@ -19,7 +19,7 @@
 
         .card {
             background: white;
-            width: 400px;
+            width: 420px;
             max-width: 95%;
             padding: 30px;
             border-radius: 16px;
@@ -106,39 +106,96 @@
             display: none;
             text-align: center;
         }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin: 10px 0 4px 0;
+            color: #1A4C91;
+        }
     </style>
 </head>
 <body>
     <div class="card">
         <h1>Восстановление доступа</h1>
         <p class="subtitle">
-            Укажите email или номер телефона, который вы использовали при регистрации.
+            Укажите те же данные, что вы вводили при регистрации.
+            Это нужно для вашей защиты и формирования договора.
         </p>
 
         <div id="error" class="error"></div>
 
         <form id="reset-form">
-            <label>Email или телефон</label>
+            <div class="section-title">Основные данные</div>
+
+            <label>Фамилия</label>
+            <input id="last_name" name="last_name" type="text" placeholder="Введите фамилию" required>
+
+            <label>Имя</label>
+            <input id="first_name" name="first_name" type="text" placeholder="Введите имя" required>
+
+            <label>Отчество (при наличии)</label>
+            <input id="middle_name" name="middle_name" type="text" placeholder="Введите отчество (если есть)">
+
+            <label>Год рождения</label>
             <input
-                id="identifier"
-                type="text"
-                name="identifier"
-                placeholder="Например, you@example.com или +7 900 000-00-00"
+                id="birth_year"
+                name="birth_year"
+                type="number"
+                placeholder="Например, 1985"
+                min="1900"
+                max="2025"
                 required
             >
 
-            <label>Комментарий (по желанию)</label>
+            <label>Email</label>
+            <input id="email" name="email" type="email" placeholder="Email, указанный при регистрации" required>
+
+            <label>Телефон</label>
+            <input
+                id="phone"
+                name="phone"
+                type="tel"
+                placeholder="+7 900 000-00-00"
+                pattern="^\+?[0-9\s\-]{7,20}$"
+                required
+            >
+
+            <label>Подтвердите телефон</label>
+            <input
+                id="phone_confirm"
+                name="phone_confirm"
+                type="tel"
+                placeholder="Повторите номер телефона"
+                pattern="^\+?[0-9\s\-]{7,20}$"
+                required
+            >
+
+            <label>Страна</label>
+            <input id="country" name="country" type="text" placeholder="Страна" required>
+
+            <label>Город / район</label>
+            <input id="city" name="city" type="text" placeholder="Город или район" required>
+
+            <div class="section-title">Если автоматическая проверка не пройдёт</div>
+
+            <label>Комментарий для оператора (по желанию)</label>
             <textarea
+                id="comment"
                 name="comment"
-                placeholder="Кратко опишите проблему, если нужно (забыли пароль, нет доступа к email и т.п.)"
+                placeholder="Кратко опишите проблему: забыли логин/пароль, потеряли доступ к email и т.п."
             ></textarea>
 
-            <button type="submit">Отправить запрос</button>
+            <button type="submit">Отправить запрос на восстановление</button>
         </form>
 
         <div id="success" class="success">
-            Если такой аккаунт существует, мы отправим инструкции по восстановлению
-            на указанный email или телефон.
+            Если указанные данные совпадают с данными вашего аккаунта,
+            вы получите на email и телефон одноразовую ссылку/код для входа
+            и смены логина и пароля.
+            <br><br>
+            Если данные не совпадут, ваш запрос будет автоматически передан оператору,
+            который свяжется с вами по указанным контактам.
         </div>
 
         <div class="links">
@@ -149,23 +206,40 @@
 
     <script>
         const form = document.getElementById('reset-form');
-        const identifier = document.getElementById('identifier');
+        const phone = document.getElementById('phone');
+        const phoneConfirm = document.getElementById('phone_confirm');
         const errorBlock = document.getElementById('error');
         const successBlock = document.getElementById('success');
 
         form.addEventListener('submit', function (e) {
-            e.preventDefault(); // пока не отправляем на сервер, только сообщение
+            e.preventDefault(); // пока не отправляем на сервер, только имитируем логику
 
             errorBlock.style.display = 'none';
+            errorBlock.textContent = '';
             successBlock.style.display = 'none';
 
-            if (!identifier.value.trim()) {
-                errorBlock.textContent = 'Пожалуйста, укажите email или телефон.';
+            if (phone.value.trim() !== phoneConfirm.value.trim()) {
+                errorBlock.textContent = 'Телефон и подтверждение телефона не совпадают.';
                 errorBlock.style.display = 'block';
                 return;
             }
 
-            // Здесь позже можно будет добавить реальный запрос к backend.
+            // ⚠️ Здесь позже будет реальный запрос на backend, который:
+            // 1) сверит все поля с данными аккаунта,
+            // 2) при совпадении отправит одноразовую ссылку/код,
+            // 3) при несовпадении создаст заявку оператору.
+            //
+            // Пример будущего запроса (пока закомментировано):
+            //
+            // fetch('/auth/reset-start', {
+            //   method: 'POST',
+            //   headers: { 'Content-Type': 'application/json' },
+            //   body: JSON.stringify({
+            //     last_name: last_name.value,
+            //     ...
+            //   })
+            // })
+
             successBlock.style.display = 'block';
             form.reset();
         });
