@@ -14,7 +14,7 @@ from app.auth.reset.schemas import (
     ResetCompleteRequest,
     ResetCompleteResponse,
 )
-from app.auth.utils import get_password_hash  # уже используется для регистрации/логина
+from app.auth.utils import hash_password  # правильная функция хеширования пароля
 
 
 RESET_TOKEN_TTL_MINUTES = 15  # срок жизни одноразового токена (минуты)
@@ -125,7 +125,7 @@ def complete_reset(db: Session, payload: ResetCompleteRequest) -> ResetCompleteR
 
     # меняем логин + пароль
     user.username = payload.new_username
-    user.hashed_password = get_password_hash(payload.new_password)
+    user.hashed_password = hash_password(payload.new_password)
 
     token_obj.used = True
 
