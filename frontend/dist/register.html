@@ -1,34 +1,103 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LegalAI - Register</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <title>Регистрация — LegalAI</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #E7F1FF;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .card {
+            background: white;
+            width: 360px;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0px 6px 20px rgba(0,0,0,0.15);
+        }
+
+        h1 {
+            margin: 0 0 20px 0;
+            font-size: 24px;
+            color: #1A4C91;
+            text-align: center;
+        }
+
+        label {
+            font-size: 14px;
+            color: #1A4C91;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 6px;
+            margin-bottom: 16px;
+            border-radius: 10px;
+            border: 1px solid #D2E3FF;
+            font-size: 15px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #3A7AFE;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #2E63D4;
+        }
+
+        .link {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .link a {
+            text-decoration: underline;
+            color: #1A4C91;
+        }
+    </style>
+
 </head>
 <body>
-    <div class="container">
-        <h1>LegalAI</h1>
-        <p class="subtitle">Create a new account</p>
+    <div class="card">
+        <h1>Регистрация</h1>
 
-        <div class="auth-wrapper">
-            <div class="auth-box">
-                <h2>Register</h2>
+        <form action="/auth/register" method="POST">
+            <label>Логин</label>
+            <input name="username" type="text" placeholder="Введите логин" required>
 
-                <input type="text" id="register-username" placeholder="Username" required>
-                <input type="email" id="register-email" placeholder="Email" required>
-                <input type="password" id="register-password" placeholder="Password" required>
+            <label>Email</label>
+            <input name="email" type="email" placeholder="Введите email" required>
 
-                <button id="register-btn">Register</button>
+            <label>Пароль</label>
+            <input name="password" type="password" placeholder="Придумайте пароль" required>
 
-                <p class="message">
-                    Already have an account?
-                    <a href="/login">Login</a>
-                </p>
-            </div>
+            <button type="submit">Создать аккаунт</button>
+        </form>
+
+        <div class="link">
+            Уже есть аккаунт?
+            <a href="/login">Войти</a>
         </div>
     </div>
-
-    <script src="js/app.js"></script>
 </body>
 </html>
