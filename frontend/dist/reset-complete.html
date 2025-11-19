@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Смена логина и пароля — LegalAI</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #E7F1FF;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .card {
+            background: white;
+            width: 400px;
+            max-width: 95%;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0px 6px 20px rgba(0,0,0,0.15);
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 22px;
+            color: #1A4C91;
+            text-align: center;
+        }
+
+        p.subtitle {
+            margin: 0 0 20px 0;
+            font-size: 14px;
+            color: #4B6C9A;
+            text-align: center;
+        }
+
+        label {
+            font-size: 14px;
+            color: #1A4C91;
+            display: block;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            margin-top: 6px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            border: 1px solid #D2E3FF;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #3A7AFE;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #2E63D4;
+        }
+
+        .error {
+            color: #B3261E;
+            font-size: 13px;
+            margin-bottom: 8px;
+            display: none;
+        }
+
+        .success {
+            color: #1B5E20;
+            font-size: 13px;
+            margin-top: 10px;
+            display: none;
+            text-align: center;
+        }
+
+        .links {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .links a {
+            text-decoration: underline;
+            color: #1A4C91;
+            display: inline-block;
+            margin: 2px 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Смена логина и пароля</h1>
+        <p class="subtitle">
+            Установите новый логин и надёжный пароль. Не передавайте эти данные третьим лицам.
+        </p>
+
+        <div id="error" class="error"></div>
+
+        <form id="complete-form">
+            <label>Новый логин</label>
+            <input id="new_username" name="new_username" type="text" placeholder="Новый логин" required>
+
+            <label>Новый пароль</label>
+            <input id="new_password" name="new_password" type="password" placeholder="Новый пароль" required>
+
+            <label>Повторите пароль</label>
+            <input id="new_password_confirm" name="new_password_confirm" type="password" placeholder="Повторите пароль" required>
+
+            <button type="submit">Сохранить</button>
+        </form>
+
+        <div id="success" class="success"></div>
+
+        <div class="links">
+            <a href="/login.html">Перейти к входу</a>
+        </div>
+    </div>
+
+    <script>
+        function getTokenFromQuery() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('token');
+        }
+
+        const token = getTokenFromQuery();
+        const errorBlock = document.getElementById('error');
+        const successBlock = document.getElementById('success');
+        const form = document.getElementById('complete-form');
+
+        if (!token) {
+            errorBlock.textContent = 'Токен не найден. Перейдите по ссылке из письма или начните процедуру восстановления заново.';
+            errorBlock.style.display = 'block';
+            form.style.display = 'none';
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            errorBlock.style.display = 'none';
+            errorBlock.textContent = '';
+            successBlock.style.display = 'none';
+            successBlock.textContent = '';
+
+            const newUsername = document.getElementById('new_username').value.trim();
+            const newPassword = document.getElementById('new_password').value;
+            const newPasswordConfirm = document.getElementById('new_password_confirm').value;
+
+            if (!newUsername || !newPassword || !newPasswordConfirm) {
+                errorBlock.textContent = 'Пожалуйста, заполните все поля.';
+                errorBlock.style.display = 'block';
+                return;
+            }
+
+            if (newPassword !== newPasswordConfirm) {
+                errorBlock.textContent = 'Пароль и повтор пароля не совпадают.';
+                errorBlock.style.display = 'block';
+                return;
+            }
+
+            if (!token) {
+                errorBlock.textContent = 'Токен отсутствует. Попробуйте начать процедуру восстановления заново.';
+                errorBlock.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch('/auth/reset-complete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        token: token,
+                        new_username: newUsername,
+                        new_password: newPassword
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка при сохранении новых данных. Попробуйте ещё раз.');
+                }
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    successBlock.textContent = 'Логин и пароль успешно обновлены. Теперь вы можете войти с новыми данными.';
+                    successBlock.style.display = 'block';
+                    form.reset();
+                } else if (data.status === 'token_invalid' || data.status === 'token_not_found') {
+                    errorBlock.textContent = 'Токен недействителен или истёк. Пожалуйста, начните процедуру восстановления заново.';
+                    errorBlock.style.display = 'block';
+                } else if (data.status === 'user_not_found') {
+                    errorBlock.textContent = 'Пользователь не найден. Обратитесь в поддержку.';
+                    errorBlock.style.display = 'block';
+                } else {
+                    errorBlock.textContent = 'Не удалось обновить данные. Попробуйте позже.';
+                    errorBlock.style.display = 'block';
+                }
+            } catch (err) {
+                errorBlock.textContent = err.message || 'Ошибка соединения с сервером.';
+                errorBlock.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
