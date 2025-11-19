@@ -83,18 +83,30 @@
             gap: 10px;
         }
 
-        .logo-pill {
-            width: 36px;
-            height: 36px;
-            border-radius: 999px;
+        /* Новый логотип */
+        .logo-img-wrap {
             display: flex;
             align-items: center;
             justify-content: center;
-            background: radial-gradient(circle at 30% 20%, #60a5fa 0, #2563eb 35%, #1d4ed8 70%, #0f172a 100%);
-            box-shadow: 0 14px 30px rgba(37, 99, 235, 0.6);
-            color: white;
-            font-weight: 700;
-            font-size: 19px;
+            width: 40px;
+            height: 40px;
+            border-radius: 999px;
+            padding: 2px;
+            background: radial-gradient(circle at 30% 20%, #020617 0, #020617 65%, #020617 100%);
+            box-shadow: 0 0 18px rgba(56, 189, 248, 0.7);
+            overflow: hidden;
+        }
+
+        .logo-img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        body.dark .logo-img-wrap {
+            background: radial-gradient(circle at 30% 20%, #020617 0, #020617 70%, #020617 100%);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.9);
         }
 
         .topbar-title {
@@ -566,7 +578,11 @@
     <!-- TOP BAR -->
     <header class="topbar">
         <div class="topbar-left">
-            <div class="logo-pill">L</div>
+            <div class="logo-img-wrap">
+                <img src="/assets/logo/legalai-logo-main.png"
+                     alt="LegalAI — цифровой юрист"
+                     class="logo-img">
+            </div>
             <div class="topbar-title">
                 <div class="topbar-title-main">LegalAI</div>
                 <div class="topbar-title-sub">Юридический ИИ-ассистент для документов и консультаций</div>
