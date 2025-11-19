@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>LegalAI — ИИ-ассистент</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Общие стили проекта, если есть -->
+    <link rel="stylesheet" href="/css/styles.css" />
+
+    <style>
+        :root {
+            --bg-light: #e6f2ff;
+            --bg-dark: #020617;
+            --accent: #2563eb;
+            --accent-soft: #3b82f6;
+            --accent-muted: rgba(37, 99, 235, 0.15);
+            --text-main-light: #0f172a;
+            --text-muted-light: #64748b;
+            --text-main-dark: #e5e7eb;
+            --text-muted-dark: #9ca3af;
+            --border-soft-light: rgba(15,23,42,0.08);
+            --border-soft-dark: rgba(148,163,184,0.35);
+            --radius-xl: 18px;
+            --radius-2xl: 26px;
+            --shadow-soft: 0 22px 45px rgba(15,23,42,0.22);
+            --transition-fast: 0.18s ease-out;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+            "Segoe UI", sans-serif;
+            background: radial-gradient(circle at 0% 0%, #eff6ff 0, #e0f2fe 35%, #e6f2ff 100%);
+            color: var(--text-main-light);
+            display: flex;
+            flex-direction: column;
+        }
+
+        body.dark {
+            background: radial-gradient(circle at 0% 0%, #020617 0, #020617 60%, #020617 100%);
+            color: var(--text-main-dark);
+        }
+
+        .shell {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* TOPBAR */
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            backdrop-filter: blur(20px);
+            background: linear-gradient(to right, rgba(226,239,255,0.94), rgba(219,234,254,0.9));
+            border-bottom: 1px solid var(--border-soft-light);
+            padding: 10px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        body.dark .topbar {
+            background: linear-gradient(to right, rgba(15,23,42,0.95), rgba(15,23,42,0.9));
+            border-bottom-color: var(--border-soft-dark);
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-pill {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 30% 20%, #60a5fa 0, #2563eb 35%, #1d4ed8 70%, #0f172a 100%);
+            box-shadow: 0 14px 32px rgba(37, 99, 235, 0.55);
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .topbar-title {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .topbar-title-main {
+            font-weight: 650;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+
+        .topbar-title-sub {
+            font-size: 11px;
+            color: var(--text-muted-light);
+        }
+
+        body.dark .topbar-title-sub {
+            color: var(--text-muted-dark);
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 999px;
+            padding: 6px 11px;
+            font-size: 11px;
+            border: 1px solid var(--border-soft-light);
+            background: rgba(255,255,255,0.9);
+            color: var(--text-muted-light);
+        }
+
+        body.dark .pill {
+            border-color: var(--border-soft-dark);
+            background: rgba(15,23,42,0.95);
+            color: var(--text-muted-dark);
+        }
+
+        .status-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 999px;
+            background: #22c55e;
+            box-shadow: 0 0 0 4px rgba(34,197,94,0.25);
+        }
+
+        .status-dot.bad {
+            background: #ef4444;
+            box-shadow: 0 0 0 4px rgba(239,68,68,0.25);
+        }
+
+        .btn {
+            border-radius: 999px;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 7px 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background var(--transition-fast), color var(--transition-fast),
+            transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-soft));
+            color: white;
+            box-shadow: 0 14px 33px rgba(37,99,235,0.35);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 40px rgba(37,99,235,0.45);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-soft-light);
+            color: var(--text-main-light);
+        }
+
+        body.dark .btn-outline {
+            border-color: var(--border-soft-dark);
+            color: var(--text-main-dark);
+        }
+
+        .btn-outline:hover {
+            background: rgba(255,255,255,0.12);
+        }
+
+        .btn-icon {
+            padding: 6px;
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            justify-content: center;
+        }
+
+        main {
+            flex: 1;
+            padding: 18px;
+            max-width: 1200px;
+            margin: 0 auto 10px;
+            display: grid;
+            grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.1fr);
+            gap: 18px;
+        }
+
+        @media (max-width: 960px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ЧАТ */
+        .chat-card {
+            border-radius: var(--radius-2xl);
+            padding: 14px 14px 16px;
+            background: rgba(255,255,255,0.97);
+            border: 1px solid var(--border-soft-light);
+            box-shadow: var(--shadow-soft);
+            display: flex;
+            flex-direction: column;
+            min-height: 420px;
+            max-height: calc(100vh - 120px);
+        }
+
+        body.dark .chat-card {
+            background: rgba(15,23,42,0.98);
+            border-color: var(--border-soft-dark);
+            box-shadow: 0 22px 50px rgba(0,0,0,0.9);
+        }
+
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .chat-title-block {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-title {
+            font-size: 15px;
+            font-weight: 650;
+        }
+
+        .chat-subtitle {
+            font-size: 11px;
+            color: var(--text-muted-light);
+        }
+
+        body.dark .chat-subtitle {
+            color: var(--text-muted-dark);
+        }
+
+        .chat-meta {
+            font-size: 10px;
+            color: var(--text-muted-light);
+            text-align: right;
+        }
+
+        body.dark .chat-meta {
+            color: var(--text-muted-dark);
+        }
+
+        .chat-history {
+            flex: 1;
+            border-radius: 14px;
+            border: 1px solid rgba(148,163,184,0.6);
+            background: rgba(248,250,252,0.95);
+            padding: 8px 10px;
+            overflow-y: auto;
+            font-size: 13px;
+        }
+
+        body.dark .chat-history {
+            background: rgba(15,23,42,0.9);
+            border-color: rgba(148,163,184,0.7);
+        }
+
+        .message {
+            margin-bottom: 8px;
+            max-width: 100%;
+        }
+
+        .message-role {
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .badge-user,
+        .badge-assistant {
+            border-radius: 999px;
+            padding: 2px 7px;
+            font-size: 10px;
+        }
+
+        .badge-user {
+            background: rgba(59,130,246,0.15);
+            color: #1d4ed8;
+        }
+
+        .badge-assistant {
+            background: rgba(22,163,74,0.12);
+            color: #15803d;
+        }
+
+        .message-content {
+            padding: 7px 9px;
+            border-radius: 10px;
+            line-height: 1.5;
+        }
+
+        .message.user .message-content {
+            background: white;
+            border: 1px solid rgba(148,163,184,0.6);
+        }
+
+        body.dark .message.user .message-content {
+            background: rgba(15,23,42,0.96);
+        }
+
+        .message.assistant .message-content {
+            background: #e0edff;
+            border: 1px solid rgba(129,140,248,0.6);
+        }
+
+        body.dark .message.assistant .message-content {
+            background: rgba(30,64,175,0.96);
+            border-color: rgba(129,140,248,0.8);
+        }
+
+        .message.system .message-content {
+            background: rgba(248,250,252,0.85);
+            border: 1px dashed rgba(148,163,184,0.7);
+            font-size: 12px;
+        }
+
+        body.dark .message.system .message-content {
+            background: rgba(15,23,42,0.9);
+        }
+
+        .chat-input-area {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .chat-textarea {
+            width: 100%;
+            resize: vertical;
+            min-height: 60px;
+            max-height: 140px;
+            padding: 7px 9px;
+            border-radius: 12px;
+            border: 1px solid rgba(148,163,184,0.7);
+            font-size: 13px;
+            font-family: inherit;
+            background: rgba(248,250,252,0.96);
+        }
+
+        body.dark .chat-textarea {
+            background: rgba(15,23,42,0.92);
+            border-color: rgba(148,163,184,0.8);
+            color: var(--text-main-dark);
+        }
+
+        .chat-actions-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-actions-left {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            font-size: 10px;
+            color: var(--text-muted-light);
+        }
+
+        body.dark .chat-actions-left {
+            color: var(--text-muted-dark);
+        }
+
+        .chat-actions-right {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chip {
+            border-radius: 999px;
+            padding: 3px 7px;
+            font-size: 10px;
+            background: rgba(148,163,184,0.18);
+            color: var(--text-muted-light);
+        }
+
+        body.dark .chip {
+            background: rgba(148,163,184,0.2);
+            color: var(--text-muted-dark);
+        }
+
+        /* Правая колонка */
+        .side-column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .side-card {
+            border-radius: var(--radius-xl);
+            padding: 12px 13px 13px;
+            background: rgba(255,255,255,0.97);
+            border: 1px solid var(--border-soft-light);
+            box-shadow: 0 18px 40px rgba(15,23,42,0.12);
+            font-size: 12px;
+        }
+
+        body.dark .side-card {
+            background: rgba(15,23,42,0.98);
+            border-color: var(--border-soft-dark);
+            box-shadow: 0 18px 42px rgba(0,0,0,0.9);
+        }
+
+        .side-title {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .side-subtitle {
+            font-size: 11px;
+            color: var(--text-muted-light);
+            margin-bottom: 4px;
+        }
+
+        body.dark .side-subtitle {
+            color: var(--text-muted-dark);
+        }
+
+        .side-list {
+            list-style: none;
+            margin: 4px 0 0;
+            padding: 0;
+        }
+
+        .side-list li {
+            margin-bottom: 4px;
+            display: flex;
+            gap: 6px;
+        }
+
+        .side-list li span.bullet {
+            font-size: 11px;
+            margin-top: 1px;
+        }
+
+        .side-list li span.text {
+            font-size: 11px;
+        }
+
+        .kbd {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 11px;
+            padding: 1px 5px;
+            border-radius: 4px;
+            border: 1px solid rgba(148,163,184,0.7);
+            background: rgba(248,250,252,0.96);
+        }
+
+        body.dark .kbd {
+            background: rgba(15,23,42,0.92);
+        }
+
+        .status-pill-small {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 7px;
+            border-radius: 999px;
+            font-size: 11px;
+            background: rgba(22,163,74,0.08);
+            color: #16a34a;
+        }
+
+        .status-pill-small.error {
+            background: rgba(239,68,68,0.08);
+            color: #ef4444;
+        }
+
+        .status-dot-mini {
+            width: 7px;
+            height: 7px;
+            border-radius: 999px;
+            background: currentColor;
+        }
+
+        footer {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 8px 18px 14px;
+            font-size: 11px;
+            color: var(--text-muted-light);
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        body.dark footer {
+            color: var(--text-muted-dark);
+        }
+
+        .link-muted {
+            color: inherit;
+            text-decoration: none;
+            border-bottom: 1px dashed rgba(148,163,184,0.7);
+        }
+
+        .link-muted:hover {
+            border-bottom-style: solid;
+        }
+
+        /* Спец-блоки справа */
+
+        .laws-list {
+            margin: 4px 0 0;
+            padding: 0;
+            list-style: none;
+            max-height: 160px;
+            overflow-y: auto;
+        }
+
+        .laws-list li {
+            margin-bottom: 6px;
+        }
+
+        .laws-title {
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .laws-meta {
+            font-size: 10px;
+            color: var(--text-muted-light);
+        }
+
+        body.dark .laws-meta {
+            color: var(--text-muted-dark);
+        }
+
+        .result-list {
+            list-style: none;
+            padding: 0;
+            margin: 4px 0 0;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .result-item {
+            margin-bottom: 6px;
+            border-radius: 8px;
+            padding: 6px 7px;
+            background: rgba(248,250,252,0.95);
+            border: 1px solid rgba(148,163,184,0.5);
+            font-size: 11px;
+        }
+
+        body.dark .result-item {
+            background: rgba(15,23,42,0.9);
+            border-color: rgba(148,163,184,0.7);
+        }
+
+        .result-title {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .result-snippet {
+            font-size: 11px;
+        }
+
+        .result-meta {
+            font-size: 10px;
+            color: var(--text-muted-light);
+            margin-top: 2px;
+        }
+
+        body.dark .result-meta {
+            color: var(--text-muted-dark);
+        }
+
+        .file-input-row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .file-input-row input[type="file"] {
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+<div class="shell">
+    <!-- TOP BAR -->
+    <header class="topbar">
+        <div class="topbar-left">
+            <div class="logo-pill">L</div>
+            <div class="topbar-title">
+                <div class="topbar-title-main">LegalAI</div>
+                <div class="topbar-title-sub">ИИ-ассистент · документы · практика · обновления законов</div>
+            </div>
+        </div>
+        <div class="topbar-right">
+            <div class="pill">
+                <span class="status-dot" id="health-dot"></span>
+                <span id="health-label">Проверяем backend…</span>
+            </div>
+            <button class="btn btn-outline btn-icon" id="theme-toggle" title="Переключить тему">
+                🌓
+            </button>
+            <button class="btn btn-outline" onclick="window.location.href='/'">
+                На главную
+            </button>
+            <button class="btn btn-primary" onclick="window.location.href='/dashboard'">
+                Панель
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN -->
+    <main>
+        <!-- ЧАТ -->
+        <section class="chat-card">
+            <div class="chat-header">
+                <div class="chat-title-block">
+                    <div class="chat-title">Диалог с ИИ-ассистентом</div>
+                    <div class="chat-subtitle">
+                        Вопросы по правовым ситуациям, документам и судебной практике. История диалога сохраняется локально.
+                    </div>
+                </div>
+                <div class="chat-meta">
+                    API: <span class="kbd" id="api-label"></span><br/>
+                    <span id="last-request-label">Запрос ещё не отправлялся</span>
+                </div>
+            </div>
+
+            <div id="chat-history" class="chat-history"></div>
+
+            <div class="chat-input-area">
+                <textarea id="chat-input" class="chat-textarea"
+                          placeholder="Опишите ситуацию или вопрос. Например:
+«Арендатор задерживает оплату более 2 месяцев, как правильно оформить уведомление о расторжении договора?»"></textarea>
+
+                <div class="chat-actions-row">
+                    <div class="chat-actions-left">
+                        <span class="chip">RU / EN</span>
+                        <span class="chip">Документы · споры · риски</span>
+                        <span class="chip">Ctrl + Enter — отправить</span>
+                    </div>
+                    <div class="chat-actions-right">
+                        <button class="btn btn-outline" type="button" onclick="clearChat()">
+                            Очистить диалог
+                        </button>
+                        <button class="btn btn-primary" type="button" onclick="sendMessage()">
+                            Отправить
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ПРАВАЯ КОЛОНКА -->
+        <aside class="side-column">
+            <!-- Статус backend -->
+            <section class="side-card">
+                <div class="side-title">Статус backend</div>
+                <div class="side-subtitle">Проверка <span class="kbd">/health</span></div>
+                <div id="backend-status-pill" class="status-pill-small">
+                    <span class="status-dot-mini"></span>
+                    <span id="backend-status-label">Проверяем…</span>
+                </div>
+                <p id="backend-status-text" style="margin-top: 6px; font-size: 11px;">
+                    Идёт первичная проверка соединения с API.
+                </p>
+                <button class="btn btn-outline" style="margin-top: 6px;" type="button" onclick="runHealthCheck(true)">
+                    Повторить проверку
+                </button>
+            </section>
+
+            <!-- Сегодня в законодательстве -->
+            <section class="side-card">
+                <div class="side-title">Сегодня в законодательстве</div>
+                <div class="side-subtitle">
+                    Акты, вступившие в силу сегодня (по данным backend <span class="kbd">/legal-updates/today</span>).
+                </div>
+                <ul id="laws-today" class="laws-list"></ul>
+                <p id="laws-today-status" style="font-size: 11px; margin-top: 4px;"></p>
+            </section>
+
+            <!-- Поиск судебной практики -->
+            <section class="side-card">
+                <div class="side-title">Поиск судебной практики</div>
+                <div class="side-subtitle">
+                    Быстрый поиск по <span class="kbd">/legal-cases/search</span>.
+                </div>
+                <input id="cases-query" type="text" placeholder="Например: неустойка по аренде"
+                       style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid rgba(148,163,184,0.7);font-size:11px;margin-bottom:4px;">
+                <button class="btn btn-outline" type="button" style="margin-bottom:6px;" onclick="searchCases()">
+                    Найти дела
+                </button>
+                <ul id="cases-results" class="result-list"></ul>
+                <p id="cases-status" style="font-size: 11px; margin-top: 4px;"></p>
+            </section>
+
+            <!-- Документы и файлы -->
+            <section class="side-card">
+                <div class="side-title">Документы и файлы</div>
+                <div class="side-subtitle">Генерация и анализ документов.</div>
+
+                <div class="file-input-row" style="margin-bottom:8px;">
+                    <div style="font-size:11px;margin-bottom:3px;">Загрузить для анализа (PDF, изображения, аудио):</div>
+                    <input id="file-input" type="file" multiple
+                           accept=".pdf,.doc,.docx,image/*,audio/*" />
+                    <button class="btn btn-outline" type="button" onclick="uploadFiles()" style="margin-top:4px;">
+                        Отправить файлы в /consultations/upload
+                    </button>
+                    <div id="upload-status" style="font-size:11px;margin-top:4px;"></div>
+                </div>
+
+                <hr style="border:none;border-top:1px dashed rgba(148,163,184,0.6);margin:6px 0;">
+
+                <div style="font-size:11px;margin-bottom:3px;">Сгенерировать документ:</div>
+                <select id="doc-type"
+                        style="width:100%;padding:5px 7px;border-radius:8px;border:1px solid rgba(148,163,184,0.7);font-size:11px;margin-bottom:4px;">
+                    <option value="contract">Договор (общий)</option>
+                    <option value="nda">Соглашение о конфиденциальности (NDA)</option>
+                    <option value="lease">Договор аренды</option>
+                    <option value="claim">Претензия/требование</option>
+                    <option value="custom">Произвольный документ</option>
+                </select>
+                <textarea id="doc-description"
+                          style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid rgba(148,163,184,0.7);font-size:11px;min-height:55px;resize:vertical;"
+                          placeholder="Кратко опишите ситуацию и условия. Например: договор аренды офиса, срок 11 мес., оплата раз в месяц, обеспечительный платёж 1 месяц."></textarea>
+                <button class="btn btn-outline" type="button" style="margin-top:4px;" onclick="generateDocument()">
+                    Сгенерировать через /docs/generate
+                </button>
+                <div id="doc-status" style="font-size:11px;margin-top:4px;"></div>
+            </section>
+
+            <!-- Подсказки -->
+            <section class="side-card">
+                <div class="side-title">Как правильно задавать вопросы</div>
+                <ul class="side-list">
+                    <li>
+                        <span class="bullet">•</span>
+                        <span class="text">Опишите факты: даты, стороны, что уже произошло.</span>
+                    </li>
+                    <li>
+                        <span class="bullet">•</span>
+                        <span class="text">Сформулируйте цель: «оценить риски», «подготовить черновик письма».</span>
+                    </li>
+                    <li>
+                        <span class="bullet">•</span>
+                        <span class="text">Не вводите персональные данные, номера паспортов и т.п.</span>
+                    </li>
+                    <li>
+                        <span class="bullet">•</span>
+                        <span class="text">Ответы LegalAI — не юридическая консультация, а предварительные рекомендации.</span>
+                    </li>
+                </ul>
+            </section>
+        </aside>
+    </main>
+
+    <footer>
+        <div>
+            © <span id="year"></span> LegalAI. Не является юридической консультацией.
+        </div>
+        <div>
+            API: <span class="kbd" id="api-footer"></span> ·
+            <a href="#" id="swagger-link" class="link-muted" target="_blank" rel="noreferrer">Swagger /docs</a> ·
+            <a href="/dashboard" class="link-muted">Панель</a>
+        </div>
+    </footer>
+</div>
+
+<script>
+    // Тема (как на index/dashboard)
+    (function () {
+        const body = document.body;
+        const KEY = 'legalai_theme';
+
+        function apply(theme) {
+            if (theme === 'dark') body.classList.add('dark');
+            else body.classList.remove('dark');
+        }
+
+        function toggle() {
+            const current = body.classList.contains('dark') ? 'dark' : 'light';
+            const next = current === 'dark' ? 'light' : 'dark';
+            localStorage.setItem(KEY, next);
+            apply(next);
+        }
+
+        const saved = localStorage.getItem(KEY) || 'light';
+        apply(saved);
+
+        const btn = document.getElementById('theme-toggle');
+        if (btn) btn.addEventListener('click', toggle);
+    })();
+
+    // Базовый URL backend
+    const API_BASE = (function () {
+        const host = window.location.hostname;
+        if (host.endsWith('legalai.su')) {
+            return 'https://api.legalai.su';
+        }
+        return 'http://127.0.0.1:8000';
+    })();
+
+    document.getElementById('api-label').textContent = API_BASE + '/ai/ask';
+    document.getElementById('api-footer').textContent = API_BASE;
+    document.getElementById('year').textContent = new Date().getFullYear();
+    const swaggerLink = document.getElementById('swagger-link');
+    if (swaggerLink) swaggerLink.href = API_BASE + '/docs';
+
+    // Элементы
+    const historyEl = document.getElementById('chat-history');
+    const inputEl = document.getElementById('chat-input');
+    const lastReqLabel = document.getElementById('last-request-label');
+
+    const CHAT_STORAGE_KEY = 'legalai_chat_history_v1';
+
+    // Восстановление истории из localStorage
+    function loadHistory() {
+        let stored;
+        try {
+            stored = JSON.parse(localStorage.getItem(CHAT_STORAGE_KEY) || '[]');
+        } catch (e) {
+            stored = [];
+        }
+        if (!stored.length) {
+            appendMessage('system',
+                'Добро пожаловать! Диалог будет сохранён локально в этом браузере. Не вводите персональные данные и коммерческие тайны.',
+                true
+            );
+            return;
+        }
+        stored.forEach(msg => appendMessage(msg.role, msg.text, msg.role === 'system'));
+    }
+
+    // Сохранение истории
+    function saveHistory() {
+        const messages = [];
+        const nodes = historyEl.querySelectorAll('.message');
+        nodes.forEach(node => {
+            let role = 'system';
+            if (node.classList.contains('user')) role = 'user';
+            else if (node.classList.contains('assistant')) role = 'assistant';
+            const text = node.querySelector('.message-content')?.textContent || '';
+            messages.push({ role, text });
+        });
+        try {
+            localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    function appendMessage(role, text, isSystem) {
+        const msg = document.createElement('div');
+        msg.classList.add('message');
+        if (role === 'user') msg.classList.add('user');
+        if (role === 'assistant') msg.classList.add('assistant');
+        if (isSystem) msg.classList.add('system');
+
+        const roleRow = document.createElement('div');
+        roleRow.classList.add('message-role');
+
+        const badge = document.createElement('span');
+        if (role === 'user') {
+            badge.classList.add('badge-user');
+            badge.textContent = 'Вы';
+        } else if (role === 'assistant') {
+            badge.classList.add('badge-assistant');
+            badge.textContent = 'LegalAI';
+        } else {
+            badge.classList.add('badge-assistant');
+            badge.textContent = 'Система';
+        }
+
+        roleRow.appendChild(badge);
+
+        const content = document.createElement('div');
+        content.classList.add('message-content');
+        content.textContent = text;
+
+        msg.appendChild(roleRow);
+        msg.appendChild(content);
+        historyEl.appendChild(msg);
+        historyEl.scrollTop = historyEl.scrollHeight;
+    }
+
+    function clearChat() {
+        while (historyEl.firstChild) {
+            historyEl.removeChild(historyEl.firstChild);
+        }
+        appendMessage('system',
+            'Диалог очищен. Можно задать новый вопрос. Напоминаем: не вводите персональные данные.',
+            true
+        );
+        lastReqLabel.textContent = 'История очищена';
+        saveHistory();
+    }
+
+    async function sendMessage() {
+        const query = (inputEl.value || '').trim();
+        if (!query) {
+            alert('Введите вопрос перед отправкой.');
+            return;
+        }
+
+        appendMessage('user', query);
+        inputEl.value = '';
+        appendMessage('assistant', 'Думаю над ответом…', true);
+        saveHistory();
+
+        lastReqLabel.textContent = 'Отправляем запрос к /ai/ask…';
+
+        try {
+            const res = await fetch(API_BASE + '/ai/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ query: query })
+            });
+
+            // удалить "Думаю над ответом…"
+            const last = historyEl.lastChild;
+            if (last) historyEl.removeChild(last);
+
+            const now = new Date();
+            lastReqLabel.textContent = 'Последний запрос: ' +
+                now.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+
+            if (!res.ok) {
+                let detail = res.status + ' ' + res.statusText;
+                try {
+                    const errJson = await res.json();
+                    if (errJson && errJson.detail) detail = errJson.detail;
+                } catch (e) {}
+                appendMessage('assistant',
+                    'Ошибка ответа от /ai/ask: ' + detail +
+                    '. Возможно, требуется авторизация или модуль ИИ временно отключён.',
+                    true
+                );
+                saveHistory();
+                return;
+            }
+
+            let data;
+            try { data = await res.json(); } catch (e) {
+                appendMessage('assistant', 'Ответ получен, но не удалось прочитать JSON.', true);
+                saveHistory();
+                return;
+            }
+
+            let answer;
+            if (data && (data.answer || data.detail || typeof data === 'string')) {
+                answer = data.answer || data.detail || data.toString();
+            } else {
+                answer = 'Ответ от ИИ получен, но в нестандартном формате.';
+            }
+
+            appendMessage('assistant', answer);
+            saveHistory();
+        } catch (err) {
+            const last = historyEl.lastChild;
+            if (last) historyEl.removeChild(last);
+            appendMessage('assistant',
+                'Не удалось отправить запрос к /ai/ask. Проверьте, доступен ли backend и разрешён ли CORS.',
+                true
+            );
+            saveHistory();
+        }
+    }
+
+    // Отправка по Ctrl+Enter
+    inputEl.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    // /health
+    async function runHealthCheck(showAlert) {
+        const dot = document.getElementById('health-dot');
+        const label = document.getElementById('health-label');
+        const pill = document.getElementById('backend-status-pill');
+        const statusLabel = document.getElementById('backend-status-label');
+        const text = document.getElementById('backend-status-text');
+
+        if (!dot || !label || !pill || !statusLabel || !text) return;
+
+        dot.classList.remove('bad');
+        pill.classList.remove('error');
+        label.textContent = 'Проверяем backend…';
+        statusLabel.textContent = 'Проверяем…';
+        text.textContent = 'Отправляем запрос к /health на ' + API_BASE + ' …';
+
+        try {
+            const res = await fetch(API_BASE + '/health', {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (!res.ok) {
+                dot.classList.add('bad');
+                pill.classList.add('error');
+                label.textContent = 'Ошибка: ' + res.status;
+                statusLabel.textContent = 'Ошибка ' + res.status;
+                text.textContent = 'Backend ответил кодом ' + res.status + '. Проверьте systemd и nginx.';
+                if (showAlert) alert('Backend ответил кодом ' + res.status);
+                return;
+            }
+
+            let data = null;
+            try { data = await res.json(); } catch (e) {}
+
+            dot.classList.remove('bad');
+            pill.classList.remove('error');
+            const now = new Date();
+            label.textContent = 'Backend онлайн (' + now.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'}) + ')';
+            statusLabel.textContent = 'Работает';
+            if (data && (data.status || data.detail)) {
+                text.textContent = 'Ответ /health: ' + (data.status || data.detail);
+            } else {
+                text.textContent = 'Ответ /health получен успешно.';
+            }
+        } catch (err) {
+            dot.classList.add('bad');
+            pill.classList.add('error');
+            label.textContent = 'Backend недоступен';
+            statusLabel.textContent = 'Недоступен';
+            text.textContent = 'Не удалось подключиться к ' + API_BASE +
+                '. Проверьте подключение к серверу и сервис legalai.service.';
+            if (showAlert) alert('Backend недоступен. Подробности — в блоке “Статус backend”.');
+        }
+    }
+
+    // Сегодня в законодательстве: /legal-updates/today
+    async function loadLawsToday() {
+        const list = document.getElementById('laws-today');
+        const status = document.getElementById('laws-today-status');
+        list.innerHTML = '';
+        status.textContent = 'Запрашиваем /legal-updates/today…';
+
+        try {
+            const res = await fetch(API_BASE + '/legal-updates/today', {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (!res.ok) {
+                status.textContent = 'Ошибка ' + res.status + '. Возможно, эндпоинт ещё не реализован.';
+                return;
+            }
+
+            const data = await res.json();
+            if (!Array.isArray(data) || !data.length) {
+                status.textContent = 'На сегодня нет данных от backend или список пуст.';
+                return;
+            }
+
+            data.forEach(item => {
+                const li = document.createElement('li');
+                const title = document.createElement('div');
+                title.classList.add('laws-title');
+                title.textContent = item.title || 'Без названия';
+
+                const meta = document.createElement('div');
+                meta.classList.add('laws-meta');
+                const eff = item.effective_date || item.date || '';
+                const ref = item.reference || item.number || '';
+                meta.textContent = [eff, ref, item.source].filter(Boolean).join(' · ');
+
+                li.appendChild(title);
+                if (item.summary) {
+                    const s = document.createElement('div');
+                    s.style.fontSize = '11px';
+                    s.textContent = item.summary;
+                    li.appendChild(s);
+                }
+                li.appendChild(meta);
+                list.appendChild(li);
+            });
+
+            status.textContent = '';
+        } catch (e) {
+            status.textContent = 'Не удалось получить список. Проверьте эндпоинт /legal-updates/today.';
+        }
+    }
+
+    // Поиск судебной практики: /legal-cases/search
+    async function searchCases() {
+        const qInput = document.getElementById('cases-query');
+        const resultsEl = document.getElementById('cases-results');
+        const statusEl = document.getElementById('cases-status');
+
+        const q = (qInput.value || '').trim();
+        if (!q) {
+            alert('Введите запрос для поиска судебной практики.');
+            return;
+        }
+
+        resultsEl.innerHTML = '';
+        statusEl.textContent = 'Ищем дела по запросу: "' + q + '"…';
+
+        try {
+            const url = API_BASE + '/legal-cases/search?q=' + encodeURIComponent(q) + '&limit=5';
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (!res.ok) {
+                statusEl.textContent = 'Ошибка ' + res.status + ' при обращении к /legal-cases/search.';
+                return;
+            }
+
+            const data = await res.json();
+            const items = Array.isArray(data.results) ? data.results : Array.isArray(data) ? data : [];
+            if (!items.length) {
+                statusEl.textContent = 'Ни одного дела не найдено.';
+                return;
+            }
+
+            items.forEach(it => {
+                const li = document.createElement('li');
+                li.classList.add('result-item');
+
+                const title = document.createElement('div');
+                title.classList.add('result-title');
+                title.textContent = it.title || 'Дело без названия';
+
+                const snip = document.createElement('div');
+                snip.classList.add('result-snippet');
+                snip.textContent = it.snippet || it.summary || '';
+
+                const meta = document.createElement('div');
+                meta.classList.add('result-meta');
+                const court = it.court || '';
+                const date = it.date || '';
+                meta.textContent = [court, date].filter(Boolean).join(' · ');
+
+                li.appendChild(title);
+                if (snip.textContent) li.appendChild(snip);
+                if (meta.textContent) li.appendChild(meta);
+
+                resultsEl.appendChild(li);
+            });
+
+            statusEl.textContent = '';
+        } catch (e) {
+            statusEl.textContent = 'Не удалось выполнить поиск. Проверьте доступность backend и /legal-cases/search.';
+        }
+    }
+
+    // Загрузка файлов: /consultations/upload
+    async function uploadFiles() {
+        const input = document.getElementById('file-input');
+        const status = document.getElementById('upload-status');
+        const files = input.files;
+
+        if (!files || !files.length) {
+            alert('Выберите хотя бы один файл для загрузки.');
+            return;
+        }
+
+        const form = new FormData();
+        Array.from(files).forEach(f => form.append('files', f));
+
+        status.textContent = 'Отправляем файлы в /consultations/upload…';
+
+        try {
+            const res = await fetch(API_BASE + '/consultations/upload', {
+                method: 'POST',
+                body: form
+            });
+
+            if (!res.ok) {
+                let detail = res.status + ' ' + res.statusText;
+                try {
+                    const errJson = await res.json();
+                    if (errJson && errJson.detail) detail = errJson.detail;
+                } catch (e) {}
+                status.textContent = 'Ошибка загрузки: ' + detail;
+                return;
+            }
+
+            const data = await res.json();
+            status.textContent = 'Файлы отправлены успешно. Ответ backend: ' + (data.detail || 'ОК');
+        } catch (e) {
+            status.textContent = 'Не удалось отправить файлы. Проверьте доступность /consultations/upload.';
+        }
+    }
+
+    // Генерация документов: /docs/generate
+    async function generateDocument() {
+        const type = document.getElementById('doc-type').value;
+        const desc = (document.getElementById('doc-description').value || '').trim();
+        const status = document.getElementById('doc-status');
+
+        if (!desc) {
+            alert('Опишите хотя бы кратко, какой документ нужен.');
+            return;
+        }
+
+        status.textContent = 'Отправляем запрос в /docs/generate…';
+
+        try {
+            const res = await fetch(API_BASE + '/docs/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ type: type, description: desc })
+            });
+
+            if (!res.ok) {
+                let detail = res.status + ' ' + res.statusText;
+                try {
+                    const errJson = await res.json();
+                    if (errJson && errJson.detail) detail = errJson.detail;
+                } catch (e) {}
+                status.textContent = 'Ошибка генерации документа: ' + detail;
+                return;
+            }
+
+            const data = await res.json();
+            const id = data.id || data.document_id || '';
+            const msg = data.message || data.detail || '';
+            status.textContent = 'Документ сгенерирован. ' +
+                (id ? 'ID: ' + id + '. ' : '') +
+                (msg ? msg : 'Проверьте список документов в панели или через API.');
+        } catch (e) {
+            status.textContent = 'Не удалось обратиться к /docs/generate. Проверьте backend.';
+        }
+    }
+
+    // Инициализация
+    loadHistory();
+    runHealthCheck(false);
+    loadLawsToday();
+</script>
+</body>
+</html>
