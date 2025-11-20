@@ -325,6 +325,11 @@
             border: 1px solid rgba(148, 163, 184, 0.6);
         }
 
+        .btn--small {
+            padding: 4px 10px;
+            font-size: 12px;
+        }
+
         /* FOLLOW-UP КНОПКИ ПОД ОТВЕТОМ ТАТЬЯНЫ */
         .chat__followups {
             margin-top: 4px;
@@ -352,6 +357,39 @@
             color: #6B7280;
             font-style: italic;
             margin-bottom: 6px;
+        }
+
+        /* ПАНЕЛЬ ТЕКУЩЕГО КЕЙСА */
+        .case-panel {
+            border-radius: 10px;
+            background: #EFF6FF;
+            border: 1px solid rgba(148, 163, 184, 0.6);
+            padding: 6px 8px;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .case-panel__title {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .case-panel__body {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            margin-top: 2px;
+        }
+
+        .case-panel__summary {
+            font-size: 12px;
+        }
+
+        .case-panel__hint {
+            margin-top: 4px;
+            font-size: 11px;
+            color: #6B7280;
         }
 
         /* ПРАВАЯ КОЛОНКА */
@@ -523,6 +561,10 @@
             .chat {
                 height: 320px;
             }
+            .case-panel__body {
+                flex-direction: column;
+                align-items: flex-start;
+            }
         }
     </style>
 </head>
@@ -589,6 +631,9 @@
             </div>
 
             <div class="topbar__right">
+                <a href="/dashboard_help.html" target="_blank" class="btn btn--ghost btn--small">
+                    ℹ Инструкция
+                </a>
                 <div class="user-chip" id="profile-mini">
                     <div class="user-chip__avatar" id="user-avatar">U</div>
                     <div class="user-chip__info">
@@ -615,6 +660,22 @@
                             </div>
                         </div>
                         <span class="badge">AI · RAG · База законов</span>
+                    </div>
+
+                    <!-- ТЕКУЩИЙ КЕЙС -->
+                    <div class="case-panel" id="case-panel">
+                        <div class="case-panel__title">Текущий кейс</div>
+                        <div class="case-panel__body">
+                            <div class="case-panel__summary" id="case-summary">
+                                Кейс: не указан (общий вопрос)
+                            </div>
+                            <button type="button" class="btn btn--ghost btn--small" id="new-session-btn">
+                                🔄 Новая консультация
+                            </button>
+                        </div>
+                        <div class="case-panel__hint">
+                            Страну и направление вы можете указать в блоке «Обновления базы законов» справа.
+                        </div>
                     </div>
 
                     <div class="chat">
@@ -859,6 +920,8 @@
     const chatSendBtn = document.getElementById("chat-send");
     const chatAttachBtn = document.getElementById("chat-attach");
 
+    const newSessionBtn = document.getElementById("new-session-btn");
+
     let typingEl = null;
 
     function removePlaceholder() {
@@ -929,8 +992,8 @@
             const followupButtons = msg.querySelectorAll(".chat__followups button");
             followupButtons.forEach(btn => {
                 btn.addEventListener("click", () => {
-                    const f = btn.getAttribute("data-followup");
                     if (!chatInputEl) return;
+                    const f = btn.getAttribute("data-followup");
                     if (f === "document") {
                         chatInputEl.value = "Составь, пожалуйста, проект документа по описанной выше ситуации.";
                     } else if (f === "simplify") {
@@ -944,8 +1007,7 @@
         }
     }
 
-    // Приветствие от ЮИИ Татьяны при загрузке
-    (function greetTatyana() {
+    function greetTatyana() {
         const greeting = `
             Здравствуйте! Я <strong>ЮИИ Татьяна</strong>, ваш юрист искусственного интеллекта.
             Могу помочь разобраться в юридической ситуации, проверить договор, подготовить жалобу или иск,
@@ -954,9 +1016,117 @@
             Кратко опишите, пожалуйста, вашу ситуацию: что случилось, с кем и когда — и с какой целью вы обращаетесь.
         `;
         addAiMessage(greeting, '<div class="chat__meta">ЮИИ Татьяна · ИИ-юрист</div>', true);
-    })();
+    }
+
+    // Первое приветствие при загрузке
+    greetTatyana();
+
+    // ===== ПАНЕЛЬ КЕЙСА =====
+    function humanCountryShort(code) {
+        if (code === "RU") return "РФ";
+        if (code === "BY") return "Беларусь";
+        if (code === "UA") return "Украина";
+        if (code === "EU") return "ЕС";
+        return "";
+    }
+
+    function humanCategory(code) {
+        if (code === "civil") return "гражданское право";
+        if (code === "criminal") return "уголовное право";
+        if (code === "housing") return "жилищное право";
+        if (code === "family") return "семейное право";
+        if (code === "migration") return "миграционное право";
+        return "";
+    }
+
+    function updateCaseSummary() {
+        const summaryEl = document.getElementById("case-summary");
+        if (!summaryEl) return;
+
+        const country = document.getElementById("filter-country")?.value || "";
+        const category = document.getElementById("filter-category")?.value || "";
+
+        if (!country && !category) {
+            summaryEl.textContent = "Кейс: не указан (общий вопрос)";
+            return;
+        }
+
+        const parts = [];
+        if (country) parts.push(humanCountryShort(country));
+        else parts.push("страна не указана");
+
+        if (category) parts.push(humanCategory(category));
+        else parts.push("направление не указано");
+
+        summaryEl.textContent = "Кейс: " + parts.join(" · ");
+    }
+
+    if (newSessionBtn) {
+        newSessionBtn.addEventListener("click", () => {
+            // Чистим чат
+            if (chatMessagesEl) {
+                chatMessagesEl.innerHTML = "";
+            }
+            if (chatInputEl) {
+                chatInputEl.value = "";
+                chatInputEl.focus();
+            }
+            hideTypingIndicator();
+
+            // Сбрасываем панель файлов
+            selectedFiles = [];
+            fileObjectUrls.forEach(url => URL.revokeObjectURL(url));
+            fileObjectUrls.clear();
+            if (filePanelFilesEl) filePanelFilesEl.innerHTML = "";
+            if (filePanelErrorEl) filePanelErrorEl.textContent = "";
+            if (fileGoalEl) fileGoalEl.value = "";
+            if (fileAnalyzeBtn) {
+                fileAnalyzeBtn.disabled = true;
+                fileAnalyzeBtn.textContent = "🔍 Отправить на анализ";
+            }
+            if (filePanelEl) filePanelEl.hidden = true;
+
+            // Новое приветствие
+            greetTatyana();
+        });
+    }
 
     // ===== РАБОТА С ФАЙЛАМИ =====
+    if (fileInputEl) {
+        fileInputEl.addEventListener("change", function () {
+            selectedFiles = [];
+            fileObjectUrls.forEach(url => URL.revokeObjectURL(url));
+            fileObjectUrls.clear();
+            filePanelErrorEl.textContent = "";
+
+            const files = Array.from(fileInputEl.files || []);
+            if (!files.length) {
+                renderFilePanel();
+                return;
+            }
+
+            if (files.length > 4) {
+                filePanelErrorEl.textContent = "Можно загрузить не более 4 файлов за один анализ.";
+                fileInputEl.value = "";
+                renderFilePanel();
+                return;
+            }
+
+            const MAX_SIZE = 30 * 1024 * 1024; // 30 МБ
+            for (const f of files) {
+                if (f.size > MAX_SIZE) {
+                    filePanelErrorEl.textContent = "Файл \"" + f.name + "\" слишком большой (максимум 30 МБ).";
+                    fileInputEl.value = "";
+                    renderFilePanel();
+                    return;
+                }
+            }
+
+            selectedFiles = files;
+            renderFilePanel();
+        });
+    }
+
     function renderFilePanel() {
         filePanelErrorEl.textContent = "";
         filePanelFilesEl.innerHTML = "";
@@ -992,41 +1162,6 @@
 
         const goalText = (fileGoalEl.value || "").trim();
         fileAnalyzeBtn.disabled = !goalText || !selectedFiles.length;
-    }
-
-    if (fileInputEl) {
-        fileInputEl.addEventListener("change", function () {
-            selectedFiles = [];
-            fileObjectUrls.forEach(url => URL.revokeObjectURL(url));
-            fileObjectUrls.clear();
-            filePanelErrorEl.textContent = "";
-
-            const files = Array.from(fileInputEl.files || []);
-            if (!files.length) {
-                renderFilePanel();
-                return;
-            }
-
-            if (files.length > 4) {
-                filePanelErrorEl.textContent = "Можно загрузить не более 4 файлов за один анализ.";
-                fileInputEl.value = "";
-                renderFilePanel();
-                return;
-            }
-
-            const MAX_SIZE = 30 * 1024 * 1024; // 30 МБ
-            for (const f of files) {
-                if (f.size > MAX_SIZE) {
-                    filePanelErrorEl.textContent = "Файл \"" + f.name + "\" слишком большой (максимум 30 МБ).";
-                    fileInputEl.value = "";
-                    renderFilePanel();
-                    return;
-                }
-            }
-
-            selectedFiles = files;
-            renderFilePanel();
-        });
     }
 
     if (fileGoalEl) {
@@ -1296,8 +1431,14 @@
         }
     }
 
-    document.getElementById("filter-country")?.addEventListener("change", loadLaws);
-    document.getElementById("filter-category")?.addEventListener("change", loadLaws);
+    document.getElementById("filter-country")?.addEventListener("change", () => {
+        loadLaws();
+        updateCaseSummary();
+    });
+    document.getElementById("filter-category")?.addEventListener("change", () => {
+        loadLaws();
+        updateCaseSummary();
+    });
     document.getElementById("filter-period")?.addEventListener("change", loadLaws);
 
     // ===== ЧАТ /ai/ask =====
@@ -1320,7 +1461,6 @@
                 query: text,
                 country: country || null,
                 category: category || null,
-                // можно расширить для будущего "живого мозга":
                 mode: "dialog"
             };
 
@@ -1396,6 +1536,7 @@
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     loadRecentDocs();
     loadLaws();
+    updateCaseSummary();
 </script>
 </body>
 </html>
