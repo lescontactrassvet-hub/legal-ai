@@ -6,7 +6,7 @@ from app.db import Base, engine
 from app.legal_doc.routes import router as legal_doc_router
 from app.auth.routes import router as auth_router
 from app.auth.reset.router import router as reset_router  # модуль восстановления доступа
-from routers.ai import router as ai_router  # AI-консультант
+from routers.ai import router as ai_router  # AI-консультант ЮИИ Татьяна
 
 # --- Sentry (опционально) ---
 try:
@@ -62,4 +62,6 @@ app.include_router(auth_router, prefix="/auth", tags=["Auth"])
 # reset_router уже имеет prefix="/auth" внутри себя, поэтому здесь без prefix
 app.include_router(reset_router, tags=["Auth Reset"])
 app.include_router(legal_doc_router, prefix="/docs", tags=["Docs"])
-app.include_router(ai_router, prefix="/ai", tags=["AI"])
+
+# ВАЖНО: prefix НЕ указываем, он уже задан внутри routers/ai.py (prefix="/ai")
+app.include_router(ai_router, tags=["AI"])
