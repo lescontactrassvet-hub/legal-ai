@@ -1,1542 +1,962 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Панель управления — LegalAI</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- Общие стили проекта, если есть -->
-    <link rel="stylesheet" href="/css/styles.css">
+    <meta charset="UTF-8" />
+    <title>Панель — LegalAI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <style>
+        :root {
+            --bg-main: #e7f1ff;
+            --bg-card: #ffffff;
+            --bg-header: #0f172a;
+            --bg-chat: #f9fbff;
+            --accent: #2563eb;
+            --accent-soft: #dbeafe;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-soft: #e2e8f0;
+            --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.18);
+            --radius-lg: 18px;
+            --radius-md: 10px;
+            --radius-sm: 6px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             padding: 0;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: #E7F1FF; /* светло-голубой фон */
-            color: #102040;
-        }
-
-        .dashboard-root {
-            display: flex;
+            background: radial-gradient(circle at top, #eef3ff 0, #dce8ff 30%, #e7f1ff 65%, #d7e3ff 100%);
+            color: var(--text-main);
             min-height: 100vh;
-        }
-
-        /* ЛЕВОЕ МЕНЮ */
-        .sidebar {
-            width: 240px;
-            background: #0C235A;
-            color: #ffffff;
             display: flex;
             flex-direction: column;
-            padding: 20px 18px;
-            box-sizing: border-box;
         }
 
-        .sidebar__logo {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 20px;
+        /* ───────────────── HEADER / MENU ───────────────── */
+
+        .top-bar {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: linear-gradient(90deg, #020617, #0f172a);
+            color: #e5e7eb;
+            padding: 10px 18px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: space-between;
+            box-shadow: 0 4px 18px rgba(15, 23, 42, 0.6);
         }
 
-        .sidebar__logo-badge {
-            width: 24px;
-            height: 24px;
-            border-radius: 8px;
-            background: #4C8DFF;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            font-weight: 800;
-        }
-
-        .sidebar__nav {
-            list-style: none;
-            padding: 0;
-            margin: 0 0 20px;
-        }
-
-        .sidebar__nav-item {
-            margin-bottom: 4px;
-        }
-
-        .sidebar__nav-link {
+        .top-left {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 8px 10px;
-            border-radius: 10px;
-            color: #e0e7ff;
-            text-decoration: none;
+        }
+
+        .logo {
+            width: 34px;
+            height: 34px;
+            border-radius: 12px;
+            background: #0ea5e9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .project-title {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .project-title span:first-child {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+        }
+
+        .project-title span:last-child {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+
+        .top-nav {
+            margin-left: 24px;
+        }
+
+        .top-nav ul {
+            list-style: none;
+            display: flex;
+            gap: 14px;
+            margin: 0;
+            padding: 0;
             font-size: 14px;
         }
 
-        .sidebar__nav-link span.icon {
-            width: 18px;
-            text-align: center;
-        }
-
-        .sidebar__nav-link--active,
-        .sidebar__nav-link:hover {
-            background: rgba(255, 255, 255, 0.12);
-            color: #ffffff;
-        }
-
-        .sidebar__footer {
-            margin-top: auto;
-            font-size: 12px;
-            opacity: 0.8;
-        }
-
-        .sidebar__footer a {
-            color: #c5d4ff;
+        .top-nav a {
+            color: #e5e7eb;
             text-decoration: none;
+            padding: 6px 10px;
+            border-radius: 999px;
+            transition: background 0.2s, color 0.2s, transform 0.1s;
+            white-space: nowrap;
         }
 
-        .sidebar__footer a:hover {
-            text-decoration: underline;
+        .top-nav a:hover {
+            background: rgba(148, 163, 184, 0.25);
+            transform: translateY(-1px);
         }
 
-        /* ПРАВАЯ ЧАСТЬ */
-        .dashboard-main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 18px 20px;
-            box-sizing: border-box;
-            gap: 14px;
-        }
-
-        /* ТОП-ПАНЕЛЬ */
-        .topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-        }
-
-        .topbar__left {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .topbar__title {
-            font-size: 22px;
+        .top-nav a.is-active {
+            background: #f97316;
+            color: #0f172a;
             font-weight: 600;
         }
 
-        .topbar__subtitle {
-            font-size: 13px;
-            color: #51607C;
-        }
-
-        .topbar__right {
+        .top-right {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 14px;
+        }
+
+        .edit-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #cbd5f5;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .edit-toggle input {
+            display: none;
+        }
+
+        .toggle-pill {
+            width: 34px;
+            height: 18px;
+            border-radius: 999px;
+            background: #1e293b;
+            padding: 2px;
+            position: relative;
+            transition: background 0.2s;
+        }
+
+        .toggle-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 999px;
+            background: #e5e7eb;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s;
+        }
+
+        .edit-toggle input:checked + .toggle-pill {
+            background: #22c55e;
+        }
+
+        .edit-toggle input:checked + .toggle-pill .toggle-dot {
+            transform: translateX(14px);
         }
 
         .user-chip {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            font-size: 12px;
             padding: 6px 10px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.8);
-            border: 1px solid rgba(16, 32, 64, 0.08);
-            font-size: 12px;
-        }
-
-        .user-chip__avatar {
-            width: 26px;
-            height: 26px;
-            border-radius: 999px;
-            background: #2563EB;
-            color: #ffffff;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(148, 163, 184, 0.5);
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            font-weight: 600;
+            gap: 8px;
         }
 
-        .user-chip__info {
+        .user-circle {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: #22c55e;
+        }
+
+        /* ───────────────── MAIN LAYOUT ───────────────── */
+
+        .page {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            padding: 14px 10px 18px;
+        }
+
+        .dashboard-shell {
+            width: 100%;
+            max-width: 1240px;
             display: flex;
             flex-direction: column;
+            gap: 12px;
         }
 
-        .user-chip__name {
-            font-weight: 500;
-        }
-
-        .user-chip__meta {
-            opacity: 0.75;
-        }
-
-        /* КАРТОЧКИ / СЕТКА */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 2fr 1.4fr;
-            gap: 14px;
-            align-items: flex-start;
-        }
-
-        .card {
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 14px 16px 14px;
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
-            box-sizing: border-box;
-        }
-
-        .card__header {
+        .dashboard-header-row {
             display: flex;
             justify-content: space-between;
+            align-items: baseline;
             gap: 10px;
-            align-items: flex-start;
-            margin-bottom: 8px;
         }
 
-        .card__title {
-            font-size: 16px;
-            font-weight: 600;
+        .dashboard-header-row h1 {
+            font-size: 20px;
+            margin: 0;
         }
 
-        .card__subtitle {
-            font-size: 12px;
-            color: #64748B;
-        }
-
-        .card__section-title {
+        .dashboard-header-row p {
+            margin: 2px 0 0;
             font-size: 13px;
-            font-weight: 500;
-            margin: 8px 0 4px;
+            color: var(--text-muted);
         }
 
-        .badge {
-            padding: 3px 8px;
+        .edit-hint {
             font-size: 11px;
-            border-radius: 999px;
-            background: #EFF4FF;
-            color: #1D4ED8;
+            color: var(--text-muted);
         }
 
-        /* ЧАТ */
-        .chat {
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 3fr 2fr;
+            gap: 14px;
+            align-items: stretch;
+        }
+
+        /* ───────────────── CHAT PANEL ───────────────── */
+
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-soft);
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .chat-card {
+            background: radial-gradient(circle at top, #f9fbff 0, #eef3ff 35%, #f1f5f9 100%);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .card-header h2 {
+            font-size: 15px;
+            margin: 0;
+        }
+
+        .card-header span {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .card-badge {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .chat-window {
+            flex: 1;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-soft);
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.85);
             display: flex;
             flex-direction: column;
             gap: 8px;
-            height: 380px;
+            overflow: hidden;
+            min-height: 260px;
+            max-height: 520px;
         }
 
-        .chat__messages {
+        .chat-messages {
             flex: 1;
-            background: #F4F7FF;
-            border-radius: 12px;
-            padding: 8px 10px;
             overflow-y: auto;
+            padding-right: 4px;
             font-size: 13px;
         }
 
-        .chat__placeholder {
-            font-size: 12px;
-            color: #9CA3AF;
+        .msg {
+            margin-bottom: 8px;
+            padding: 6px 8px;
+            border-radius: 10px;
+            max-width: 90%;
         }
 
-        .chat__message {
-            max-width: 92%;
-            padding: 8px 11px;
-            border-radius: 12px;
-            margin-bottom: 6px;
-            line-height: 1.4;
-            word-wrap: break-word;
-        }
-
-        .chat__message--ai {
-            margin-right: auto;
-            background: #ffffff;
-            color: #111827;
-            border-bottom-left-radius: 4px;
-            border: 1px solid rgba(148, 163, 184, 0.4);
-        }
-
-        .chat__message--user {
-            margin-left: auto;
-            background: #2563EB;
-            color: #ffffff;
+        .msg-user {
+            align-self: flex-end;
+            background: var(--accent);
+            color: white;
             border-bottom-right-radius: 4px;
         }
 
-        .chat__meta {
-            font-size: 11px;
-            opacity: 0.75;
-            margin-top: 4px;
+        .msg-ai {
+            align-self: flex-start;
+            background: #e5e7eb;
+            border-bottom-left-radius: 4px;
         }
 
-        .chat__composer {
-            display: flex;
-            gap: 6px;
-        }
-
-        .chat__textarea {
-            flex: 1;
-            resize: none;
-            border-radius: 999px;
-            border: 1px solid rgba(148, 163, 184, 0.7);
-            padding: 8px 12px;
-            font-size: 13px;
-            outline: none;
-        }
-
-        .chat__buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .btn {
-            border: none;
-            border-radius: 999px;
-            padding: 7px 14px;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            background: #2563EB;
-            color: #ffffff;
-        }
-
-        .btn--secondary {
-            background: #EFF6FF;
-            color: #1D4ED8;
-        }
-
-        .btn--ghost {
-            background: transparent;
-            color: #102040;
-            border: 1px solid rgba(148, 163, 184, 0.6);
-        }
-
-        .btn--small {
-            padding: 4px 10px;
-            font-size: 12px;
-        }
-
-        /* FOLLOW-UP КНОПКИ ПОД ОТВЕТОМ ТАТЬЯНЫ */
-        .chat__followups {
-            margin-top: 4px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-        }
-
-        .chat__followups button {
-            border-radius: 999px;
-            border: 1px solid rgba(148, 163, 184, 0.6);
-            background: #F9FAFB;
-            font-size: 11px;
-            padding: 3px 8px;
-            cursor: pointer;
-        }
-
-        .chat__followups button:hover {
-            background: #EFF6FF;
-        }
-
-        /* ИНДИКАТОР "ТАТЬЯНА ПЕЧАТАЕТ" */
-        .chat__typing {
-            font-size: 12px;
-            color: #6B7280;
-            font-style: italic;
-            margin-bottom: 6px;
-        }
-
-        /* ПАНЕЛЬ ТЕКУЩЕГО КЕЙСА */
-        .case-panel {
-            border-radius: 10px;
-            background: #EFF6FF;
-            border: 1px solid rgba(148, 163, 184, 0.6);
-            padding: 6px 8px;
-            margin-bottom: 8px;
-            font-size: 12px;
-        }
-
-        .case-panel__title {
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-
-        .case-panel__body {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 6px;
+        .msg-meta {
+            display: block;
+            font-size: 10px;
+            color: var(--text-muted);
             margin-top: 2px;
         }
 
-        .case-panel__summary {
-            font-size: 12px;
+        .chat-input-row {
+            border-top: 1px solid var(--border-soft);
+            padding-top: 8px;
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            margin-top: 6px;
         }
 
-        .case-panel__hint {
-            margin-top: 4px;
+        .chat-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        /* менее овальная форма поля ввода */
+        .chat-input {
+            width: 100%;
+            min-height: 44px;
+            max-height: 96px;
+            resize: none;
+            border-radius: 12px; /* только лёгкое скругление */
+            border: 1px solid var(--border-soft);
+            padding: 8px 36px 8px 10px;
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+            transition: border 0.15s, box-shadow 0.15s, background 0.15s;
+            background: #f9fafb;
+        }
+
+        .chat-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
+            background: #ffffff;
+        }
+
+        .chat-send {
+            border-radius: 999px;
+            border: none;
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            background: var(--accent);
+            color: #f9fafb;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 3px 10px rgba(37, 99, 235, 0.5);
+            transition: background 0.15s, transform 0.08s, box-shadow 0.15s;
+            white-space: nowrap;
+        }
+
+        .chat-send:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .chat-send:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
+        }
+
+        .chat-shortcuts {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .chip {
             font-size: 11px;
-            color: #6B7280;
+            padding: 4px 8px;
+            border-radius: 999px;
+            border: 1px solid var(--border-soft);
+            background: rgba(248, 250, 252, 0.9);
+            cursor: pointer;
+            white-space: nowrap;
         }
 
-        /* ПРАВАЯ КОЛОНКА */
-        .stack {
+        .chip:hover {
+            border-color: var(--accent);
+            background: #eff6ff;
+        }
+
+        /* ───────────────── SIDEBAR ───────────────── */
+
+        .sidebar {
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
 
-        .list {
-            list-style: none;
-            padding: 0;
-            margin: 6px 0 0;
-            font-size: 13px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-
-        .list__item {
-            padding: 6px 0;
-            border-bottom: 1px dashed rgba(148, 163, 184, 0.5);
-        }
-
-        .list__item:last-child {
-            border-bottom: none;
-        }
-
-        .list__title {
-            font-weight: 500;
-        }
-
-        .list__meta {
-            font-size: 11px;
-            color: #6B7280;
-        }
-
-        .list__empty {
-            font-size: 12px;
-            color: #9CA3AF;
-        }
-
-        .quick-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 6px;
-        }
-
-        .quick-actions__btn {
-            border-radius: 999px;
-            border: 1px solid rgba(148, 163, 184, 0.6);
-            background: #F9FAFB;
-            font-size: 12px;
-            padding: 5px 10px;
-            cursor: pointer;
-        }
-
-        .quick-actions__btn:hover {
-            background: #EFF6FF;
-        }
-
-        /* ПАНЕЛЬ АНАЛИЗА ФАЙЛОВ */
-        .file-panel {
-            margin-top: 10px;
+        .sidebar-block {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-soft);
             padding: 10px 12px;
-            border-radius: 12px;
-            background: #F9FAFB;
-            border: 1px dashed rgba(148, 163, 184, 0.8);
-            font-size: 12px;
-        }
-
-        .file-panel__files {
-            margin: 4px 0 6px;
-        }
-
-        .file-panel__file {
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .sidebar-block-header {
+            display: flex;
             justify-content: space-between;
-            gap: 10px;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sidebar-block-header h3 {
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .sidebar-block-header span {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .action-list,
+        .history-list {
+            margin: 0;
+            padding-left: 18px;
+            font-size: 12px;
+            color: var(--text-main);
+        }
+
+        .action-list li,
+        .history-list li {
             margin-bottom: 4px;
         }
 
-        .file-panel__file-name {
-            font-weight: 500;
-        }
-
-        .file-panel__links a {
+        .link-more {
             font-size: 11px;
-            margin-left: 6px;
+            color: var(--accent);
             text-decoration: none;
-            color: #2563EB;
+            margin-top: 2px;
+            align-self: flex-start;
         }
 
-        .file-panel__links a:hover {
+        .link-more:hover {
             text-decoration: underline;
         }
 
-        .file-panel__goal {
-            margin-top: 6px;
+        .sidebar-mini-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
         }
 
-        .file-panel__goal textarea {
-            width: 100%;
-            min-height: 40px;
+        .mini-card {
+            padding: 9px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-soft);
+            background: #f9fafb;
             font-size: 12px;
-            border-radius: 8px;
-            border: 1px solid rgba(148, 163, 184, 0.7);
-            padding: 6px 8px;
-            resize: vertical;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
         }
 
-        .file-panel__actions {
-            margin-top: 8px;
+        .mini-card-title {
+            font-weight: 600;
+        }
+
+        .mini-card-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .mini-card:hover {
+            border-color: var(--accent);
+            background: #eff6ff;
+        }
+
+        .block-toolbar {
+            display: none;
+            justify-content: flex-end;
+            gap: 4px;
+        }
+
+        .block-toolbar button {
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            padding: 2px 6px;
+            cursor: pointer;
+            background: #e5e7eb;
+        }
+
+        .block-toolbar button:hover {
+            background: #cbd5f5;
+        }
+
+        /* ───────────────── FOOTER ───────────────── */
+
+        footer {
+            text-align: center;
+            padding: 8px 10px 12px;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        /* ───────────────── EDIT MODE ───────────────── */
+
+        body.edit-mode .sidebar-block,
+        body.edit-mode .card,
+        body.edit-mode .mini-card {
+            outline: 1px dashed rgba(37, 99, 235, 0.6);
+            outline-offset: 2px;
+        }
+
+        body.edit-mode [data-editable="true"] {
+            cursor: text;
+        }
+
+        body.edit-mode .block-toolbar {
             display: flex;
-            justify-content: space-between;
+        }
+
+        body.edit-mode .edit-hint {
+            color: #16a34a;
+        }
+
+        .save-layout-btn {
+            display: none;
+            margin-left: auto;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(22, 163, 74, 0.7);
+            background: rgba(22, 163, 74, 0.08);
+            color: #16a34a;
+            cursor: pointer;
+        }
+
+        body.edit-mode .save-layout-btn {
+            display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
         }
 
-        .file-panel__hint {
-            font-size: 11px;
-            color: #6B7280;
-        }
+        /* ───────────────── RESPONSIVE ───────────────── */
 
-        .file-panel__error {
-            margin-top: 4px;
-            font-size: 11px;
-            color: #B91C1C;
-        }
-
-        /* ФИЛЬТРЫ "ЗАКОНЫ" */
-        .filters {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 6px;
-        }
-
-        .filters select {
-            font-size: 12px;
-            padding: 4px 6px;
-            border-radius: 8px;
-            border: 1px solid rgba(148, 163, 184, 0.7);
-            background: #F9FAFB;
-        }
-
-        /* АДАПТИВ */
-        @media (max-width: 1024px) {
-            .dashboard-root {
-                flex-direction: column;
-            }
-            .sidebar {
-                width: 100%;
-                flex-direction: row;
-                align-items: center;
-                gap: 12px;
-                overflow-x: auto;
-            }
-            .sidebar__footer {
-                display: none;
-            }
-            .dashboard-main {
-                padding: 12px;
-            }
-            .dashboard-grid {
+        @media (max-width: 900px) {
+            .dashboard-layout {
                 grid-template-columns: 1fr;
             }
-            .chat {
-                height: 320px;
+            .page {
+                padding: 10px 8px 14px;
             }
-            .case-panel__body {
-                flex-direction: column;
-                align-items: flex-start;
+            .top-nav {
+                display: none; /* меню можно будет вывести бургером позже */
+            }
+            .chat-window {
+                max-height: none;
+                min-height: 220px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .top-bar {
+                padding: 8px 10px;
+            }
+            .user-chip {
+                display: none;
             }
         }
     </style>
 </head>
 <body>
-<div class="dashboard-root">
-    <!-- ЛЕВОЕ МЕНЮ -->
-    <aside class="sidebar">
-        <div class="sidebar__logo">
-            <div class="sidebar__logo-badge">L</div>
-            LegalAI
+    <!-- Верхняя панель с логотипом и горизонтальным меню -->
+    <header class="top-bar">
+        <div class="top-left">
+            <!-- ЗАМЕНИ src на путь к твоему реальному логотипу -->
+            <div class="logo">
+                <!-- пример: <img src="/static/img/legalai-logo.svg" alt="LegalAI"> -->
+                <span style="font-size: 16px; font-weight: 700; color: #0f172a; background: #e5e7eb; padding: 2px 4px; border-radius: 6px;">L</span>
+            </div>
+            <div class="project-title">
+                <span>LegalAI</span>
+                <span>Юридический ИИ-помощник</span>
+            </div>
+
+            <nav class="top-nav">
+                <ul>
+                    <li><a href="/dashboard" class="is-active">Главная</a></li>
+                    <li><a href="/consultation">Консультация</a></li>
+                    <li><a href="/documents">Документы</a></li>
+                    <li><a href="/history">История</a></li>
+                    <li><a href="/updates">Обновления законов</a></li>
+                    <li><a href="/profile">Профиль</a></li>
+                </ul>
+            </nav>
         </div>
 
-        <ul class="sidebar__nav">
-            <li class="sidebar__nav-item">
-                <a class="sidebar__nav-link sidebar__nav-link--active" href="/dashboard">
-                    <span class="icon">🏠</span><span>Главная</span>
-                </a>
-            </li>
-            <li class="sidebar__nav-item">
-                <a class="sidebar__nav-link" href="#consult">
-                    <span class="icon">💬</span><span>Консультации</span>
-                </a>
-            </li>
-            <li class="sidebar__nav-item">
-                <a class="sidebar__nav-link" href="#docs">
-                    <span class="icon">📄</span><span>Документы</span>
-                </a>
-            </li>
-            <li class="sidebar__nav-item">
-                <a class="sidebar__nav-link" href="#laws">
-                    <span class="icon">⚖️</span><span>Законы</span>
-                </a>
-            </li>
-            <li class="sidebar__nav-item">
-                <a class="sidebar__nav-link" href="#files">
-                    <span class="icon">📁</span><span>Файлы</span>
-                </a>
-            </li>
-            <li class="sidebar__nav-item">
-                <a class="sidebar__nav-link" href="#profile">
-                    <span class="icon">👤</span><span>Профиль</span>
-                </a>
-            </li>
-        </ul>
-
-        <div class="sidebar__footer">
-            <div>© <span id="footer-year"></span> LegalAI</div>
-            <div><a href="/legal">Правовая информация</a></div>
+        <div class="top-right">
+            <label class="edit-toggle">
+                <input type="checkbox" id="editModeToggle" />
+                <span class="toggle-pill">
+                    <span class="toggle-dot"></span>
+                </span>
+                <span>Режим конструктора</span>
+            </label>
+            <div class="user-chip">
+                <span class="user-circle"></span>
+                <span>Онлайн</span>
+            </div>
         </div>
-    </aside>
+    </header>
 
-    <!-- ПРАВАЯ ЧАСТЬ -->
-    <main class="dashboard-main">
-        <!-- ТОП-ПАНЕЛЬ -->
-        <header class="topbar">
-            <div class="topbar__left">
-                <div class="topbar__title">Панель LegalAI</div>
-                <div class="topbar__subtitle" id="topbar-date">
-                    Загрузка даты...
+    <main class="page">
+        <div class="dashboard-shell">
+            <div class="dashboard-header-row">
+                <div>
+                    <h1 data-editable="true">Рабочая панель юридического помощника</h1>
+                    <p data-editable="true">
+                        Здесь вы можете задавать вопросы, быстро запускать частые действия и видеть историю консультаций.
+                    </p>
                 </div>
-                <div class="topbar__subtitle">
-                    Ваш ИИ-юрист: <strong>ЮИИ Татьяна</strong> (Юрист Искусственного Интеллекта)
+                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+                    <span class="edit-hint">В режиме конструктора можно менять тексты и порядок блоков.</span>
+                    <button type="button" class="save-layout-btn" id="saveLayoutBtn">💾 Сохранить изменения</button>
                 </div>
             </div>
 
-            <div class="topbar__right">
-                <a href="/dashboard_help.html" target="_blank" class="btn btn--ghost btn--small">
-                    ℹ Инструкция
-                </a>
-                <div class="user-chip" id="profile-mini">
-                    <div class="user-chip__avatar" id="user-avatar">U</div>
-                    <div class="user-chip__info">
-                        <div class="user-chip__name" id="user-name">Пользователь</div>
-                        <div class="user-chip__meta" id="user-meta">
-                            Язык: RU · Страна: РФ
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- ОСНОВНАЯ СЕТКА -->
-        <section class="dashboard-grid">
-            <!-- ЛЕВАЯ КОЛОНКА -->
-            <section>
-                <!-- AI-КОНСУЛЬТАНТ + ФАЙЛЫ -->
-                <section class="card" id="consult">
-                    <div class="card__header">
+            <section class="dashboard-layout">
+                <!-- ЧАТ: слева, ~60% ширины на ПК; на мобиле — на всю ширину -->
+                <section class="card chat-card" id="chatBlock" data-block-id="chat">
+                    <div class="card-header">
                         <div>
-                            <div class="card__title">ЮИИ Татьяна — ИИ-юрист</div>
-                            <div class="card__subtitle">
-                                Опишите ситуацию или прикрепите документ. Татьяна уточнит детали, найдёт нормы закона и предложит варианты действий.
-                            </div>
+                            <h2 data-editable="true">Юридический чат-консультант</h2>
+                            <span data-editable="true">Задайте вопрос о законе, договоре или документе — LegalAI подберёт ответ и ссылки.</span>
                         </div>
-                        <span class="badge">AI · RAG · База законов</span>
+                        <span class="card-badge">AI • онлайн</span>
                     </div>
 
-                    <!-- ТЕКУЩИЙ КЕЙС -->
-                    <div class="case-panel" id="case-panel">
-                        <div class="case-panel__title">Текущий кейс</div>
-                        <div class="case-panel__body">
-                            <div class="case-panel__summary" id="case-summary">
-                                Кейс: не указан (общий вопрос)
+                    <div class="chat-window">
+                        <div class="chat-messages" id="chatMessages">
+                            <!-- Пример начальных сообщений (можно очистить JS-ом) -->
+                            <div class="msg msg-ai">
+                                Добро пожаловать! Опишите вашу ситуацию или задайте вопрос — я помогу с анализом и черновиком документа.
+                                <span class="msg-meta">LegalAI • сейчас</span>
                             </div>
-                            <button type="button" class="btn btn--ghost btn--small" id="new-session-btn">
-                                🔄 Новая консультация
+                        </div>
+
+                        <form class="chat-input-row" id="chatForm">
+                            <div class="chat-input-wrapper">
+                                <textarea
+                                    id="chatInput"
+                                    class="chat-input"
+                                    placeholder="Опишите вашу ситуацию или введите вопрос…"
+                                ></textarea>
+                            </div>
+                            <button type="submit" class="chat-send">
+                                Отправить
+                            </button>
+                        </form>
+
+                        <div class="chat-shortcuts">
+                            <button type="button" class="chip" data-prompt="Составь черновик договора аренды квартиры.">
+                                Договор аренды
+                            </button>
+                            <button type="button" class="chip" data-prompt="Проанализируй, есть ли риски в этом трудовом договоре.">
+                                Проверка трудового договора
+                            </button>
+                            <button type="button" class="chip" data-prompt="Подскажи, какие права у нанимателя по ТК РФ.">
+                                Права по ТК РФ
                             </button>
                         </div>
-                        <div class="case-panel__hint">
-                            Страну и направление вы можете указать в блоке «Обновления базы законов» справа.
-                        </div>
                     </div>
+                </section>
 
-                    <div class="chat">
-                        <div class="chat__messages" id="chat-messages">
-                            <div class="chat__placeholder">
-                                Загрузка чата...
+                <!-- ПРАВАЯ КОЛОНКА: быстрые действия + история + профиль/обновления как отдельные страницы -->
+                <aside class="sidebar" id="sidebarBlocks">
+                    <!-- Блок: Быстрые юридические действия -->
+                    <section class="sidebar-block" data-block-id="quick-actions">
+                        <div class="sidebar-block-header">
+                            <div>
+                                <h3 data-editable="true">Быстрые юридические действия</h3>
+                                <span data-editable="true">Частые сценарии в один клик</span>
+                            </div>
+                            <div class="block-toolbar">
+                                <button type="button" data-move="up">↑</button>
+                                <button type="button" data-move="down">↓</button>
                             </div>
                         </div>
+                        <ul class="action-list">
+                            <li data-editable="true">Подготовка претензии контрагенту</li>
+                            <li data-editable="true">Проверка договора перед подписанием</li>
+                            <li data-editable="true">Составление заявления в госорган</li>
+                        </ul>
+                    </section>
 
-                        <div class="chat__composer">
-                            <textarea
-                                id="chat-input"
-                                class="chat__textarea"
-                                rows="1"
-                                placeholder="Кратко опишите вашу ситуацию или задайте вопрос..."
-                            ></textarea>
-                            <div class="chat__buttons">
-                                <button class="btn" type="button" id="chat-send">
-                                    ➤ Отправить
-                                </button>
-                                <button class="btn btn--secondary" type="button" id="chat-voice">
-                                    🎙 Голос
-                                </button>
-                                <button class="btn btn--ghost" type="button" id="chat-attach">
-                                    📎 Файл
-                                </button>
+                    <!-- Блок: История консультаций -->
+                    <section class="sidebar-block" data-block-id="history">
+                        <div class="sidebar-block-header">
+                            <div>
+                                <h3 data-editable="true">История консультаций</h3>
+                                <span data-editable="true">Последние запросы и ответы</span>
+                            </div>
+                            <div class="block-toolbar">
+                                <button type="button" data-move="up">↑</button>
+                                <button type="button" data-move="down">↓</button>
                             </div>
                         </div>
+                        <ul class="history-list">
+                            <li data-editable="true">Спор по договору подряда • черновик иска сохранён</li>
+                            <li data-editable="true">Вопрос по увольнению по инициативе работодателя</li>
+                            <li data-editable="true">Проверка договора аренды коммерческого помещения</li>
+                        </ul>
+                        <a href="/history" class="link-more">Открыть всю историю</a>
+                    </section>
 
-                        <!-- ПАНЕЛЬ ВЫБОРА ФАЙЛОВ И ЦЕЛИ АНАЛИЗА -->
-                        <div class="file-panel" id="file-panel" hidden>
-                            <div><strong>Выбранные файлы для анализа (до 4, максимум по 30 МБ):</strong></div>
-                            <div class="file-panel__files" id="file-panel-files"></div>
-                            <div class="file-panel__goal">
-                                <label for="file-goal">
-                                    Что вы хотите получить от анализа этих документов? <span style="color:#B91C1C">*</span>
-                                </label>
-                                <textarea id="file-goal" placeholder="Например: проверить договор на риски, указать статьи закона и предложить, как исправить..."></textarea>
-                            </div>
-                            <div class="file-panel__actions">
-                                <div class="file-panel__hint">
-                                    Ответ ЮИИ Татьяны: проблемы → причины → что сделать, с обязательными ссылками на законы.
+                    <!-- Блоки: Профиль и настройки; Обновления базы законов — как отдельные страницы -->
+                    <section class="sidebar-block" data-block-id="profile-updates">
+                        <div class="sidebar-mini-grid">
+                            <a href="/profile" class="mini-card">
+                                <div class="mini-card-title" data-editable="true">Профиль и настройки</div>
+                                <div class="mini-card-desc" data-editable="true">
+                                    Управление аккаунтом, доступами и параметрами ИИ-консультанта.
                                 </div>
-                                <button class="btn btn--secondary" type="button" id="file-analyze-btn" disabled>
-                                    🔍 Отправить на анализ
-                                </button>
-                            </div>
-                            <div class="file-panel__error" id="file-panel-error"></div>
+                            </a>
+                            <a href="/updates" class="mini-card">
+                                <div class="mini-card-title" data-editable="true">Обновления базы законов</div>
+                                <div class="mini-card-desc" data-editable="true">
+                                    Лента свежих законов, указов и судебной практики за сегодня.
+                                </div>
+                            </a>
                         </div>
-                    </div>
-                </section>
-
-                <!-- ИСТОРИЯ КОНСУЛЬТАЦИЙ (каркас) -->
-                <section class="card" id="history">
-                    <div class="card__header">
-                        <div>
-                            <div class="card__title">История консультаций</div>
-                            <div class="card__subtitle">
-                                Позже здесь появятся последние кейсы, которые вела ЮИИ Татьяна, чтобы можно было к ним вернуться.
-                            </div>
+                        <div class="block-toolbar">
+                            <button type="button" data-move="up">↑</button>
+                            <button type="button" data-move="down">↓</button>
                         </div>
-                    </div>
-                    <ul class="list" id="history-list">
-                        <li class="list__empty">История ещё не загружена.</li>
-                    </ul>
-                </section>
+                    </section>
+                </aside>
             </section>
-
-            <!-- ПРАВАЯ КОЛОНКА -->
-            <section class="stack">
-                <!-- БЫСТРЫЕ ЮРИДИЧЕСКИЕ ДЕЙСТВИЯ -->
-                <section class="card" id="quick-actions-card">
-                    <div class="card__header">
-                        <div>
-                            <div class="card__title">Быстрые юридические действия</div>
-                            <div class="card__subtitle">
-                                Выберите задачу — ЮИИ Татьяна подготовит анализ и предложит нужные документы.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="quick-actions">
-                        <button class="quick-actions__btn" type="button" data-action="contract">📑 Подготовить договор</button>
-                        <button class="quick-actions__btn" type="button" data-action="complaint">✉️ Составить жалобу</button>
-                        <button class="quick-actions__btn" type="button" data-action="claim">⚖️ Сформировать иск</button>
-                        <button class="quick-actions__btn" type="button" data-action="check-doc">🔍 Проверить документ</button>
-                        <button class="quick-actions__btn" type="button" data-action="analyze-files">📄 PDF/Word на анализ</button>
-                    </div>
-                </section>
-
-                <!-- МОИ ДОКУМЕНТЫ -->
-                <section class="card" id="docs">
-                    <div class="card__header">
-                        <div>
-                            <div class="card__title">Мои документы</div>
-                            <div class="card__subtitle">
-                                Последние созданные и сгенерированные документы LegalDocAI.
-                            </div>
-                        </div>
-                    </div>
-                    <ul class="list" id="docs-list">
-                        <li class="list__empty">Документы ещё не загружены.</li>
-                    </ul>
-                </section>
-
-                <!-- ОБНОВЛЕНИЯ ЗАКОНОВ -->
-                <section class="card" id="laws">
-                    <div class="card__header">
-                        <div>
-                            <div class="card__title" id="laws-title">
-                                Обновления базы законов на [дата]
-                            </div>
-                            <div class="card__subtitle">
-                                Акты, вступившие в силу. Фильтры по стране, направлению и периоду.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="filters">
-                        <select id="filter-country">
-                            <option value="">Страна: все</option>
-                            <option value="RU">РФ</option>
-                            <option value="BY">Беларусь</option>
-                            <option value="UA">Украина</option>
-                            <option value="EU">ЕС</option>
-                        </select>
-                        <select id="filter-category">
-                            <option value="">Направление: все</option>
-                            <option value="civil">Гражданское</option>
-                            <option value="criminal">Уголовное</option>
-                            <option value="housing">Жилищное</option>
-                            <option value="family">Семейное</option>
-                            <option value="migration">Миграционное</option>
-                        </select>
-                        <select id="filter-period">
-                            <option value="today">Сегодня</option>
-                            <option value="7d">7 дней</option>
-                            <option value="30d">30 дней</option>
-                        </select>
-                    </div>
-
-                    <ul class="list" id="laws-list">
-                        <li class="list__empty">Данные по обновлениям законов ещё не загружены.</li>
-                    </ul>
-                </section>
-
-                <!-- СТАТУС СИСТЕМЫ -->
-                <section class="card" id="status">
-                    <div class="card__header">
-                        <div>
-                            <div class="card__title">Статус системы</div>
-                            <div class="card__subtitle">
-                                Текущее состояние AI и базы законов (индикатор, не диагностика).
-                            </div>
-                        </div>
-                    </div>
-                    <ul class="list">
-                        <li class="list__item">
-                            <div class="list__title">AI (ЮИИ Татьяна)</div>
-                            <div class="list__meta" id="status-ai">Статус: OK</div>
-                        </li>
-                        <li class="list__item">
-                            <div class="list__title">Обновления базы законов</div>
-                            <div class="list__meta" id="status-laws">Статус: OK</div>
-                        </li>
-                    </ul>
-                </section>
-
-                <!-- ПРОФИЛЬ/НАСТРОЙКИ -->
-                <section class="card" id="profile">
-                    <div class="card__header">
-                        <div>
-                            <div class="card__title">Профиль и настройки</div>
-                            <div class="card__subtitle">
-                                В дальнейшем здесь будут настройки языка, страны и безопасности (2FA).
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card__section">
-                        <div class="card__section-title">Язык интерфейса</div>
-                        <div class="list__meta">RU (английский будет добавлен позже)</div>
-
-                        <div class="card__section-title" style="margin-top: 8px;">Страна законодательства</div>
-                        <div class="list__meta">РФ / Беларусь / Украина / ЕС (выбор позже)</div>
-                    </div>
-                </section>
-            </section>
-        </section>
+        </div>
     </main>
-</div>
 
-<!-- Скрытый input для файлов -->
-<input
-    type="file"
-    id="file-input"
-    multiple
-    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp3,.wav,.m4a"
-    style="display:none"
-/>
+    <footer>
+        LegalAI не является адвокатом или юрфирмой. Перед принятием решений проверяйте документы у специалиста.
+    </footer>
 
-<script>
-    // ===== ВСПОМОГАТЕЛЬНОЕ: ДАТА И ЗАГОЛОВКИ =====
-    (function initDate() {
-        const now = new Date();
-        const months = [
-            "января", "февраля", "марта", "апреля", "мая", "июня",
-            "июля", "августа", "сентября", "октября", "ноября", "декабря"
-        ];
-        const d = now.getDate();
-        const m = months[now.getMonth()];
-        const y = now.getFullYear();
+    <!-- ТВОЙ существующий JS, который общается с backend (оставляем, если был) -->
+    <!-- <script src="js/app.js"></script> -->
 
-        const topbarDate = document.getElementById("topbar-date");
-        if (topbarDate) {
-            topbarDate.textContent = "Сегодня: " + d + " " + m + " " + y;
+    <script>
+        // ───────────────── Режим конструктора (редактирование текстов и порядка блоков) ─────────────────
+
+        const editToggle = document.getElementById("editModeToggle");
+        const saveBtn = document.getElementById("saveLayoutBtn");
+        const sidebar = document.getElementById("sidebarBlocks");
+        const EDIT_STORAGE_KEY = "legalai_dashboard_layout_v1";
+
+        function applyEditableState(isOn) {
+            // Включение / выключение contenteditable для помеченных элементов
+            const editableNodes = document.querySelectorAll("[data-editable='true']");
+            editableNodes.forEach((el) => {
+                el.contentEditable = isOn ? "true" : "false";
+            });
+
+            if (isOn) {
+                document.body.classList.add("edit-mode");
+            } else {
+                document.body.classList.remove("edit-mode");
+            }
         }
 
-        const footerYear = document.getElementById("footer-year");
-        if (footerYear) {
-            footerYear.textContent = String(y);
+        function moveBlock(section, direction) {
+            const current = section;
+            if (!current || !current.parentElement) return;
+            const parent = current.parentElement;
+            if (direction === "up" && current.previousElementSibling) {
+                parent.insertBefore(current, current.previousElementSibling);
+            } else if (direction === "down" && current.nextElementSibling) {
+                parent.insertBefore(current.nextElementSibling, current);
+            }
         }
 
-        const lawsTitle = document.getElementById("laws-title");
-        if (lawsTitle) {
-            lawsTitle.textContent = "Обновления базы законов на " + d + " " + m + " " + y;
-        }
-    })();
-
-    // ===== СОСТОЯНИЕ ДЛЯ ФАЙЛОВ =====
-    let selectedFiles = [];
-    const fileObjectUrls = new Map(); // file.name -> objectURL
-
-    const fileInputEl = document.getElementById("file-input");
-    const filePanelEl = document.getElementById("file-panel");
-    const filePanelFilesEl = document.getElementById("file-panel-files");
-    const fileGoalEl = document.getElementById("file-goal");
-    const fileAnalyzeBtn = document.getElementById("file-analyze-btn");
-    const filePanelErrorEl = document.getElementById("file-panel-error");
-
-    const chatMessagesEl = document.getElementById("chat-messages");
-    const chatInputEl = document.getElementById("chat-input");
-    const chatSendBtn = document.getElementById("chat-send");
-    const chatAttachBtn = document.getElementById("chat-attach");
-
-    const newSessionBtn = document.getElementById("new-session-btn");
-
-    let typingEl = null;
-
-    function removePlaceholder() {
-        if (!chatMessagesEl) return;
-        const placeholder = chatMessagesEl.querySelector(".chat__placeholder");
-        if (placeholder) placeholder.remove();
-    }
-
-    function showTypingIndicator() {
-        if (!chatMessagesEl) return;
-        if (typingEl) return;
-        typingEl = document.createElement("div");
-        typingEl.className = "chat__typing";
-        typingEl.textContent = "ЮИИ Татьяна печатает...";
-        chatMessagesEl.appendChild(typingEl);
-        chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-    }
-
-    function hideTypingIndicator() {
-        if (!chatMessagesEl || !typingEl) return;
-        if (typingEl.parentNode === chatMessagesEl) {
-            chatMessagesEl.removeChild(typingEl);
-        }
-        typingEl = null;
-    }
-
-    function addUserMessage(text) {
-        if (!chatMessagesEl) return;
-        removePlaceholder();
-        const msg = document.createElement("div");
-        msg.className = "chat__message chat__message--user";
-        msg.innerHTML = `
-            <div>${text}</div>
-            <div class="chat__meta">Вы</div>
-        `;
-        chatMessagesEl.appendChild(msg);
-        chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-    }
-
-    function addAiMessage(html, metaHtml, withFollowups = false) {
-        if (!chatMessagesEl) return;
-        removePlaceholder();
-        const msg = document.createElement("div");
-        msg.className = "chat__message chat__message--ai";
-
-        let meta = metaHtml || '<div class="chat__meta">ЮИИ Татьяна · ИИ-юрист</div>';
-
-        let followups = "";
-        if (withFollowups) {
-            followups = `
-                <div class="chat__followups">
-                    <button type="button" data-followup="document">Составить документ</button>
-                    <button type="button" data-followup="simplify">Объяснить проще</button>
-                    <button type="button" data-followup="risks">Оценить риски</button>
-                </div>
-            `;
-        }
-
-        msg.innerHTML = `
-            <div>${html}</div>
-            ${meta}
-            ${followups}
-        `;
-        chatMessagesEl.appendChild(msg);
-        chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-
-        if (withFollowups) {
-            const followupButtons = msg.querySelectorAll(".chat__followups button");
-            followupButtons.forEach(btn => {
-                btn.addEventListener("click", () => {
-                    if (!chatInputEl) return;
-                    const f = btn.getAttribute("data-followup");
-                    if (f === "document") {
-                        chatInputEl.value = "Составь, пожалуйста, проект документа по описанной выше ситуации.";
-                    } else if (f === "simplify") {
-                        chatInputEl.value = "Объясни, пожалуйста, проще и короче, чтобы было понятно неюристу.";
-                    } else if (f === "risks") {
-                        chatInputEl.value = "Оцени, пожалуйста, основные риски в моей ситуации и вероятность их реализации.";
-                    }
-                    chatInputEl.focus();
+        function setupMoveButtons() {
+            sidebar.querySelectorAll(".sidebar-block").forEach((block) => {
+                block.querySelectorAll(".block-toolbar button").forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        const dir = btn.getAttribute("data-move");
+                        moveBlock(block, dir);
+                    });
                 });
             });
         }
-    }
 
-    function greetTatyana() {
-        const greeting = `
-            Здравствуйте! Я <strong>ЮИИ Татьяна</strong>, ваш юрист искусственного интеллекта.
-            Могу помочь разобраться в юридической ситуации, проверить договор, подготовить жалобу или иск,
-            а также проанализировать ваши документы (PDF, Word, фото, аудио).
-            <br><br>
-            Кратко опишите, пожалуйста, вашу ситуацию: что случилось, с кем и когда — и с какой целью вы обращаетесь.
-        `;
-        addAiMessage(greeting, '<div class="chat__meta">ЮИИ Татьяна · ИИ-юрист</div>', true);
-    }
-
-    // Первое приветствие при загрузке
-    greetTatyana();
-
-    // ===== ПАНЕЛЬ КЕЙСА =====
-    function humanCountryShort(code) {
-        if (code === "RU") return "РФ";
-        if (code === "BY") return "Беларусь";
-        if (code === "UA") return "Украина";
-        if (code === "EU") return "ЕС";
-        return "";
-    }
-
-    function humanCategory(code) {
-        if (code === "civil") return "гражданское право";
-        if (code === "criminal") return "уголовное право";
-        if (code === "housing") return "жилищное право";
-        if (code === "family") return "семейное право";
-        if (code === "migration") return "миграционное право";
-        return "";
-    }
-
-    function updateCaseSummary() {
-        const summaryEl = document.getElementById("case-summary");
-        if (!summaryEl) return;
-
-        const country = document.getElementById("filter-country")?.value || "";
-        const category = document.getElementById("filter-category")?.value || "";
-
-        if (!country && !category) {
-            summaryEl.textContent = "Кейс: не указан (общий вопрос)";
-            return;
-        }
-
-        const parts = [];
-        if (country) parts.push(humanCountryShort(country));
-        else parts.push("страна не указана");
-
-        if (category) parts.push(humanCategory(category));
-        else parts.push("направление не указано");
-
-        summaryEl.textContent = "Кейс: " + parts.join(" · ");
-    }
-
-    if (newSessionBtn) {
-        newSessionBtn.addEventListener("click", () => {
-            // Чистим чат
-            if (chatMessagesEl) {
-                chatMessagesEl.innerHTML = "";
-            }
-            if (chatInputEl) {
-                chatInputEl.value = "";
-                chatInputEl.focus();
-            }
-            hideTypingIndicator();
-
-            // Сбрасываем панель файлов
-            selectedFiles = [];
-            fileObjectUrls.forEach(url => URL.revokeObjectURL(url));
-            fileObjectUrls.clear();
-            if (filePanelFilesEl) filePanelFilesEl.innerHTML = "";
-            if (filePanelErrorEl) filePanelErrorEl.textContent = "";
-            if (fileGoalEl) fileGoalEl.value = "";
-            if (fileAnalyzeBtn) {
-                fileAnalyzeBtn.disabled = true;
-                fileAnalyzeBtn.textContent = "🔍 Отправить на анализ";
-            }
-            if (filePanelEl) filePanelEl.hidden = true;
-
-            // Новое приветствие
-            greetTatyana();
-        });
-    }
-
-    // ===== РАБОТА С ФАЙЛАМИ =====
-    if (fileInputEl) {
-        fileInputEl.addEventListener("change", function () {
-            selectedFiles = [];
-            fileObjectUrls.forEach(url => URL.revokeObjectURL(url));
-            fileObjectUrls.clear();
-            filePanelErrorEl.textContent = "";
-
-            const files = Array.from(fileInputEl.files || []);
-            if (!files.length) {
-                renderFilePanel();
-                return;
-            }
-
-            if (files.length > 4) {
-                filePanelErrorEl.textContent = "Можно загрузить не более 4 файлов за один анализ.";
-                fileInputEl.value = "";
-                renderFilePanel();
-                return;
-            }
-
-            const MAX_SIZE = 30 * 1024 * 1024; // 30 МБ
-            for (const f of files) {
-                if (f.size > MAX_SIZE) {
-                    filePanelErrorEl.textContent = "Файл \"" + f.name + "\" слишком большой (максимум 30 МБ).";
-                    fileInputEl.value = "";
-                    renderFilePanel();
-                    return;
-                }
-            }
-
-            selectedFiles = files;
-            renderFilePanel();
-        });
-    }
-
-    function renderFilePanel() {
-        filePanelErrorEl.textContent = "";
-        filePanelFilesEl.innerHTML = "";
-
-        if (!selectedFiles.length) {
-            filePanelEl.hidden = true;
-            return;
-        }
-
-        filePanelEl.hidden = false;
-
-        selectedFiles.forEach(file => {
-            let url = fileObjectUrls.get(file.name);
-            if (!url) {
-                url = URL.createObjectURL(file);
-                fileObjectUrls.set(file.name, url);
-            }
-
-            const div = document.createElement("div");
-            div.className = "file-panel__file";
-            div.innerHTML = `
-                <div>
-                    <div class="file-panel__file-name">${file.name}</div>
-                    <div class="list__meta">${(file.size / (1024 * 1024)).toFixed(2)} МБ</div>
-                </div>
-                <div class="file-panel__links">
-                    <a href="${url}" target="_blank">Открыть</a>
-                    <a href="${url}" download="${file.name}">Скачать</a>
-                </div>
-            `;
-            filePanelFilesEl.appendChild(div);
-        });
-
-        const goalText = (fileGoalEl.value || "").trim();
-        fileAnalyzeBtn.disabled = !goalText || !selectedFiles.length;
-    }
-
-    if (fileGoalEl) {
-        fileGoalEl.addEventListener("input", function () {
-            const goalText = (fileGoalEl.value || "").trim();
-            fileAnalyzeBtn.disabled = !goalText || !selectedFiles.length;
-        });
-    }
-
-    if (chatAttachBtn && fileInputEl) {
-        chatAttachBtn.addEventListener("click", function () {
-            fileInputEl.click();
-        });
-    }
-
-    document.querySelectorAll("#quick-actions-card .quick-actions__btn").forEach(btn => {
-        btn.addEventListener("click", function () {
-            const action = btn.getAttribute("data-action");
-            if (!chatInputEl) return;
-
-            if (action === "contract") {
-                chatInputEl.value = "Нужно подготовить проект договора. Стороны, предмет, срок, цена и особенности сделки такие: ...";
-            } else if (action === "complaint") {
-                chatInputEl.value = "Помоги составить юридическую жалобу. Орган, на чьи действия/бездействие жалуемся, и суть нарушения: ...";
-            } else if (action === "claim") {
-                chatInputEl.value = "Нужно сформировать исковое заявление. Ответчик, обстоятельства, требования и доказательства: ...";
-            } else if (action === "check-doc") {
-                chatInputEl.value = "Проверь, пожалуйста, мой документ на юридические риски и соответствие закону. Описание: ...";
-            } else if (action === "analyze-files") {
-                if (fileInputEl) fileInputEl.click();
-            }
-            chatInputEl.focus();
-        });
-    });
-
-    if (fileAnalyzeBtn) {
-        fileAnalyzeBtn.addEventListener("click", async function () {
-            filePanelErrorEl.textContent = "";
-
-            const goalText = (fileGoalEl.value || "").trim();
-            if (!goalText) {
-                filePanelErrorEl.textContent = "Пожалуйста, укажите, что вы хотите получить от анализа документов.";
-                return;
-            }
-            if (!selectedFiles.length) {
-                filePanelErrorEl.textContent = "Не выбраны файлы для анализа.";
-                return;
-            }
-
-            fileAnalyzeBtn.disabled = true;
-            fileAnalyzeBtn.textContent = "Анализ...";
-
-            try {
-                const formData = new FormData();
-                selectedFiles.forEach(f => {
-                    formData.append("file", f);
-                });
-                formData.append("goal", goalText);
-                formData.append("notes", goalText);
-                formData.append("mode", "analyze_documents_with_laws");
-
-                if (chatInputEl && chatInputEl.value.trim()) {
-                    formData.append("context", chatInputEl.value.trim());
-                }
-
-                const res = await fetch("/consultations/upload", {
-                    method: "POST",
-                    credentials: "include",
-                    body: formData
-                });
-
-                if (!res.ok) {
-                    throw new Error("Ответ сервера: " + res.status);
-                }
-
-                const data = await res.json();
-                const answer = data.answer || "Анализ выполнен, но текст ответа не был получен.";
-                const citations = Array.isArray(data.citations) ? data.citations : [];
-                const problems = data.problems || null;
-                const reasons = data.reasons || null;
-                const suggestions = data.suggestions || null;
-
-                let text = "";
-                if (problems || reasons || suggestions) {
-                    if (problems) text += "<strong>Проблемы / риски:</strong><br>" + problems + "<br><br>";
-                    if (reasons) text += "<strong>Причины / на что ссылается закон:</strong><br>" + reasons + "<br><br>";
-                    if (suggestions) text += "<strong>Что можно сделать:</strong><br>" + suggestions + "<br><br>";
-                    text += "<strong>Общий вывод ЮИИ Татьяны:</strong><br>" + answer;
-                } else {
-                    text = answer;
-                }
-
-                let citationsHtml = "";
-                if (citations.length) {
-                    const ids = citations
-                        .map(c => c.id || c.reference || "")
-                        .filter(Boolean)
-                        .join(", ");
-                    citationsHtml = `
-                        <div class="chat__meta">
-                            Ссылки на законы, на которых основан ответ: ${ids}
-                        </div>
-                    `;
-                } else {
-                    citationsHtml = `
-                        <div class="chat__meta">
-                            Внимание: ЮИИ Татьяна не смогла указать конкретные нормы закона. Ответ нельзя считать юридически обоснованным.
-                        </div>
-                    `;
-                }
-
-                const fileNames = selectedFiles.map(f => f.name).join(", ");
-                const header = `<strong>Анализ файлов:</strong> ${fileNames}<br><br>`;
-                addAiMessage(header + text, citationsHtml, true);
-
-                fileGoalEl.value = "";
-                fileAnalyzeBtn.disabled = true;
-                fileAnalyzeBtn.textContent = "🔍 Отправить на анализ";
-
-            } catch (e) {
-                console.error(e);
-                filePanelErrorEl.textContent = "Не удалось выполнить анализ документов. Причина: " +
-                    (e && e.message ? e.message : "неизвестная ошибка") +
-                    ". Попробуйте позже или загрузите другой формат/качество файла.";
-                fileAnalyzeBtn.disabled = false;
-                fileAnalyzeBtn.textContent = "🔍 Отправить на анализ";
-            }
-        });
-    }
-
-    // ===== МОИ ДОКУМЕНТЫ =====
-    async function loadRecentDocs() {
-        const list = document.getElementById("docs-list");
-        if (!list) return;
-        list.innerHTML = '<li class="list__empty">Загрузка документов...</li>';
-
-        try {
-            const res = await fetch("/docs/documents?limit=5", { credentials: "include" });
-            if (!res.ok) {
-                list.innerHTML = '<li class="list__empty">Не удалось получить список документов.</li>';
-                return;
-            }
-            const data = await res.json();
-            const items = Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : []);
-
-            if (!items.length) {
-                list.innerHTML = '<li class="list__empty">Документы ещё не создавались.</li>';
-                return;
-            }
-
-            list.innerHTML = "";
-            items.forEach(doc => {
-                const li = document.createElement("li");
-                li.className = "list__item";
-
-                const name = doc.name || doc.title || "Документ";
-                const created = doc.created_at || "";
-                const id = doc.id || doc.document_id || "";
-
-                const viewUrl = id ? `/docs/documents/${id}/view` : null;
-                const downloadUrl = id ? `/docs/documents/${id}/download` : null;
-
-                li.innerHTML = `
-                    <div class="list__title">${name}</div>
-                    <div class="list__meta">${created}</div>
-                `;
-
-                const linksDiv = document.createElement("div");
-                linksDiv.className = "file-panel__links";
-
-                if (viewUrl) {
-                    const aView = document.createElement("a");
-                    aView.href = viewUrl;
-                    aView.target = "_blank";
-                    aView.textContent = "Открыть";
-                    linksDiv.appendChild(aView);
-                }
-
-                if (downloadUrl) {
-                    const aDownload = document.createElement("a");
-                    aDownload.href = downloadUrl;
-                    aDownload.textContent = "Скачать";
-                    linksDiv.appendChild(aDownload);
-                }
-
-                if (linksDiv.children.length) {
-                    li.appendChild(linksDiv);
-                }
-
-                list.appendChild(li);
-            });
-        } catch (e) {
-            console.error(e);
-            list.innerHTML = '<li class="list__empty">Ошибка при загрузке документов.</li>';
-        }
-    }
-
-    // ===== ОБНОВЛЕНИЯ ЗАКОНОВ =====
-    function computeDateRange(period) {
-        const now = new Date();
-        let from = new Date(now);
-        let to = new Date(now);
-
-        if (period === "7d") {
-            from.setDate(now.getDate() - 6);
-        } else if (period === "30d") {
-            from.setDate(now.getDate() - 29);
-        } else {
-            from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            to = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        }
-
-        const toISO = (d) => d.toISOString().slice(0, 10);
-        return { date_from: toISO(from), date_to: toISO(to) };
-    }
-
-    async function loadLaws() {
-        const list = document.getElementById("laws-list");
-        if (!list) return;
-        list.innerHTML = '<li class="list__empty">Загрузка данных...</li>';
-
-        const country = document.getElementById("filter-country")?.value || "";
-        const category = document.getElementById("filter-category")?.value || "";
-        const period = document.getElementById("filter-period")?.value || "today";
-
-        const range = computeDateRange(period);
-
-        const params = new URLSearchParams();
-        params.set("date_from", range.date_from);
-        params.set("date_to", range.date_to);
-        params.set("limit", "5");
-        if (country) params.set("country", country);
-        if (category) params.set("category", category);
-
-        try {
-            const res = await fetch("/legal-cases?" + params.toString(), { credentials: "include" });
-            if (!res.ok) {
-                list.innerHTML = '<li class="list__empty">Не удалось загрузить обновления законодательства.</li>';
-                return;
-            }
-            const data = await res.json();
-            const items = Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : []);
-
-            if (!items.length) {
-                list.innerHTML = '<li class="list__empty">По выбранным фильтрам ничего не найдено.</li>';
-                return;
-            }
-
-            list.innerHTML = "";
-            items.forEach(item => {
-                const li = document.createElement("li");
-                li.className = "list__item";
-                li.innerHTML = `
-                    <div class="list__title">${item.title || "Без названия"}</div>
-                    <div class="list__meta">
-                        ${item.document_type || "Акт"}
-                        · ${item.country || country || ""}
-                        · ${item.category_name || item.category || ""}
-                        · ${item.date || ""}
-                    </div>
-                `;
-                list.appendChild(li);
-            });
-        } catch (e) {
-            console.error(e);
-            list.innerHTML = '<li class="list__empty">Ошибка при загрузке данных по законам.</li>';
-        }
-    }
-
-    document.getElementById("filter-country")?.addEventListener("change", () => {
-        loadLaws();
-        updateCaseSummary();
-    });
-    document.getElementById("filter-category")?.addEventListener("change", () => {
-        loadLaws();
-        updateCaseSummary();
-    });
-    document.getElementById("filter-period")?.addEventListener("change", loadLaws);
-
-    // ===== ЧАТ /ai/ask =====
-    async function sendChatMessage() {
-        if (!chatInputEl) return;
-        const text = chatInputEl.value.trim();
-        if (!text) return;
-
-        addUserMessage(text);
-        chatInputEl.value = "";
-        chatInputEl.focus();
-
-        showTypingIndicator();
-
-        const country = document.getElementById("filter-country")?.value || "";
-        const category = document.getElementById("filter-category")?.value || "";
-
-        try {
-            const payload = {
-                query: text,
-                country: country || null,
-                category: category || null,
-                mode: "dialog"
+        function serializeLayout() {
+            const layout = {
+                order: [],
+                texts: {}
             };
 
-            const res = await fetch("/ai/ask", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                credentials: "include",
-                body: JSON.stringify(payload)
+            sidebar.querySelectorAll(".sidebar-block").forEach((block, index) => {
+                const id = block.getAttribute("data-block-id") || "block-" + index;
+                layout.order.push(id);
+                layout.texts[id] = [];
+                block.querySelectorAll("[data-editable='true']").forEach((el) => {
+                    layout.texts[id].push(el.innerHTML);
+                });
             });
 
-            hideTypingIndicator();
-
-            if (!res.ok) {
-                addAiMessage(
-                    "Не удалось получить ответ от ЮИИ Татьяны (ошибка сервера: " + res.status + "). Попробуйте позже.",
-                    '<div class="chat__meta">ЮИИ Татьяна · ИИ-юрист</div>',
-                    false
-                );
-                return;
-            }
-
-            const data = await res.json();
-            const answer = data.answer || "Ответ получен, но без текста. Попробуйте переформулировать вопрос.";
-            const citations = Array.isArray(data.citations) ? data.citations : [];
-
-            let citationsHtml = "";
-            if (citations.length) {
-                const ids = citations
-                    .map(c => c.id || c.reference || "")
-                    .filter(Boolean)
-                    .join(", ");
-                citationsHtml = `
-                    <div class="chat__meta">
-                        Ссылки на законы, на которых основан ответ: ${ids}
-                    </div>
-                `;
-            } else {
-                citationsHtml = `
-                    <div class="chat__meta">
-                        Внимание: ЮИИ Татьяна не смогла указать конкретные нормы закона. Ответ нельзя считать юридически обоснованным.
-                    </div>
-                `;
-            }
-
-            addAiMessage(answer, citationsHtml, true);
-        } catch (e) {
-            console.error(e);
-            hideTypingIndicator();
-            addAiMessage(
-                "Не удалось связаться с сервером ЮИИ Татьяны. Причина: " +
-                (e && e.message ? e.message : "неизвестная ошибка") +
-                ". Попробуйте позже.",
-                '<div class="chat__meta">ЮИИ Татьяна · ИИ-юрист</div>',
-                false
+            // Заголовки / описание в шапке + чат
+            const extraEditable = document.querySelectorAll(
+                "#chatBlock [data-editable='true'], .dashboard-header-row [data-editable='true']"
             );
-        }
-    }
+            layout.texts["_top"] = [];
+            extraEditable.forEach((el) => {
+                layout.texts["_top"].push(el.innerHTML);
+            });
 
-    if (chatSendBtn) {
-        chatSendBtn.addEventListener("click", sendChatMessage);
-    }
-    if (chatInputEl) {
-        chatInputEl.addEventListener("keydown", function (e) {
-            if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                sendChatMessage();
+            return layout;
+        }
+
+        function restoreLayout(layout) {
+            if (!layout || !layout.order) return;
+            // Восстановление порядка блоков
+            layout.order.forEach((id) => {
+                const block = sidebar.querySelector('[data-block-id="' + id + '"]');
+                if (block) {
+                    sidebar.appendChild(block);
+                }
+            });
+
+            // Восстановление текстов
+            Object.keys(layout.texts || {}).forEach((id) => {
+                if (id === "_top") {
+                    const extraEditable = document.querySelectorAll(
+                        "#chatBlock [data-editable='true'], .dashboard-header-row [data-editable='true']"
+                    );
+                    extraEditable.forEach((el, idx) => {
+                        if (layout.texts[id][idx] !== undefined) {
+                            el.innerHTML = layout.texts[id][idx];
+                        }
+                    });
+                } else {
+                    const block = sidebar.querySelector('[data-block-id="' + id + '"]');
+                    if (!block) return;
+                    const editableEls = block.querySelectorAll("[data-editable='true']");
+                    editableEls.forEach((el, idx) => {
+                        if (layout.texts[id][idx] !== undefined) {
+                            el.innerHTML = layout.texts[id][idx];
+                        }
+                    });
+                }
+            });
+        }
+
+        // Загрузка сохранённой конфигурации из localStorage (если есть)
+        (function initLayoutFromStorage() {
+            try {
+                const raw = localStorage.getItem(EDIT_STORAGE_KEY);
+                if (!raw) return;
+                const layout = JSON.parse(raw);
+                restoreLayout(layout);
+            } catch (e) {
+                console.warn("Не удалось восстановить конфигурацию панели:", e);
+            }
+        })();
+
+        // Инициализация кнопок перемещения
+        setupMoveButtons();
+
+        // Переключение режима конструктора
+        editToggle.addEventListener("change", () => {
+            applyEditableState(editToggle.checked);
+        });
+
+        // Кнопка сохранения конфигурации (в localStorage)
+        saveBtn.addEventListener("click", () => {
+            try {
+                const layout = serializeLayout();
+                localStorage.setItem(EDIT_STORAGE_KEY, JSON.stringify(layout));
+                alert("Изменения сохранены локально в браузере.\nОни не влияют на работу сервера.");
+            } catch (e) {
+                console.error(e);
+                alert("Не удалось сохранить изменения (смотри консоль).");
             }
         });
-    }
 
-    // ===== ИНИЦИАЛИЗАЦИЯ =====
-    loadRecentDocs();
-    loadLaws();
-    updateCaseSummary();
-</script>
+        // Быстрые фразы — вставка текста в чат
+        document.querySelectorAll(".chip[data-prompt]").forEach((chip) => {
+            chip.addEventListener("click", () => {
+                const prompt = chip.getAttribute("data-prompt");
+                const input = document.getElementById("chatInput");
+                if (!input) return;
+                input.value = prompt;
+                input.focus();
+            });
+        });
+
+        // Простая обработка отправки формы (чтобы не ломать существующий app.js — можно удалить, если он есть)
+        const chatForm = document.getElementById("chatForm");
+        if (chatForm) {
+            chatForm.addEventListener("submit", (e) => {
+                if (window.legalAIChatHandled) {
+                    // если твой app.js уже подключил свой обработчик — даём ему работать
+                    return;
+                }
+                e.preventDefault();
+                const input = document.getElementById("chatInput");
+                const messages = document.getElementById("chatMessages");
+                if (!input || !messages) return;
+                const text = (input.value || "").trim();
+                if (!text) return;
+                const userDiv = document.createElement("div");
+                userDiv.className = "msg msg-user";
+                userDiv.textContent = text;
+                messages.appendChild(userDiv);
+
+                const aiDiv = document.createElement("div");
+                aiDiv.className = "msg msg-ai";
+                aiDiv.innerHTML =
+                    "Спасибо за запрос. На этом макете ответ сгенерирован локально. Реальный ответ выдаёт backend /ai/ask.";
+                messages.appendChild(aiDiv);
+
+                messages.scrollTop = messages.scrollHeight;
+                input.value = "";
+            });
+        }
+    </script>
 </body>
 </html>
