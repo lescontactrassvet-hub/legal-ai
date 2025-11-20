@@ -1,1 +1,227 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>Добро пожаловать — LegalAI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle at 10% 0%, #0b1120 0, #020617 55%, #020617 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+            color: #e5e7eb;
+        }
+
+        .welcome-splash {
+            text-align: center;
+            opacity: 1;
+            transition: opacity 2s ease;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .welcome-splash.hidden {
+            opacity: 0;
+        }
+
+        /* Логотип */
+        .logo-wrap {
+            width: 120px;
+            height: 120px;
+            border-radius: 999px;
+            padding: 6px;
+            background: radial-gradient(circle at 30% 20%, #020617 0, #020617 70%, #020617 100%);
+            box-shadow: 0 0 35px rgba(56,189,248,0.9);
+            overflow: hidden;
+            margin: 0 auto;
+            animation: pulse 2.4s infinite ease-in-out;
+        }
+
+        .logo-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Текст */
+        .title {
+            margin-top: 18px;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+        }
+
+        .subtitle {
+            margin-top: 8px;
+            font-size: 15px;
+            color: #9ca3af;
+        }
+
+        /* Прогресс-бар */
+        .progress-bar {
+            width: 190px;
+            height: 4px;
+            margin: 20px auto 0;
+            background: rgba(255,255,255,0.12);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .progress {
+            width: 40%;
+            height: 100%;
+            background: linear-gradient(90deg, #38bdf8, #3b82f6, #6366f1);
+            animation: loading 1.3s infinite linear;
+        }
+
+        /* Анимации */
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 28px rgba(56,189,248,0.7);
+            }
+            50% {
+                transform: scale(1.07);
+                box-shadow: 0 0 38px rgba(56,189,248,1);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes loading {
+            0% { transform: translateX(-60%); }
+            100% { transform: translateX(160%); }
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="welcome" class="welcome-splash">
+    <div class="logo-wrap">
+        <!-- Путь к логотипу в проде -->
+        <img src="/assets/logo/legalai-logo-main.png" alt="LegalAI logo">
+    </div>
+    <div id="welcome-title" class="title">Добро пожаловать!</div>
+    <div id="welcome-subtitle" class="subtitle">
+        Загрузка панели LegalAI…
+    </div>
+
+    <div class="progress-bar">
+        <div class="progress"></div>
+    </div>
+</div>
+
+<script>
+    // Определяем базовый URL API (как на других страницах)
+    const API_BASE = (function () {
+        const host = window.location.hostname;
+        if (host.endsWith('legalai.su')) {
+            return 'https://api.legalai.su';
+        }
+        return 'http://127.0.0.1:8000';
+    })();
+
+    const titleEl = document.getElementById('welcome-title');
+    const subtitleEl = document.getElementById('welcome-subtitle');
+    const splashEl = document.getElementById('welcome');
+
+    // Попытка прочитать имя из JWT токена
+    function getToken() {
+        // Подстрой под то, как вы храните токен:
+        // попробуем несколько ключей
+        return localStorage.getItem('access_token')
+            || localStorage.getItem('token')
+            || localStorage.getItem('auth_token')
+            || null;
+    }
+
+    function decodeJwtPayload(token) {
+        try {
+            const parts = token.split('.');
+            if (parts.length !== 3) return null;
+            const payload = parts[1]
+                .replace(/-/g, '+')
+                .replace(/_/g, '/');
+            const json = decodeURIComponent(atob(payload).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(json);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function setGreetingName(name) {
+        if (!name || !titleEl) return;
+        // Небольшая защита: обрезать слишком длинные имена
+        const cleanName = String(name).trim().slice(0, 40);
+        titleEl.textContent = 'Добро пожаловать, ' + cleanName + '!';
+        if (subtitleEl && !subtitleEl.dataset.customized) {
+            subtitleEl.textContent = 'Подготавливаем вашу панель LegalAI…';
+            subtitleEl.dataset.customized = '1';
+        }
+    }
+
+    // 1. Пытаемся взять имя из токена
+    (function initGreeting() {
+        const token = getToken();
+        if (!token) return;
+
+        const payload = decodeJwtPayload(token);
+        if (payload) {
+            const name = payload.name || payload.full_name || payload.username || payload.email;
+            if (name) {
+                setGreetingName(name);
+                return; // Уже достаточно
+            }
+        }
+
+        // 2. Если из токена не получилось — пробуем /auth/profile
+        tryFetchProfile(token);
+    })();
+
+    async function tryFetchProfile(token) {
+        try {
+            const res = await fetch(API_BASE + '/auth/profile', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                }
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            const name = data.full_name || data.name || data.username || data.email;
+            if (name) setGreetingName(name);
+        } catch (e) {
+            // тихо игнорируем, оставляем дефолтный текст
+        }
+    }
+
+    // Функция скрытия splash (делаем глобально, если вдруг захочешь вызывать из другого скрипта)
+    function hideSplashAndGo() {
+        if (splashEl) {
+            splashEl.classList.add('hidden');
+        }
+        setTimeout(function () {
+            window.location.href = '/dashboard';
+        }, 700);
+    }
+
+    // Авто-скрытие: через 1.6с начать анимацию, ещё 0.7с — переход
+    setTimeout(hideSplashAndGo, 1600);
+</script>
+
+</body>
+</html>
 
