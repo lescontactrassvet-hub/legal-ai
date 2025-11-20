@@ -92,12 +92,13 @@
     <div class="card">
         <h1>Вход</h1>
 
-        <form action="/auth/login" method="POST">
+        <!-- Форма теперь НЕ отправляет напрямую -->
+        <form id="login-form" onsubmit="return login(event)">
             <label>Логин или Email</label>
-            <input name="username" type="text" placeholder="Введите логин или email" required>
+            <input id="username" type="text" placeholder="Введите логин или email" required>
 
             <label>Пароль</label>
-            <input name="password" type="password" placeholder="Введите пароль" required>
+            <input id="password" type="password" placeholder="Введите пароль" required>
 
             <button type="submit">Войти</button>
         </form>
@@ -111,5 +112,55 @@
             <a href="/register.html">Создать</a>
         </div>
     </div>
+
+<script>
+    // Определяем API URL (как на других страницах)
+    const API_BASE = (function () {
+        const host = window.location.hostname;
+        if (host.endsWith("legalai.su")) {
+            return "https://api.legalai.su";
+        }
+        return "http://127.0.0.1:8000";
+    })();
+
+    async function login(event) {
+        event.preventDefault();
+
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value;
+
+        if (!username || !password) return;
+
+        try {
+            const res = await fetch(API_BASE + "/auth/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: new URLSearchParams({
+                    username: username,
+                    password: password
+                })
+            });
+
+            if (!res.ok) {
+                alert("Ошибка входа: неверный логин или пароль");
+                return;
+            }
+
+            const data = await res.json();
+
+            // Сохраняем токен
+            localStorage.setItem("access_token", data.access_token);
+
+            // 🔥 Главный момент — переход на welcome.html
+            window.location.href = "/welcome.html";
+
+        } catch (err) {
+            alert("Ошибка сети или сервера");
+        }
+    }
+</script>
+
 </body>
 </html>
