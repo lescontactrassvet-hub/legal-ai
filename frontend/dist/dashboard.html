@@ -55,8 +55,8 @@
         }
 
         .logo {
-            height: 40px;              /* подстраиваемся под реальный логотип */
-            max-width: 140px;
+            height: 40px;
+            max-width: 180px;
             border-radius: 6px;
             overflow: hidden;
             flex-shrink: 0;
@@ -91,17 +91,23 @@
 
         .top-nav {
             margin-left: 18px;
-            overflow: hidden;
+            max-width: 420px;
+            overflow-x: auto;
+            overflow-y: hidden;
         }
 
         .top-nav ul {
             list-style: none;
             display: flex;
-            gap: 10px;
+            flex-wrap: nowrap;          /* не переносим на вторую строку */
+            gap: 8px;
             margin: 0;
             padding: 0;
             font-size: 13px;
-            flex-wrap: wrap;
+        }
+
+        .top-nav li {
+            flex: 0 0 auto;             /* фиксированные элементы, можно скроллить */
         }
 
         .top-nav a {
@@ -293,6 +299,12 @@
             color: var(--text-muted);
         }
 
+        .chat-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .card-badge {
             font-size: 11px;
             padding: 4px 8px;
@@ -300,6 +312,21 @@
             background: var(--accent-soft);
             color: var(--accent);
             white-space: nowrap;
+        }
+
+        .new-chat-btn {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            border: 1px solid var(--border-soft);
+            background: #0f172a;
+            color: #e5e7eb;
+            cursor: pointer;
+        }
+
+        .new-chat-btn:hover {
+            border-color: var(--accent-soft);
+            background: #111827;
         }
 
         .chat-window {
@@ -489,11 +516,11 @@
 
         .editor-note {
             margin-top: 6px;
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-muted);
         }
 
-        /* Правая колонка: только список законов */
+        /* Правая колонка: список законов */
 
         .sidebar {
             display: flex;
@@ -543,12 +570,13 @@
 
         .warnings {
             margin-top: 8px;
-            font-size: 11px;
+            font-size: 13px;           /* увеличен шрифт */
             color: var(--text-muted);
+            line-height: 1.5;
         }
 
         .warnings p {
-            margin: 0 0 4px;
+            margin: 0 0 6px;
         }
 
         footer {
@@ -566,14 +594,12 @@
             outline-offset: 1px;
         }
 
-        body.edit-mode .edit-hint {
-            color: #16a34a;
-        }
+        body.edit-mode .edit-hint { color: #16a34a; }
 
         @media (max-width: 900px) {
             .dashboard-layout { grid-template-columns: 1fr; }
             .page { padding: 10px 8px 14px; }
-            .top-nav { display: none; } /* позже можно сделать бургер */
+            .top-nav { display: none; } /* на узких экранах меню убираем, оставляем лого */
         }
 
         @media (max-width: 600px) {
@@ -586,8 +612,8 @@
 <header class="top-bar">
     <div class="top-left">
         <div class="logo">
-            <!-- Логотип: файл /srv/legal-ai/frontend/dist/img/logo.png -->
-            <img src="/img/logo.png" alt="LegalAI — Цифровой юрист">
+            <!-- ВАЖНО: имя файла с учётом регистра. Если на сервере "Logo.png" — используем именно так. -->
+            <img src="/img/Logo.png" alt="LegalAI — Цифровой юрист">
         </div>
         <div class="project-title">
             <span>LegalAI</span>
@@ -598,7 +624,6 @@
                 <li><a href="/dashboard" class="is-active">Главная</a></li>
                 <li><a href="/consultations">Консультации</a></li>
                 <li><a href="/documents">Документы</a></li>
-                <!-- Историю убрали по твоему требованию -->
                 <li><a href="/updates">Обновления законов</a></li>
                 <li><a href="/profile">Профиль</a></li>
             </ul>
@@ -635,9 +660,8 @@
         </div>
 
         <section class="dashboard-layout">
-            <!-- Левая колонка: ЧАТ + редактор документов -->
+            <!-- Левая колонка: чат + редактор -->
             <div class="left-column">
-                <!-- Чат: консультант ИИ Татьяна -->
                 <section class="card chat-card" id="chat-section">
                     <div class="card-header">
                         <div>
@@ -646,7 +670,10 @@
                                 Задайте вопрос о законе, договоре или ситуации. ИИ&nbsp;Татьяна подберёт нормы закона и предложит формулировки.
                             </span>
                         </div>
-                        <span class="card-badge">ИИ Татьяна • онлайн</span>
+                        <div class="chat-header-actions">
+                            <button type="button" class="new-chat-btn" id="btnNewChat">Новый чат</button>
+                            <span class="card-badge">ИИ Татьяна • онлайн</span>
+                        </div>
                     </div>
 
                     <div class="chat-window">
@@ -662,7 +689,7 @@
                         </div>
 
                         <div class="chat-messages" id="chatMessages">
-                            <div class="msg msg-ai">
+                            <div class="msg msg-ai" id="welcomeMessage">
                                 Добро пожаловать! Я — ИИ-консультант Татьяна. Опишите вашу ситуацию или прикрепите документ —
                                 я проанализирую его с учётом выбранной страны и актуальных законов.
                                 <span class="msg-meta">Татьяна • сейчас</span>
@@ -684,14 +711,13 @@
                             <button type="button" class="chip" data-prompt="Проанализируй, есть ли риски в этом трудовом договоре.">
                                 Проверка трудового договора
                             </button>
-                            <button type="button" class="chip" data-prompt="Подскажи, какие права у работника по ТК выбранной страны.">
+                            <button type="button" class="chip" data-prompt="Подскажи, какие права у работника по трудовому праву выбранной страны.">
                                 Права по трудовому праву
                             </button>
                         </div>
                     </div>
                 </section>
 
-                <!-- Редактор документов под чатом -->
                 <section class="card editor-card" id="editor-section">
                     <h2 data-editable="true">Редактор документов — проекты, составленные Татьяной</h2>
                     <p data-editable="true" style="font-size:12px; color:var(--text-muted); margin-top:0;">
@@ -719,8 +745,8 @@
                     <div class="warnings">
                         <p data-editable="true">
                             ⚠ Информация, полученная от ИИ-Татьяны, носит справочный характер и не является юридической консультацией
-                            в понимании закона. Вы обязаны самостоятельно проверить корректность текста и норм права
-                            перед использованием. Команда LegalAI не несёт ответственности за принятые вами решения.
+                            в понимании закона. Вы обязаны самостоятельно проверить корректность текста и норм права перед использованием.
+                            Команда LegalAI не несёт ответственности за принятые вами решения.
                         </p>
                         <p data-editable="true">
                             ⚖ Права собственности: загруженные вами файлы и созданные черновики принадлежат вам. Вы подтверждаете,
@@ -731,7 +757,7 @@
                 </section>
             </div>
 
-            <!-- Правая колонка: только список законов/указов/постановлений, вступивших в силу -->
+            <!-- Правая колонка: только список законов -->
             <aside class="sidebar">
                 <section class="sidebar-block" id="laws-section">
                     <div class="sidebar-block-header">
@@ -759,11 +785,10 @@
     обязательно проконсультируйтесь с профильным специалистом.
 </footer>
 
-<!-- Здесь может подключаться твой существующий js/app.js -->
 <!-- <script src="js/app.js"></script> -->
 
 <script>
-    // Режим конструктора: редактирование текстов + сохранение в localStorage
+    // Режим конструктора: тексты в localStorage
     const EDIT_KEY = "legalai_dashboard_texts_v1";
     const editToggle = document.getElementById("editModeToggle");
     const saveBtn = document.getElementById("saveLayoutBtn");
@@ -783,7 +808,7 @@
             alert("Тексты сохранены локально в браузере.\nОни не влияют на сервер и базу данных.");
         } catch (e) {
             console.error(e);
-            alert("Не удалось сохранить тексты (смотри консоль браузера).");
+            alert("Не удалось сохранить тексты (см. консоль браузера).");
         }
     }
 
@@ -803,16 +828,12 @@
 
     restoreEditableTexts();
 
-    if (editToggle) {
-        editToggle.addEventListener("change", () => {
-            applyEditMode(editToggle.checked);
-        });
-    }
-    if (saveBtn) {
-        saveBtn.addEventListener("click", saveEditableTexts);
-    }
+    editToggle?.addEventListener("change", () => {
+        applyEditMode(editToggle.checked);
+    });
+    saveBtn?.addEventListener("click", saveEditableTexts);
 
-    // Быстрые фразы в чат
+    // Быстрые фразы
     document.querySelectorAll(".chip[data-prompt]").forEach(chip => {
         chip.addEventListener("click", () => {
             const prompt = chip.getAttribute("data-prompt") || "";
@@ -824,11 +845,11 @@
         });
     });
 
-    // Простейший локальный вывод сообщений, если основной JS ещё не подключён
+    // Простейший локальный чат (пока без ИИ-бэкенда)
     const chatForm = document.getElementById("chatForm");
     if (chatForm) {
         chatForm.addEventListener("submit", (e) => {
-            if (window.legalAIChatHandled) return; // если твой app.js перехватывает — не мешаем
+            if (window.legalAIChatHandled) return;
             e.preventDefault();
             const input = document.getElementById("chatInput");
             const messages = document.getElementById("chatMessages");
@@ -844,7 +865,7 @@
             const aiDiv = document.createElement("div");
             aiDiv.className = "msg msg-ai";
             aiDiv.innerHTML =
-                "Это демонстрационный ответ. После подключения ИИ на этом месте появится анализ от Татьяны и предложения по документу.";
+                "Это демонстрационный ответ. После подключения ИИ здесь появится анализ от Татьяны и предложения по документу.";
             const meta = document.createElement("span");
             meta.className = "msg-meta";
             meta.textContent = "Татьяна • через несколько секунд";
@@ -856,7 +877,25 @@
         });
     }
 
-    // Кнопки загрузки файлов — пока только открывают диалог выбора файла
+    // Кнопка "Новый чат" — очищает сообщения и возвращает приветствие
+    const btnNewChat = document.getElementById("btnNewChat");
+    if (btnNewChat) {
+        btnNewChat.addEventListener("click", () => {
+            const messages = document.getElementById("chatMessages");
+            if (!messages) return;
+            messages.innerHTML = "";
+            const welcome = document.createElement("div");
+            welcome.className = "msg msg-ai";
+            welcome.innerHTML =
+                'Добро пожаловать! Я — ИИ-консультант Татьяна. Опишите вашу ситуацию или прикрепите документ — ' +
+                'я проанализирую его с учётом выбранной страны и актуальных законов.' +
+                '<span class="msg-meta">Татьяна • сейчас</span>';
+            messages.appendChild(welcome);
+            messages.scrollTop = 0;
+        });
+    }
+
+    // Кнопки загрузки файлов (пока только диалог выбора)
     function bindUpload(btnId, inputId) {
         const btn = document.getElementById(btnId);
         const input = document.getElementById(inputId);
@@ -865,19 +904,19 @@
         input.addEventListener("change", () => {
             if (!input.files || !input.files[0]) return;
             console.log("Выбран файл:", input.files[0].name);
-            // Здесь позже можно вызвать реальный upload на backend /consultations/upload
+            // позже сюда добавим реальную загрузку на backend
         });
     }
     bindUpload("btnUploadPdf", "inputPdf");
     bindUpload("btnUploadDocx", "inputDocx");
     bindUpload("btnUploadAudio", "inputAudio");
 
-    // Кнопки редактора — пока только заглушки под будущую интеграцию
+    // Кнопки редактора (заглушки)
     document.getElementById("btnSavePdf")?.addEventListener("click", () => {
         alert("Заглушка: здесь будет сохранение документа в PDF и отправка копии в «Мои документы».");
     });
     document.getElementById("btnSaveDocx")?.addEventListener("click", () => {
-        alert("Заглушка: здесь будет сохранение документа в формате Word и отправка копии в «Мои документы».");
+        alert("Заглушка: здесь будет сохранение документа в Word и отправка копии в «Мои документы».");
     });
     document.getElementById("btnOpenDocuments")?.addEventListener("click", () => {
         window.location.href = "/documents";
