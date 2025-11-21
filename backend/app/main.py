@@ -8,6 +8,10 @@ from app.auth.routes import router as auth_router
 from app.auth.reset.router import router as reset_router  # модуль восстановления доступа
 from routers.ai import router as ai_router  # AI-консультант ЮИИ Татьяна
 
+# === ДОБАВЛЕНО: загрузка логотипа ===
+from app.admin.logo_upload import router as logo_upload_router
+# ====================================
+
 # --- Sentry (опционально) ---
 try:
     import sentry_sdk
@@ -59,9 +63,13 @@ async def debug_sentry():
 
 # Роутеры
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])
-# reset_router уже имеет prefix="/auth" внутри себя, поэтому здесь без prefix
 app.include_router(reset_router, tags=["Auth Reset"])
 app.include_router(legal_doc_router, prefix="/docs", tags=["Docs"])
 
-# ВАЖНО: prefix НЕ указываем, он уже задан внутри routers/ai.py (prefix="/ai")
+# AI-консультант (prefix уже внутри файла)
 app.include_router(ai_router, tags=["AI"])
+
+# === ДОБАВЛЕНО: роут для загрузки логотипа ===
+app.include_router(logo_upload_router, tags=["Admin"])
+# =============================================
+
