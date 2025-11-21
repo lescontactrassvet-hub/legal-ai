@@ -22,9 +22,7 @@
             --radius-sm: 6px;
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
@@ -37,7 +35,7 @@
             flex-direction: column;
         }
 
-        /* ───────────────── HEADER / MENU ───────────────── */
+        /* ───── HEADER ───── */
 
         .top-bar {
             position: sticky;
@@ -45,7 +43,7 @@
             z-index: 20;
             background: linear-gradient(90deg, #020617, #0f172a);
             color: #e5e7eb;
-            padding: 10px 18px;
+            padding: 10px 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -56,29 +54,29 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            min-width: 0;
         }
 
         .logo {
-            width: 34px;
-            height: 34px;
-            border-radius: 12px;
-            background: #0ea5e9;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
             overflow: hidden;
+            background: transparent;
+            flex-shrink: 0;
         }
 
         .logo img {
             width: 100%;
             height: 100%;
-            object-fit: contain;
             display: block;
+            object-fit: contain;
         }
 
         .project-title {
             display: flex;
             flex-direction: column;
+            min-width: 0;
         }
 
         .project-title span:first-child {
@@ -90,25 +88,30 @@
         .project-title span:last-child {
             font-size: 11px;
             color: #9ca3af;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .top-nav {
-            margin-left: 24px;
+            margin-left: 20px;
+            overflow: hidden;
         }
 
         .top-nav ul {
             list-style: none;
             display: flex;
-            gap: 14px;
+            gap: 10px;
             margin: 0;
             padding: 0;
-            font-size: 14px;
+            font-size: 13px;
+            flex-wrap: wrap;
         }
 
         .top-nav a {
             color: #e5e7eb;
             text-decoration: none;
-            padding: 6px 10px;
+            padding: 5px 10px;
             border-radius: 999px;
             transition: background 0.2s, color 0.2s, transform 0.1s;
             white-space: nowrap;
@@ -128,22 +131,22 @@
         .top-right {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 10px;
+            flex-wrap: wrap;         /* чтобы «Онлайн» не вылазил */
+            justify-content: flex-end;
         }
 
         .edit-toggle {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            font-size: 12px;
+            font-size: 11px;
             color: #cbd5f5;
             cursor: pointer;
             user-select: none;
         }
 
-        .edit-toggle input {
-            display: none;
-        }
+        .edit-toggle input { display: none; }
 
         .toggle-pill {
             width: 34px;
@@ -166,33 +169,33 @@
             transition: transform 0.2s;
         }
 
-        .edit-toggle input:checked + .toggle-pill {
-            background: #22c55e;
-        }
-
-        .edit-toggle input:checked + .toggle-pill .toggle-dot {
-            transform: translateX(14px);
-        }
+        .edit-toggle input:checked + .toggle-pill { background: #22c55e; }
+        .edit-toggle input:checked + .toggle-pill .toggle-dot { transform: translateX(14px); }
 
         .user-chip {
-            font-size: 12px;
-            padding: 6px 10px;
+            font-size: 11px;
+            padding: 5px 9px;
             border-radius: 999px;
             background: rgba(15, 23, 42, 0.85);
             border: 1px solid rgba(148, 163, 184, 0.5);
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            max-width: 130px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .user-circle {
-            width: 8px;
-            height: 8px;
+            width: 7px;
+            height: 7px;
             border-radius: 999px;
             background: #22c55e;
+            flex-shrink: 0;
         }
 
-        /* ───────────────── MAIN LAYOUT ───────────────── */
+        /* ───── MAIN ───── */
 
         .page {
             flex: 1;
@@ -239,7 +242,7 @@
             align-items: stretch;
         }
 
-        /* ───────────────── CHAT PANEL ───────────────── */
+        /* ───── CARDS ───── */
 
         .card {
             background: var(--bg-card);
@@ -279,6 +282,7 @@
             border-radius: 999px;
             background: var(--accent-soft);
             color: var(--accent);
+            white-space: nowrap;
         }
 
         .chat-window {
@@ -329,6 +333,33 @@
             margin-top: 2px;
         }
 
+        /* ───── ПАНЕЛЬ ЗАГРУЗКИ ФАЙЛОВ ───── */
+
+        .input-tools {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+
+        .input-tool-btn {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            border: 1px solid var(--border-soft);
+            background: #f9fafb;
+            cursor: pointer;
+        }
+
+        .input-tool-btn:hover {
+            border-color: var(--accent);
+            background: #eff6ff;
+        }
+
+        .file-input-hidden {
+            display: none;
+        }
+
         .chat-input-row {
             border-top: 1px solid var(--border-soft);
             padding-top: 8px;
@@ -338,18 +369,14 @@
             margin-top: 6px;
         }
 
-        .chat-input-wrapper {
-            flex: 1;
-            position: relative;
-        }
+        .chat-input-wrapper { flex: 1; position: relative; }
 
-        /* менее овальная форма поля ввода */
         .chat-input {
             width: 100%;
             min-height: 44px;
             max-height: 96px;
             resize: none;
-            border-radius: 12px; /* только лёгкое скругление */
+            border-radius: 12px; /* лёгкое скругление, не «капсула» */
             border: 1px solid var(--border-soft);
             padding: 8px 36px 8px 10px;
             font-family: inherit;
@@ -380,17 +407,11 @@
             box-shadow: 0 3px 10px rgba(37, 99, 235, 0.5);
             transition: background 0.15s, transform 0.08s, box-shadow 0.15s;
             white-space: nowrap;
+            flex-shrink: 0;
         }
 
-        .chat-send:hover {
-            background: #1d4ed8;
-            transform: translateY(-1px);
-        }
-
-        .chat-send:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
-        }
+        .chat-send:hover { background: #1d4ed8; transform: translateY(-1px); }
+        .chat-send:active { transform: translateY(0); box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4); }
 
         .chat-shortcuts {
             display: flex;
@@ -414,7 +435,7 @@
             background: #eff6ff;
         }
 
-        /* ───────────────── SIDEBAR ───────────────── */
+        /* ───── SIDEBAR ───── */
 
         .sidebar {
             display: flex;
@@ -458,9 +479,7 @@
         }
 
         .action-list li,
-        .history-list li {
-            margin-bottom: 4px;
-        }
+        .history-list li { margin-bottom: 4px; }
 
         .link-more {
             font-size: 11px;
@@ -470,9 +489,7 @@
             align-self: flex-start;
         }
 
-        .link-more:hover {
-            text-decoration: underline;
-        }
+        .link-more:hover { text-decoration: underline; }
 
         .sidebar-mini-grid {
             display: grid;
@@ -489,19 +506,13 @@
             display: flex;
             flex-direction: column;
             gap: 4px;
-            cursor: pointer;
             text-decoration: none;
             color: inherit;
+            cursor: pointer;
         }
 
-        .mini-card-title {
-            font-weight: 600;
-        }
-
-        .mini-card-desc {
-            font-size: 11px;
-            color: var(--text-muted);
-        }
+        .mini-card-title { font-weight: 600; }
+        .mini-card-desc  { font-size: 11px; color: var(--text-muted); }
 
         .mini-card:hover {
             border-color: var(--accent);
@@ -523,11 +534,7 @@
             background: #e5e7eb;
         }
 
-        .block-toolbar button:hover {
-            background: #cbd5f5;
-        }
-
-        /* ───────────────── FOOTER ───────────────── */
+        .block-toolbar button:hover { background: #cbd5f5; }
 
         footer {
             text-align: center;
@@ -536,7 +543,7 @@
             color: var(--text-muted);
         }
 
-        /* ───────────────── EDIT MODE ───────────────── */
+        /* ───── EDIT MODE ───── */
 
         body.edit-mode .sidebar-block,
         body.edit-mode .card,
@@ -545,17 +552,9 @@
             outline-offset: 2px;
         }
 
-        body.edit-mode [data-editable="true"] {
-            cursor: text;
-        }
-
-        body.edit-mode .block-toolbar {
-            display: flex;
-        }
-
-        body.edit-mode .edit-hint {
-            color: #16a34a;
-        }
+        body.edit-mode [data-editable="true"] { cursor: text; }
+        body.edit-mode .block-toolbar { display: flex; }
+        body.edit-mode .edit-hint { color: #16a34a; }
 
         .save-layout-btn {
             display: none;
@@ -575,56 +574,42 @@
             gap: 4px;
         }
 
-        /* ───────────────── RESPONSIVE ───────────────── */
+        /* ───── RESPONSIVE ───── */
 
         @media (max-width: 900px) {
-            .dashboard-layout {
-                grid-template-columns: 1fr;
-            }
-            .page {
-                padding: 10px 8px 14px;
-            }
-            .top-nav {
-                display: none; /* меню можно будет вывести бургером позже */
-            }
-            .chat-window {
-                max-height: none;
-                min-height: 220px;
-            }
+            .dashboard-layout { grid-template-columns: 1fr; }
+            .page { padding: 10px 8px 14px; }
+            .top-nav { display: none; } /* меню потом можно заменить на бургер */
+            .chat-window { max-height: none; min-height: 220px; }
         }
 
         @media (max-width: 600px) {
-            .top-bar {
-                padding: 8px 10px;
-            }
-            .user-chip {
-                display: none;
-            }
+            .top-bar { padding: 8px 10px; }
+            .user-chip { display: none; }
         }
     </style>
 </head>
 <body>
-    <!-- Верхняя панель с логотипом и горизонтальным меню -->
+    <!-- Шапка: логотип + меню, привязанное к блокам страницы -->
     <header class="top-bar">
         <div class="top-left">
-            <!-- ЗАМЕНИ src на путь к твоему реальному логотипу -->
-        <div class="logo">
-               <img src="/img/logo.png" alt="LegalAI — Юридический ИИ Татьяна">
-        </div>
-
-        <div class="project-title">
+            <div class="logo">
+                <!-- Путь к логотипу на сервере: /srv/legal-ai/frontend/dist/img/logo.png -->
+                <img src="/img/logo.png" alt="LegalAI — Цифровой юрист">
+            </div>
+            <div class="project-title">
                 <span>LegalAI</span>
-                <span>Юридический ИИ Татьяна</span>
-        </div>
+                <span>Цифровой юрист</span>
+            </div>
 
             <nav class="top-nav">
                 <ul>
-                    <li><a href="/dashboard" class="is-active">Главная</a></li>
-                    <li><a href="/consultation">Консультация</a></li>
-                    <li><a href="/documents">Документы</a></li>
-                    <li><a href="/history">История</a></li>
-                    <li><a href="/updates">Обновления законов</a></li>
-                    <li><a href="/profile">Профиль</a></li>
+                    <li><a href="#chat-section" class="is-active">Главная</a></li>
+                    <li><a href="#chat-section">Консультация</a></li>
+                    <li><a href="#quick-actions-section">Документы</a></li>
+                    <li><a href="#history-section">История</a></li>
+                    <li><a href="#updates-section">Обновления законов</a></li>
+                    <li><a href="#profile-section">Профиль</a></li>
                 </ul>
             </nav>
         </div>
@@ -650,7 +635,7 @@
                 <div>
                     <h1 data-editable="true">Рабочая панель юридического помощника</h1>
                     <p data-editable="true">
-                        Здесь вы можете задавать вопросы, быстро запускать частые действия и видеть историю консультаций.
+                        Здесь вы можете задавать вопросы, загружать документы и просматривать историю консультаций.
                     </p>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
@@ -660,21 +645,31 @@
             </div>
 
             <section class="dashboard-layout">
-                <!-- ЧАТ: слева, ~60% ширины на ПК; на мобиле — на всю ширину -->
-                <section class="card chat-card" id="chatBlock" data-block-id="chat">
+                <!-- ЧАТ -->
+                <section class="card chat-card" id="chat-section" data-block-id="chat">
                     <div class="card-header">
                         <div>
                             <h2 data-editable="true">Юридический чат-консультант</h2>
-                            <span data-editable="true">Задайте вопрос о законе, договоре или документе — LegalAI Татьяна подберёт ответ, ссылки. и по необходимоси подготовит нужный документ</span>
+                            <span data-editable="true">Опишите ситуацию, прикрепите файл (PDF, Word, аудио) и получите разбор.</span>
                         </div>
                         <span class="card-badge">AI • онлайн</span>
                     </div>
 
                     <div class="chat-window">
+                        <!-- Панель загрузки файлов -->
+                        <div class="input-tools">
+                            <button type="button" class="input-tool-btn" id="btnUploadPdf">📄 PDF</button>
+                            <button type="button" class="input-tool-btn" id="btnUploadDocx">📝 Word</button>
+                            <button type="button" class="input-tool-btn" id="btnUploadAudio">🎧 Аудио</button>
+
+                            <input type="file" class="file-input-hidden" id="inputPdf" accept=".pdf,application/pdf">
+                            <input type="file" class="file-input-hidden" id="inputDocx" accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                            <input type="file" class="file-input-hidden" id="inputAudio" accept="audio/*">
+                        </div>
+
                         <div class="chat-messages" id="chatMessages">
-                            <!-- Пример начальных сообщений (можно очистить JS-ом) -->
                             <div class="msg msg-ai">
-                                Добро пожаловать! Я юридический ИИ консультант Татьяна. Опишите вашу ситуацию или задайте вопрос — я помогу с анализом и черновиком документа.
+                                Добро пожаловать! Задайте вопрос или прикрепите документ для анализа.
                                 <span class="msg-meta">LegalAI • сейчас</span>
                             </div>
                         </div>
@@ -684,7 +679,7 @@
                                 <textarea
                                     id="chatInput"
                                     class="chat-input"
-                                    placeholder="Подробно опишите вашу ситуацию или введите вопрос…"
+                                    placeholder="Опишите вашу ситуацию или введите вопрос…"
                                 ></textarea>
                             </div>
                             <button type="submit" class="chat-send">
@@ -706,10 +701,10 @@
                     </div>
                 </section>
 
-                <!-- ПРАВАЯ КОЛОНКА: быстрые действия + история + профиль/обновления как отдельные страницы -->
+                <!-- ПРАВАЯ КОЛОНКА -->
                 <aside class="sidebar" id="sidebarBlocks">
-                    <!-- Блок: Быстрые юридические действия -->
-                    <section class="sidebar-block" data-block-id="quick-actions">
+                    <!-- Быстрые действия -->
+                    <section class="sidebar-block" id="quick-actions-section" data-block-id="quick-actions">
                         <div class="sidebar-block-header">
                             <div>
                                 <h3 data-editable="true">Быстрые юридические действия</h3>
@@ -727,8 +722,8 @@
                         </ul>
                     </section>
 
-                    <!-- Блок: История консультаций -->
-                    <section class="sidebar-block" data-block-id="history">
+                    <!-- История консультаций -->
+                    <section class="sidebar-block" id="history-section" data-block-id="history">
                         <div class="sidebar-block-header">
                             <div>
                                 <h3 data-editable="true">История консультаций</h3>
@@ -747,8 +742,8 @@
                         <a href="/history" class="link-more">Открыть всю историю</a>
                     </section>
 
-                    <!-- Блоки: Профиль и настройки; Обновления базы законов — как отдельные страницы -->
-                    <section class="sidebar-block" data-block-id="profile-updates">
+                    <!-- Профиль и обновления -->
+                    <section class="sidebar-block" id="profile-section" data-block-id="profile-updates">
                         <div class="sidebar-mini-grid">
                             <a href="/profile" class="mini-card">
                                 <div class="mini-card-title" data-editable="true">Профиль и настройки</div>
@@ -756,10 +751,10 @@
                                     Управление аккаунтом, доступами и параметрами ИИ-консультанта.
                                 </div>
                             </a>
-                            <a href="/updates" class="mini-card">
+                            <a href="/updates" class="mini-card" id="updates-section">
                                 <div class="mini-card-title" data-editable="true">Обновления базы законов</div>
                                 <div class="mini-card-desc" data-editable="true">
-                                    Лента свежих законов, указов и судебной практики за сегодня.
+                                    Законы, указы и судебная практика, вступившие в силу сегодня.
                                 </div>
                             </a>
                         </div>
@@ -777,39 +772,29 @@
         LegalAI не является адвокатом или юрфирмой. Перед принятием решений проверяйте документы у специалиста.
     </footer>
 
-    <!-- ТВОЙ существующий JS, который общается с backend (оставляем, если был) -->
     <!-- <script src="js/app.js"></script> -->
 
     <script>
-        // ───────────────── Режим конструктора (редактирование текстов и порядка блоков) ─────────────────
-
+        // Режим конструктора
         const editToggle = document.getElementById("editModeToggle");
         const saveBtn = document.getElementById("saveLayoutBtn");
         const sidebar = document.getElementById("sidebarBlocks");
         const EDIT_STORAGE_KEY = "legalai_dashboard_layout_v1";
 
         function applyEditableState(isOn) {
-            // Включение / выключение contenteditable для помеченных элементов
-            const editableNodes = document.querySelectorAll("[data-editable='true']");
-            editableNodes.forEach((el) => {
+            document.querySelectorAll("[data-editable='true']").forEach((el) => {
                 el.contentEditable = isOn ? "true" : "false";
             });
-
-            if (isOn) {
-                document.body.classList.add("edit-mode");
-            } else {
-                document.body.classList.remove("edit-mode");
-            }
+            document.body.classList.toggle("edit-mode", isOn);
         }
 
         function moveBlock(section, direction) {
-            const current = section;
-            if (!current || !current.parentElement) return;
-            const parent = current.parentElement;
-            if (direction === "up" && current.previousElementSibling) {
-                parent.insertBefore(current, current.previousElementSibling);
-            } else if (direction === "down" && current.nextElementSibling) {
-                parent.insertBefore(current.nextElementSibling, current);
+            const parent = section.parentElement;
+            if (!parent) return;
+            if (direction === "up" && section.previousElementSibling) {
+                parent.insertBefore(section, section.previousElementSibling);
+            } else if (direction === "down" && section.nextElementSibling) {
+                parent.insertBefore(section.nextElementSibling, section);
             }
         }
 
@@ -817,19 +802,14 @@
             sidebar.querySelectorAll(".sidebar-block").forEach((block) => {
                 block.querySelectorAll(".block-toolbar button").forEach((btn) => {
                     btn.addEventListener("click", () => {
-                        const dir = btn.getAttribute("data-move");
-                        moveBlock(block, dir);
+                        moveBlock(block, btn.getAttribute("data-move"));
                     });
                 });
             });
         }
 
         function serializeLayout() {
-            const layout = {
-                order: [],
-                texts: {}
-            };
-
+            const layout = { order: [], texts: {} };
             sidebar.querySelectorAll(".sidebar-block").forEach((block, index) => {
                 const id = block.getAttribute("data-block-id") || "block-" + index;
                 layout.order.push(id);
@@ -839,73 +819,56 @@
                 });
             });
 
-            // Заголовки / описание в шапке + чат
             const extraEditable = document.querySelectorAll(
-                "#chatBlock [data-editable='true'], .dashboard-header-row [data-editable='true']"
+                "#chat-section [data-editable='true'], .dashboard-header-row [data-editable='true']"
             );
             layout.texts["_top"] = [];
-            extraEditable.forEach((el) => {
-                layout.texts["_top"].push(el.innerHTML);
-            });
+            extraEditable.forEach((el) => layout.texts["_top"].push(el.innerHTML));
 
             return layout;
         }
 
         function restoreLayout(layout) {
             if (!layout || !layout.order) return;
-            // Восстановление порядка блоков
+
             layout.order.forEach((id) => {
                 const block = sidebar.querySelector('[data-block-id="' + id + '"]');
-                if (block) {
-                    sidebar.appendChild(block);
-                }
+                if (block) sidebar.appendChild(block);
             });
 
-            // Восстановление текстов
             Object.keys(layout.texts || {}).forEach((id) => {
                 if (id === "_top") {
                     const extraEditable = document.querySelectorAll(
-                        "#chatBlock [data-editable='true'], .dashboard-header-row [data-editable='true']"
+                        "#chat-section [data-editable='true'], .dashboard-header-row [data-editable='true']"
                     );
                     extraEditable.forEach((el, idx) => {
-                        if (layout.texts[id][idx] !== undefined) {
-                            el.innerHTML = layout.texts[id][idx];
-                        }
+                        if (layout.texts[id][idx] !== undefined) el.innerHTML = layout.texts[id][idx];
                     });
                 } else {
                     const block = sidebar.querySelector('[data-block-id="' + id + '"]');
                     if (!block) return;
                     const editableEls = block.querySelectorAll("[data-editable='true']");
                     editableEls.forEach((el, idx) => {
-                        if (layout.texts[id][idx] !== undefined) {
-                            el.innerHTML = layout.texts[id][idx];
-                        }
+                        if (layout.texts[id][idx] !== undefined) el.innerHTML = layout.texts[id][idx];
                     });
                 }
             });
         }
 
-        // Загрузка сохранённой конфигурации из localStorage (если есть)
         (function initLayoutFromStorage() {
             try {
                 const raw = localStorage.getItem(EDIT_STORAGE_KEY);
                 if (!raw) return;
-                const layout = JSON.parse(raw);
-                restoreLayout(layout);
-            } catch (e) {
-                console.warn("Не удалось восстановить конфигурацию панели:", e);
-            }
+                restoreLayout(JSON.parse(raw));
+            } catch (e) { console.warn("Не удалось восстановить конфигурацию панели:", e); }
         })();
 
-        // Инициализация кнопок перемещения
         setupMoveButtons();
 
-        // Переключение режима конструктора
         editToggle.addEventListener("change", () => {
             applyEditableState(editToggle.checked);
         });
 
-        // Кнопка сохранения конфигурации (в localStorage)
         saveBtn.addEventListener("click", () => {
             try {
                 const layout = serializeLayout();
@@ -917,7 +880,7 @@
             }
         });
 
-        // Быстрые фразы — вставка текста в чат
+        // Быстрые фразы
         document.querySelectorAll(".chip[data-prompt]").forEach((chip) => {
             chip.addEventListener("click", () => {
                 const prompt = chip.getAttribute("data-prompt");
@@ -928,20 +891,18 @@
             });
         });
 
-        // Простая обработка отправки формы (чтобы не ломать существующий app.js — можно удалить, если он есть)
+        // Примитивная обработка отправки, если нет своего app.js
         const chatForm = document.getElementById("chatForm");
         if (chatForm) {
             chatForm.addEventListener("submit", (e) => {
-                if (window.legalAIChatHandled) {
-                    // если твой app.js уже подключил свой обработчик — даём ему работать
-                    return;
-                }
+                if (window.legalAIChatHandled) return; // если твой JS уже взял управление
                 e.preventDefault();
                 const input = document.getElementById("chatInput");
                 const messages = document.getElementById("chatMessages");
                 if (!input || !messages) return;
                 const text = (input.value || "").trim();
                 if (!text) return;
+
                 const userDiv = document.createElement("div");
                 userDiv.className = "msg msg-user";
                 userDiv.textContent = text;
@@ -957,6 +918,23 @@
                 input.value = "";
             });
         }
+
+        // Кнопки загрузки файлов → открываем скрытые input'ы
+        function bindUploadButton(btnId, inputId) {
+            const btn = document.getElementById(btnId);
+            const input = document.getElementById(inputId);
+            if (!btn || !input) return;
+            btn.addEventListener("click", () => input.click());
+            input.addEventListener("change", () => {
+                if (!input.files || !input.files[0]) return;
+                // Здесь можно подвязать твой существующий код отправки файла на backend
+                console.log("Выбран файл:", input.files[0].name);
+            });
+        }
+
+        bindUploadButton("btnUploadPdf", "inputPdf");
+        bindUploadButton("btnUploadDocx", "inputDocx");
+        bindUploadButton("btnUploadAudio", "inputAudio");
     </script>
 </body>
 </html>
