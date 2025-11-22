@@ -589,7 +589,7 @@
 
         .warnings {
             margin-top: 8px;
-            font-size: 10px; /* мелкий шрифт для текста ответственности и прав собственности */
+            font-size: 10px; /* мелкий шрифт */
             color: var(--text-muted);
             line-height: 1.5;
         }
@@ -656,8 +656,8 @@
             <span>Режим конструктора</span>
         </label>
 
-        <!-- НОВОЕ: кнопка Инструкции -->
-        <a href="/dashboard_help" class="help-btn">Инструкция</a>
+        <!-- исправлено: реальная страница dashboard_help.html -->
+        <a href="dashboard_help.html" class="help-btn">Инструкция</a>
 
         <div class="user-chip">
             <span class="user-circle"></span>
@@ -813,8 +813,9 @@
 <script>
     // Базовый URL API можно переопределить в window.LEGALAI_API_BASE
     const API_BASE = window.LEGALAI_API_BASE || "";
+    // Можно переопределить полностью явным эндпоинтом window.LEGALAI_CHAT_ENDPOINT
     const CHAT_ENDPOINT =
-        (window.LEGALAI_CHAT_ENDPOINT) || (API_BASE + "/ai/chat");
+        (window.LEGALAI_CHAT_ENDPOINT) || (API_BASE + "/ai/ask");
 
     // Режим конструктора: тексты в localStorage
     const EDIT_KEY = "legalai_dashboard_texts_v1";
@@ -878,6 +879,27 @@
     const chatMessages = document.getElementById("chatMessages");
     const editorArea = document.getElementById("editorArea");
 
+    function extractReplyText(data) {
+        return (
+            data.reply ||
+            data.answer ||
+            data.response ||
+            data.message ||
+            data.text ||
+            ""
+        );
+    }
+
+    function extractDocumentDraft(data) {
+        return (
+            data.document_draft ||
+            data.document ||
+            data.doc_text ||
+            data.generated_document ||
+            ""
+        );
+    }
+
     async function sendMessageToAI(userText) {
         if (!CHAT_ENDPOINT) {
             throw new Error("CHAT_ENDPOINT not configured");
@@ -885,7 +907,8 @@
         const resp = await fetch(CHAT_ENDPOINT, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: userText })
+            // отправляем и message, и question — backend возьмёт то, что ему нужно
+            body: JSON.stringify({ message: userText, question: userText })
         });
         if (!resp.ok) {
             throw new Error("Bad status: " + resp.status);
@@ -920,9 +943,9 @@
             try {
                 const data = await sendMessageToAI(text);
 
-                // Заменяем "обрабатывает..." на реальный ответ
+                const replyText = extractReplyText(data) || "Ответ от ИИ получен, но текст не был передан.";
                 waitingDiv.innerHTML = "";
-                waitingDiv.textContent = data.reply || "Ответ от ИИ получен, но текст не был передан.";
+                waitingDiv.textContent = replyText;
 
                 const meta = document.createElement("span");
                 meta.className = "msg-meta";
@@ -930,14 +953,13 @@
                 waitingDiv.appendChild(meta);
 
                 // Если backend вернул черновик документа — поместим его в редактор
-                if (data.document_draft && editorArea) {
-                    editorArea.textContent = data.document_draft;
+                const draft = extractDocumentDraft(data);
+                if (draft && editorArea) {
+                    editorArea.textContent = draft;
                 }
             } catch (err) {
                 console.error("Ошибка при обращении к ИИ:", err);
 
-                // Fallback: превращаем сообщение в аккуратную ошибку,
-                // а не ломаем страницу. Чат остаётся рабочим.
                 waitingDiv.innerHTML =
                     'Возникла техническая ошибка при обращении к ИИ. ' +
                     'Попробуйте позже или переформулируйте запрос.' +
