@@ -8,6 +8,10 @@ from app.auth.routes import router as auth_router
 from app.auth.reset.router import router as reset_router  # модуль восстановления доступа
 from routers.ai import router as ai_router  # AI-консультант ЮИИ Татьяна
 
+# === ДОБАВЛЕНО: обновления законов /laws/... ===
+from app.updates.routes import router as laws_router
+# ===============================================
+
 # === ДОБАВЛЕНО: загрузка логотипа ===
 from app.admin.logo_upload import router as logo_upload_router
 # ====================================
@@ -69,7 +73,10 @@ app.include_router(legal_doc_router, prefix="/docs", tags=["Docs"])
 # AI-консультант (prefix уже внутри файла)
 app.include_router(ai_router, tags=["AI"])
 
+# === ДОБАВЛЕНО: роут для законов /laws/... ===
+app.include_router(laws_router, tags=["Laws"])
+# ============================================
+
 # === ДОБАВЛЕНО: роут для загрузки логотипа ===
 app.include_router(logo_upload_router, tags=["Admin"])
 # =============================================
-
