@@ -1,51 +1,71 @@
-"""
-Local language model generator for Consultant.
+# backend/ai/generators/local_gen.py
 
-This module defines LocalGenerator which generates answers from
-retrieved context using a locally distilled language model. It is
-used when no external service is required.
-"""
+from typing import List, Optional, Sequence, Tuple
 
-from typing import List, Tuple, Any, Optional
+# если у тебя здесь уже есть импорт TATYANA_SYSTEM_PROMPT, можно подтянуть:
+# from ..tatyana_profile import TATYANA_SYSTEM_PROMPT
 
 class LocalGenerator:
-    """Generates responses using a local language model."""
+    """
+    Простой генератор ответов.
+    Сейчас он НЕ вызывает внешние модели, а формирует развернутый текст на основе найденных фрагментов.
+    Позже здесь можно подключить настоящую LLM (локальную или внешнюю), используя system_prompt.
+    """
 
-    def __init__(self) -> None:
-        """
-        Initialize the local generator (load model, tokenizer, etc.).
-        In this stub implementation, no actual model is loaded.
-        """
-        # TODO: load the distilled local model if available
-        pass
+    def __init__(self, default_system_prompt: Optional[str] = None) -> None:
+        self.default_system_prompt = default_system_prompt
 
-    async def generate(
+    def generate(
         self,
         query: str,
-        documents: List[Tuple[str, Any]],
-        *,
-        intent: Optional[str] = None,
+        docs: Sequence[Tuple[str, str]],
+        system_prompt: Optional[str] = None,
     ) -> str:
         """
-        Generate a response based on provided query and retrieved documents.
-
-        This simple implementation concatenates the contents of the retrieved
-        documents and returns a generic answer. Future versions should call
-        a local language model to produce a more fluent response.
-
-        Args:
-            query: The user question.
-            documents: A list of (document_id, document_content) tuples.
-            intent: Optional intent label determined by the classifier.
-
-        Returns:
-            A generated answer string.
+        Формирует текст ответа.
+        - query: вопрос пользователя;
+        - docs: список (id, content) найденных документов (законы, решения и т.п.);
+        - system_prompt: профиль поведения (например, TATYANA_SYSTEM_PROMPT).
         """
-        # Combine the content of all retrieved documents into a single context string
-        context = "\n".join([content for _, content in documents])
-        if context:
-            # Truncate context to avoid overly long responses
-            snippet = context[:500].strip()
-            return f"На основании найденных документов можно ответить: {snippet}"
+
+        effective_prompt = system_prompt or self.default_system_prompt
+
+        # Собираем фрагменты документов
+        snippets: List[str] = []
+        for doc_id, content in docs:
+            if not content:
+                continue
+            # Обрезаем каждый фрагмент, чтобы не раздувать ответ
+            snippet = content.strip()
+            if len(snippet) > 500:
+                snippet = snippet[:500] + "..."
+            snippets.append(f"[Документ {doc_id}] {snippet}")
+
+        context_block = "\n\n".join(snippets) if snippets else ""
+
+        # Базовая логика (можно заменить на вызов ЛЛМ позже)
+        if not snippets:
+            # Нет релевантных документов — даём аккуратный общий комментарий
+            base_answer = (
+                "Сейчас в моей локальной базе не нашлось явных нормативных актов или судебных "
+                "решений, прямо подходящих под вашу ситуацию. Я могу описать общие принципы и "
+                "возможные шаги, но настоятельно рекомендую дополнительно проверить актуальные нормы "
+                "и, при серьёзных рисках, обратиться к живому юристу."
+            )
         else:
-            return "Не удалось найти релевантные документы для вашего запроса."
+            base_answer = (
+                "Ниже приведены выдержки из найденных документов, которые могут относиться к вашей ситуации. "
+                "Я поясню их смысл простыми словами и предложу возможные шаги.\n\n"
+                f"{context_block}"
+            )
+
+        # Если есть system_prompt, используем его как «рамку» поведения.
+        # Пока мы не подключили настоящую LLM, мы просто добавляем краткое упоминание стиля.
+        if effective_prompt:
+            return (
+                "Я буду отвечать как Татьяна — спокойный и аккуратный юридический консультант, "
+                "следуя заданному профилю поведения. Ниже – анализ вашей ситуации.\n\n" + base_answer
+            )
+
+        # Фолбэк без промпта
+        return base_answer
