@@ -1,99 +1,153 @@
-from __future__ import annotations
-from typing import Any, Dict, List, Optional
+# backend/ai/core.py
 
-from backend.ai.router_rubert import RuBERTIntentClassifier
-from backend.ai.rag.retriever import DocumentRetriever
-from backend.ai.rag.ranker import DocumentRanker
-from backend.ai.rag.citation import CitationNormalizer
-from backend.ai.generators.local_gen import LocalGenerator
-from backend.ai.verifiers.law_guard import LawGuard
-from backend.ai.verifiers.safety import SafetyVerifier
+from typing import Any, Dict, List, Sequence, Tuple
 
+from .tatyana_profile import TATYANA_SYSTEM_PROMPT
+from .rag.retriever import DocumentRetriever
+from .rag.ranker import DocumentRanker
+from .rag.citation import CitationNormalizer
+from .generators.local_gen import LocalGenerator
+from .verifiers.safety import SafetyVerifier
+from .verifiers.law_guard import LawGuard
+from .verifiers.risk_checker import RiskChecker
+from .router_rubert import RuBERTIntentClassifier
 
-from backend.ai.verifiers.risk_checker import RiskChecker
 
 class ConsultantCore:
-    """Orchestrator for the LegalAI consultant.
+    """
+    Оркестратор логики юридического консультанта.
 
-    Coordinates intent classification, document retrieval, answer generation
-    and verification to produce grounded responses with citations.
+    В ЭТОЙ ВЕРСИИ ОН ВСЕГДА РАБОТАЕТ КАК «ТАТЬЯНА»,
+    используя системный промпт TATYANA_SYSTEM_PROMPT.
     """
 
     def __init__(
         self,
-        *,
-        intent_classifier: Optional[RuBERTIntentClassifier] = None,
-        retriever: Optional[DocumentRetriever] = None,
-        ranker: Optional[DocumentRanker] = None,
-        citation_normalizer: Optional[CitationNormalizer] = None,
-        generator: Optional[LocalGenerator] = None,
-        law_guard: Optional[LawGuard] = None,
-        safety: Optional[SafetyVerifier] = None,
-                    risk_checker: Optional[RiskChecker] = None,
-
+        system_prompt: str = TATYANA_SYSTEM_PROMPT,
+        retriever: DocumentRetriever | None = None,
+        ranker: DocumentRanker | None = None,
+        citation_normalizer: CitationNormalizer | None = None,
+        generator: LocalGenerator | None = None,
+        safety: SafetyVerifier | None = None,
+        law_guard: LawGuard | None = None,
+        risk_checker: RiskChecker | None = None,
+        intent_classifier: RuBERTIntentClassifier | None = None,
     ) -> None:
-        # Initialize sub components; allow dependency injection for testing.
-        self.intent_classifier = intent_classifier or RuBERTIntentClassifier()
+        self.system_prompt = system_prompt
+
         self.retriever = retriever or DocumentRetriever()
         self.ranker = ranker or DocumentRanker()
         self.citation_normalizer = citation_normalizer or CitationNormalizer()
-        self.generator = generator or LocalGenerator()
-        self.law_guard = law_guard or LawGuard()
+        self.generator = generator or LocalGenerator(default_system_prompt=system_prompt)
         self.safety = safety or SafetyVerifier()
-                self.risk_checker = risk_checker or RiskChecker()
+        self.law_guard = law_guard or LawGuard()
+        self.risk_checker = risk_checker or RiskChecker()
+        self.intent_classifier = intent_classifier or RuBERTIntentClassifier()
 
+    async def ask(self, query: str) -> Dict[str, Any]:
+        """
+        Основной метод: принимает текстовый вопрос пользователя и возвращает
+        ответ Татьяны, список цитат и дополнительную информацию о рисках.
+        """
 
-    async def ask(self, query: str, *, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Process an incoming question and return an AI response with citations."""
-        if not query:
-         
+        clean_query = (query or "").strip()
+        if not clean_query:
+            raise ValueError("Пустой запрос. Опишите, пожалуйста, вашу ситуацию или задайте вопрос.")
 
-            raise ValueError("Query must not be empty")
+        # 1. Определяем намерение (тип задачи: шаблон, анализ, проверка, риски и т.п.)
+        intent = self.intent_classifier.classify(clean_query)
 
-        # 1. Intent classification to determine how to handle the query.
-        intent = self.intent_classifier.classify(query)
+        # 2. Ищем документы (законы, практику и т.д.) через RAG
+        docs: Sequence[Tuple[str, str]] = await self.retriever.retrieve(clean_query, top_k=8)
+        ranked_docs: Sequence[Tuple[str, str]] = self.ranker.rank(clean_query, docs)
 
-        # 2. Retrieve candidate documents using the RAG retriever.
-        docs = await self.retriever.retrieve(query, top_k=8)
-
-        # 3. Rank documents by relevance.
-        ranked_docs = self.ranker.rank(query, docs)
-
-        # 4. Normalize citations from the ranked docs.
+        # 3. Нормализуем цитаты (подготовка к LawGuard и возвращаемому формату)
         citations = self.citation_normalizer.normalize(ranked_docs)
+        citations = self.citation_normalizer.validate_dates(citations)
 
-        # 5. Generate a draft answer using the local generator.
-         
-         answer = await self.generator.generate(query, ranked_docs, intent=intent)
-        
- if     ot self.safety.verify(answer):
-     
-            raise ValueError("Generated content failed safety verification")
-        # Validate citations and ensure references are present.
-        citations = self.law_guard.validate_references(citations)
-        # Analyze risks in the generated answer.
+        # 4. Генерируем ответ, передавая системный промпт Татьяны
+        answer: str = self.generator.generate(
+            query=clean_query,
+            docs=ranked_docs,
+            system_prompt=self.system_prompt,
+        )
+
+        # 5. Проверка безопасности текста
+        if not self.safety.verify(answer):
+            raise ValueError(
+                "Сформированный ответ не прошёл внутреннюю проверку безопасности. "
+                "Повторите запрос, уточните формулировки или обратитесь к живому юристу."
+            )
+
+        # 6. Проверка того, что есть хотя бы какие-то ссылки на документы
+        # (LawGuard может выбросить исключение, если цитат нет)
+        validated_citations = self.law_guard.validate_references(citations)
+
+        # 7. Анализ рисков по тексту
         risk_info = self.risk_checker.analyze(answer)
-      
-return {"answer": answer, "citations": citations, "intent": intent, "risk_info": risk_info}
 
-  
+        return {
+            "answer": answer,
+            "citations": validated_citations,
+            "intent": intent,
+            "risk_info": risk_info,
+        }
 
-    async def check(self, text: str, *, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Perform a legal check of a provided document or statement."""
-        # Basic implementation: classify and retrieve normative references.
-        intent = self.intent_classifier.classify(text)
-        docs = await self.retriever.retrieve(text, top_k=5)
-        citations = self.citation_normalizer.normalize(docs)
-        return {"intent": intent, "citations": citations}
+    async def check(self, query: str) -> Dict[str, Any]:
+        """
+        Упрощённый режим: вернуть только найденные цитаты и тип намерения без подробного ответа.
+        """
 
-    async def suggest(self, text: str, *, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Suggest next steps or template use based on the provided input."""
-        intent = self.intent_classifier.classify(text)
-        # For suggestions we may rely on classification alone.
-        # Return suggestions as placeholder.
+        clean_query = (query or "").strip()
+        if not clean_query:
+            raise ValueError("Пустой запрос. Опишите, пожалуйста, вашу ситуацию.")
+
+        intent = self.intent_classifier.classify(clean_query)
+        docs = await self.retriever.retrieve(clean_query, top_k=8)
+        ranked_docs = self.ranker.rank(clean_query, docs)
+        citations = self.citation_normalizer.normalize(ranked_docs)
+        citations = self.citation_normalizer.validate_dates(citations)
+        validated_citations = self.law_guard.validate_references(citations)
+
+        return {
+            "intent": intent,
+            "citations": validated_citations,
+        }
+
+    async def suggest(self, query: str) -> Dict[str, Any]:
+        """
+        Режим подсказок: определить, что примерно нужно пользователю
+        (тип документа, примерный план действий), без детализированного текста.
+        """
+
+        clean_query = (query or "").strip()
+        if not clean_query:
+            raise ValueError("Пустой запрос. Кратко опишите, что вы хотите сделать.")
+
+        intent = self.intent_classifier.classify(clean_query)
+
+        # Здесь можно расширить логику: на основе intent возвращать подсказки по типу документа, шагам и т.д.
         suggestions: List[str] = []
+
         if intent == "template":
-            suggestions.append("Consider using a contract template.")
+            suggestions.append(
+                "Похоже, вам нужен шаблон документа (договор, претензия, иск и т.п.). "
+                "Я могу задать вам вопросы и подготовить черновик."
+            )
+        elif intent == "risk_check":
+            suggestions.append(
+                "Запрос касается оценки рисков. Я могу перечислить возможные сценарии, риски и рекомендованные меры."
+            )
         elif intent == "analysis":
-            suggestions.append("Provide more context for a detailed analysis.")
-        return {"intent": intent, "suggestions": suggestions}
+            suggestions.append(
+                "Запрос похож на общую консультацию. Я уточню детали, объясню ваши права и предложу варианты действий."
+            )
+        else:
+            suggestions.append(
+                "Я могу помочь вам с анализом ситуации, подготовкой документа или проверкой уже готового текста."
+            )
+
+        return {
+            "intent": intent,
+            "suggestions": suggestions,
+        }
