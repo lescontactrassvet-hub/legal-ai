@@ -577,6 +577,12 @@
             margin-bottom: 4px;
         }
 
+        .laws-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
         .link-more {
             font-size: 11px;
             color: var(--accent);
@@ -656,7 +662,6 @@
             <span>Режим конструктора</span>
         </label>
 
-        <!-- исправлено: реальная страница dashboard_help.html -->
         <a href="dashboard_help.html" class="help-btn">Инструкция</a>
 
         <div class="user-chip">
@@ -782,7 +787,7 @@
                 </section>
             </div>
 
-            <!-- Правая колонка: только список законов -->
+            <!-- Правая колонка: список законов -->
             <aside class="sidebar">
                 <section class="sidebar-block" id="laws-section">
                     <div class="sidebar-block-header">
@@ -791,11 +796,10 @@
                             Краткий список законов, указов и постановлений по выбранной стране.
                         </span>
                     </div>
-                    <ul class="laws-list">
-                        <li data-editable="true">Федеральный закон №XXX-ФЗ «О внесении изменений в...». Дата вступления: сегодня.</li>
-                        <li data-editable="true">Постановление Правительства №YYY «О порядке...». Дата вступления: сегодня.</li>
-                        <li data-editable="true">Указ Президента №ZZZ «О мерах по...». Дата вступления: сегодня.</li>
+                    <ul class="laws-list" id="lawsList">
+                        <li data-placeholder="true">Загрузка обновлений законодательства...</li>
                     </ul>
+                    <div class="laws-meta" id="lawsMeta"></div>
                     <a href="/updates" class="link-more" data-editable="true">
                         Открыть полный список обновлений законодательства
                     </a>
@@ -813,9 +817,12 @@
 <script>
     // Базовый URL API можно переопределить в window.LEGALAI_API_BASE
     const API_BASE = window.LEGALAI_API_BASE || "";
-    // Можно переопределить полностью явным эндпоинтом window.LEGALAI_CHAT_ENDPOINT
+    // Эндпоинт чата (можно задать явно через window.LEGALAI_CHAT_ENDPOINT)
     const CHAT_ENDPOINT =
         (window.LEGALAI_CHAT_ENDPOINT) || (API_BASE + "/ai/ask");
+    // Эндпоинт законов: либо задаётся глобально, либо по умолчанию /laws/today
+    const LAWS_ENDPOINT =
+        (window.LEGALAI_LAWS_ENDPOINT) || (API_BASE + "/laws/today");
 
     // Режим конструктора: тексты в localStorage
     const EDIT_KEY = "legalai_dashboard_texts_v1";
@@ -1012,6 +1019,189 @@
     document.getElementById("btnOpenDocuments")?.addEventListener("click", () => {
         window.location.href = "/documents";
     });
+
+    // ─── ОЖИВЛЕНИЕ БЛОКА ЗАКОНОВ ───
+
+    const lawsListEl = document.getElementById("lawsList");
+    const lawsMetaEl = document.getElementById("lawsMeta");
+
+    function formatDateDDMMYYYY(date) {
+        const d = date.getDate().toString().padStart(2, "0");
+        const m = (date.getMonth() + 1).toString().padStart(2, "0");
+        const y = date.getFullYear();
+        return `${d}.${m}.${y}`;
+    }
+
+    function formatLawDate(dateStr) {
+        if (!dateStr) return "";
+        const dt = new Date(dateStr);
+        if (isNaN(dt.getTime())) return "";
+        const now = new Date();
+        const msPerDay = 24 * 60 * 60 * 1000;
+        const diffDays = Math.floor(
+            (now.setHours(0,0,0,0) - dt.setHours(0,0,0,0)) / msPerDay
+        );
+        if (diffDays === 0) return "сегодня";
+        if (diffDays === 1) return "вчера";
+        if (diffDays > 1 && diffDays <= 7) return `${diffDays} дн. назад`;
+        return formatDateDDMMYYYY(new Date(dateStr));
+    }
+
+    function normalizeLawsData(data) {
+        let items = [];
+        if (Array.isArray(data)) {
+            items = data;
+        } else if (data && Array.isArray(data.items)) {
+            items = data.items;
+        } else if (data && Array.isArray(data.results)) {
+            items = data.results;
+        } else if (data && Array.isArray(data.laws)) {
+            items = data.laws;
+        } else {
+            return [];
+        }
+
+        return items.map(raw => {
+            const title =
+                raw.title ||
+                raw.name ||
+                raw.text ||
+                raw.summary ||
+                "Без названия";
+
+            const date =
+                raw.date ||
+                raw.effective_date ||
+                raw.start_date ||
+                raw.published_at ||
+                null;
+
+            const type =
+                raw.type ||
+                raw.kind ||
+                raw.category ||
+                null;
+
+            const link =
+                raw.link ||
+                raw.url ||
+                raw.href ||
+                null;
+
+            return { title, date, type, link };
+        });
+    }
+
+    function renderLawsError(msg) {
+        if (!lawsListEl) return;
+        lawsListEl.innerHTML = "";
+        const li = document.createElement("li");
+        li.textContent = msg || "Не удалось загрузить обновления законодательства.";
+        lawsListEl.appendChild(li);
+
+        if (lawsMetaEl) {
+            lawsMetaEl.textContent = "Ошибка связи с сервером.";
+        }
+    }
+
+    function renderLawsLoading() {
+        if (!lawsListEl) return;
+        lawsListEl.innerHTML = "";
+        const li = document.createElement("li");
+        li.textContent = "Загрузка обновлений законодательства...";
+        lawsListEl.appendChild(li);
+
+        if (lawsMetaEl) {
+            lawsMetaEl.textContent = "";
+        }
+    }
+
+    function renderLaws(items) {
+        if (!lawsListEl) return;
+        lawsListEl.innerHTML = "";
+
+        if (!items.length) {
+            const li = document.createElement("li");
+            li.textContent = "На сегодня нет опубликованных обновлений или данные недоступны.";
+            lawsListEl.appendChild(li);
+            if (lawsMetaEl) {
+                lawsMetaEl.textContent = "Обновления: нет данных.";
+            }
+            return;
+        }
+
+        const maxItems = 5;
+        items.slice(0, maxItems).forEach(item => {
+            const li = document.createElement("li");
+
+            const parts = [];
+            if (item.type) {
+                parts.push(item.type + ":");
+            }
+            parts.push(item.title);
+
+            const mainText = parts.join(" ");
+
+            if (item.link) {
+                const a = document.createElement("a");
+                a.href = item.link;
+                a.target = "_blank";
+                a.rel = "noreferrer noopener";
+                a.textContent = mainText;
+                li.appendChild(a);
+            } else {
+                li.textContent = mainText;
+            }
+
+            const dateText = formatLawDate(item.date);
+            if (dateText) {
+                const span = document.createElement("span");
+                span.style.display = "block";
+                span.style.fontSize = "11px";
+                span.style.color = "var(--text-muted)";
+                span.textContent = "Дата вступления: " + dateText;
+                li.appendChild(span);
+            }
+
+            lawsListEl.appendChild(li);
+        });
+
+        if (lawsMetaEl) {
+            const now = new Date();
+            lawsMetaEl.textContent = "Обновлено: " + formatDateDDMMYYYY(now);
+        }
+    }
+
+    async function fetchLaws() {
+        if (!lawsListEl) return;
+
+        if (!LAWS_ENDPOINT) {
+            renderLawsError("Эндпоинт обновлений законодательства не настроен.");
+            return;
+        }
+
+        renderLawsLoading();
+
+        try {
+            const resp = await fetch(LAWS_ENDPOINT, { method: "GET" });
+            if (!resp.ok) {
+                throw new Error("Bad status: " + resp.status);
+            }
+            const data = await resp.json();
+            const items = normalizeLawsData(data);
+            renderLaws(items);
+        } catch (e) {
+            console.error("Ошибка при загрузке законов:", e);
+            renderLawsError("Не удалось загрузить обновления законодательства. Попробуйте позже.");
+        }
+    }
+
+    // Вызываем загрузку законов после загрузки страницы
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", fetchLaws);
+    } else {
+        fetchLaws();
+    }
 </script>
 </body>
 </html>
