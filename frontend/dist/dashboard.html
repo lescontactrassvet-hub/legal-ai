@@ -816,7 +816,7 @@
 
 <script>
     // Базовый URL API можно переопределить в window.LEGALAI_API_BASE
-    const API_BASE = window.LEGALAI_API_BASE || "";
+    const API_BASE = window.LEGALAI_API_BASE || "https://api.legalai.su";
     // Эндпоинт чата (можно задать явно через window.LEGALAI_CHAT_ENDPOINT)
     const CHAT_ENDPOINT =
         (window.LEGALAI_CHAT_ENDPOINT) || (API_BASE + "/ai/ask");
@@ -1144,7 +1144,14 @@
 
             if (item.link) {
                 const a = document.createElement("a");
-                a.href = item.link;
+
+                // Если ссылка относительная — дополняем доменом publication.pravo.gov.ru
+                let href = item.link;
+                if (href.startsWith("/")) {
+                    href = "https://publication.pravo.gov.ru" + href;
+                }
+
+                a.href = href;
                 a.target = "_blank";
                 a.rel = "noreferrer noopener";
                 a.textContent = mainText;
