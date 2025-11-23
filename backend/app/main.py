@@ -1,20 +1,19 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import get_settings
-from app.db import Base, engine
-from app.legal_doc.routes import router as legal_doc_router
-from app.auth.routes import router as auth_router
-from app.auth.reset.router import router as reset_router  # модуль восстановления доступа
+from .config import get_settings
+from .db import Base, engine
+from .legal_doc.routes import router as legal_doc_router
+from .auth.routes import router as auth_router
+from .auth.reset.router import router as reset_router  # модуль восстановления доступа
 from routers.ai import router as ai_router  # AI-консультант ЮИИ Татьяна
 
-# === ДОБАВЛЕНО: обновления законов /laws/... ===
-from app.updates.routes import router as laws_router
-# ===============================================
-
-# === ДОБАВЛЕНО: загрузка логотипа ===
+# База законов (локальная БД)
+from app.laws.routes import router as laws_router
+# Онлайн-обновления законов (парсер, то что было в updates)
+from app.updates.routes import router as updates_router
+# Загрузка логотипа
 from app.admin.logo_upload import router as logo_upload_router
-# ====================================
 
 # --- Sentry (опционально) ---
 try:
@@ -32,19 +31,23 @@ Base.metadata.create_all(bind=engine)
 settings = get_settings()
 
 # Инициализация Sentry ТОЛЬКО если библиотека установлена и DSN задан
-if sentry_sdk and settings.SENTRY_DSN:
+if sentry_sdk and getattr(settings, "SENTRY_DSN", None):
     sentry_sdk.init(
         dsn=settings.SENTRY_DSN,
         integrations=[FastAPIIntegration()],
         traces_sample_rate=0.0,  # только ошибки, без перфоманса
+        environment=getattr(settings, "ENVIRONMENT", "production"),
     )
 
-app = FastAPI(title="LegalAI API")
+app = FastAPI(
+    title="Юридический API",
+    version="0.1.0",
+)
 
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=getattr(settings, "CORS_ALLOW_ORIGINS", ["*"]),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -65,18 +68,26 @@ async def debug_sentry():
     1 / 0
 
 
-# Роутеры
+# =========================
+#        Роутеры
+# =========================
+
+# Авторизация
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])
 app.include_router(reset_router, tags=["Auth Reset"])
+
+# Документы
 app.include_router(legal_doc_router, prefix="/docs", tags=["Docs"])
 
-# AI-консультант (prefix уже внутри файла)
+# AI-консультант (prefix уже внутри routers/ai.py)
 app.include_router(ai_router, tags=["AI"])
 
-# === ДОБАВЛЕНО: роут для законов /laws/... ===
+# База законов (локальная БД /laws/…)
 app.include_router(laws_router, tags=["Laws"])
-# ============================================
 
-# === ДОБАВЛЕНО: роут для загрузки логотипа ===
+# Онлайн-обновления законов (модуль updates)
+app.include_router(updates_router, tags=["Laws Updates"])
+
+# Админка: загрузка логотипа
 app.include_router(logo_upload_router, tags=["Admin"])
-# =============================================
+

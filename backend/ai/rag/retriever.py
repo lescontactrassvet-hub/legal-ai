@@ -1,38 +1,46 @@
-"""
-Module for retrieving documents for RAG.
+from typing import List, Tuple
 
-This module implements a DocumentRetriever class that uses
-full-text search and embeddings to fetch relevant documents
-fGeneration pipeline.
-"""
+from sqlalchemy.orm import Session
 
-from typing import List, Tuple, Any, Optional
+from app.db import SessionLocal
+from app.laws.models import Law
+
 
 class DocumentRetriever:
     """
-    Retrieves top-k relevant documents for a query. In this
-    simplified implementation, the retriever returns an empty
-    list because there is no law database connected.
+    RAG-ретривер для Татьяны.
+    Возвращает список (id, content).
     """
 
-    def __init__(self, top_k: int = 5) -> None:
-        self.top_k = top_k
+    def __init__(self):
+        pass
 
-    async def retrieve(self, query: str, top_k: Optional[int] = None) -> List[Tuple[str, Any]]:
-        """
-        Retrieve top-k relevant documents for the given query.
+    def _build_content(self, law: Law) -> str:
+        parts = [law.title or ""]
+        if law.number:
+            parts.append(f"Номер: {law.number}")
+        if law.summary:
+            parts.append("")
+            parts.append(law.summary)
+        return "\n".join(parts)
 
-        Args:
-            query: The user question string.
-            top_k: Optional number of top documents to return. If not provided,
-                   the default configured value is used.
+    def retrieve(self, query: str, top_k: int = 8) -> List[Tuple[int, str]]:
+        if not query or not query.strip():
+            return []
 
-        Returns:
-            A list of tuples (document_id, content) representing retrieved documents.
-        """
-        # Determine how many documents to retrieve
-        k = top_k or self.top_k
+        pattern = f"%{query.strip()}%"
 
-        # TODO: Implement actual retrieval logic (FTS5 + embeddings) in future
-        # For now, return an empty list as placeholder
-        return []
+        db: Session = SessionLocal()
+        try:
+            q = (
+                db.query(Law)
+                .filter(
+                    (Law.title.ilike(pattern)) | (Law.summary.ilike(pattern))
+                )
+                .order_by(Law.date_effective.desc().nullslast())
+                .limit(top_k)
+            )
+            laws = q.all()
+            return [(law.id, self._build_content(law)) for law in laws]
+        finally:
+            db.close()
