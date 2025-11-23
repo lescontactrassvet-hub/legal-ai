@@ -11,7 +11,7 @@ class LocalGenerator:
     Генератор ответа для Татьяны.
 
     Логика:
-      1. Получает вопрос пользователя и список фрагментов законов (documents).
+      1. Получает вопрос пользователя и список фрагментов законов (documents / context_docs).
       2. Собирает из них текстовый контекст.
       3. Пытается использовать GigaChat (если ключи заданы в окружении).
       4. При любой ошибке или отсутствии ключей возвращает локальный fallback-ответ.
@@ -53,25 +53,34 @@ class LocalGenerator:
     def generate(
         self,
         query: str,
-        documents: Sequence[DocTuple],
+        documents: Optional[Sequence[DocTuple]] = None,
+        context_docs: Optional[Sequence[DocTuple]] = None,
         intent: Optional[str] = None,
     ) -> str:
         """
         Основной метод генерации ответа.
 
-        query     — вопрос пользователя;
-        documents — список (doc_id, fragment);
-        intent    — намерение (template / analysis / risk / norm и т.п.).
+        query        — вопрос пользователя;
+        context_docs — список (doc_id, fragment), передаётся из ConsultantCore;
+        documents    — старый параметр для совместимости (tests / старый код);
+        intent       — намерение (template / analysis / risk / norm и т.п.).
         """
 
-        if not documents:
+        # Поддерживаем и новый параметр context_docs, и старый documents.
+        docs_source: Sequence[DocTuple] = (
+            context_docs
+            if context_docs is not None
+            else (documents or [])
+        )
+
+        if not docs_source:
             return (
                 "Сейчас я не вижу в базе подходящих норм, чтобы дать точный ответ. "
                 "Попробуйте сформулировать вопрос более конкретно или уточнить ситуацию. "
                 "При серьёзных рисках лучше дополнительно обратиться к юристу."
             )
 
-        context = self._build_context(documents)
+        context = self._build_context(docs_source)
         fallback_answer = self._build_fallback_answer(query, context, intent)
 
         # Если GigaChat не настроен — сразу отдаём fallback.
@@ -187,4 +196,3 @@ class LocalGenerator:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ]
-
