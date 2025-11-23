@@ -46,9 +46,7 @@ LAWS_XML_RSS_MAIN = os.getenv("LAWS_XML_RSS_MAIN", "https://publication.pravo.go
 # Базовый URL API /api/rss (можно переопределить, но по умолчанию — официальный)
 LAWS_API_BASE = os.getenv("LAWS_API_BASE", "http://publication.pravo.gov.ru/api/rss")
 
-# JSON/extra источники для будущей панели управления:
-# в .env можно указать:
-#   LAWS_EXTRA_SOURCES=https://example.com/rss1.xml,https://example.com/rss2.xml
+# Дополнительные источники для будущей панели управления
 LAWS_EXTRA_SOURCES = [
     url.strip()
     for url in os.getenv("LAWS_EXTRA_SOURCES", "").split(",")
@@ -69,14 +67,14 @@ def _build_api_url(block: Optional[str]) -> str:
 
 # Список официальных API-источников по блокам + их классификация
 API_BLOCKS: List[Tuple[Optional[str], str]] = [
-    (None, "general"),                    # все публикации
-    ("president", "presidential_decree"),  # указы Президента
-    ("government", "government_resolution"),  # постановления Правительства
-    ("council_1", "federal_parliament"),  # Совет Федерации / федеральные акты
-    ("council_2", "federal_parliament"),  # Госдума / федеральные акты
+    (None, "general"),                        # все публикации
+    ("president", "presidential_decree"),    # указы Президента
+    ("government", "government_resolution"), # постановления Правительства
+    ("council_1", "federal_parliament"),     # Совет Федерации
+    ("council_2", "federal_parliament"),     # Госдума
     ("federal_authorities", "ministerial_order"),  # ведомственные акты
-    ("court", "court_ruling"),            # судебные решения
-    ("international", "international_treaty"),  # международные акты
+    ("court", "court_ruling"),               # судебные решения
+    ("international", "international_treaty"),      # международные акты
 ]
 
 
@@ -88,7 +86,6 @@ def _parse_pub_date(value: Optional[str]) -> Optional[datetime]:
     if not value:
         return None
     value = value.strip()
-    # Пример формата: "Fri, 22 Nov 2025 15:32:00 +0300"
     try:
         dt = datetime.strptime(value, "%a, %d %b %Y %H:%M:%S %z")
         return dt.astimezone(timezone.utc)
@@ -145,7 +142,6 @@ def fetch_laws_from_rss(url: str) -> List[Dict[str, object]]:
         number = _extract_number_from_title(title)
 
         if not link:
-            # Без ссылки добавлять в базу бессмысленно
             continue
 
         items.append(
@@ -248,13 +244,27 @@ def sync_xml_main() -> int:
     """
     Синхронизация по основной XML-ленте (rid=1).
     Считаем её общим потоком "general".
+
+    ВАЖНО: если источник недоступен (timeout, блокировка и т.п.),
+    НЕ валим весь процесс синхронизации — просто логируем и продолжаем.
     """
     if not LAWS_XML_RSS_MAIN:
         logger.error("LAWS_XML_RSS_MAIN не задан.")
         return 0
 
     logger.info("Синхронизация из XML RSS (main): %s", LAWS_XML_RSS_MAIN)
-    items = fetch_laws_from_rss(LAWS_XML_RSS_MAIN)
+
+    try:
+        items = fetch_laws_from_rss(LAWS_XML_RSS_MAIN)
+    except Exception as exc:  # requests.exceptions.RequestException и прочее
+        logger.exception(
+            "Не удалось загрузить основную XML RSS (%s). "
+            "Возможно временные сетевые проблемы или ограничение доступа. "
+            "Продолжаем синхронизацию по другим источникам.",
+            LAWS_XML_RSS_MAIN,
+        )
+        return 0
+
     return _save_items_to_db(items, law_type="general", source=DEFAULT_SOURCE)
 
 
@@ -300,7 +310,6 @@ def sync_extra_sources() -> int:
             logger.exception("Ошибка при загрузке дополнительного источника %s", url)
             continue
 
-        # Дополнительные источники помечаем отдельным source
         created = _save_items_to_db(items, law_type="extra", source=url)
         total_created += created
 
@@ -323,6 +332,7 @@ def sync_all_sources() -> int:
     logger.info("=== Запуск синхронизации законов (all sources) ===")
     total = 0
 
+    # Даже если XML-лента падает по timeout, мы всё равно идём дальше по API
     total += sync_xml_main()
     total += sync_api_blocks()
     total += sync_extra_sources()
