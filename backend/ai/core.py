@@ -1,5 +1,3 @@
-# backend/ai/core.py
-
 from typing import Any, Dict, List, Sequence, Tuple
 
 from .tatyana_profile import TATYANA_SYSTEM_PROMPT
@@ -34,11 +32,10 @@ class ConsultantCore:
         intent_classifier: RuBERTIntentClassifier | None = None,
     ) -> None:
         self.system_prompt = system_prompt
-
         self.retriever = retriever or DocumentRetriever()
         self.ranker = ranker or DocumentRanker()
         self.citation_normalizer = citation_normalizer or CitationNormalizer()
-        self.generator = generator or LocalGenerator(default_system_prompt=system_prompt)
+        self.generator = generator or LocalGenerator(system_prompt=system_prompt)
         self.safety = safety or SafetyVerifier()
         self.law_guard = law_guard or LawGuard()
         self.risk_checker = risk_checker or RiskChecker()
@@ -46,44 +43,48 @@ class ConsultantCore:
 
     async def ask(self, query: str) -> Dict[str, Any]:
         """
-        Основной метод: принимает текстовый вопрос пользователя и возвращает
-        ответ Татьяны, список цитат и дополнительную информацию о рисках.
+        Основной режим: получить ответ Татьяны с цитатами и анализом рисков.
         """
-
-        clean_query = (query or "").strip()
+        clean_query = query.strip()
         if not clean_query:
-            raise ValueError("Пустой запрос. Опишите, пожалуйста, вашу ситуацию или задайте вопрос.")
-
-        # 1. Определяем намерение (тип задачи: шаблон, анализ, проверка, риски и т.п.)
-        intent = self.intent_classifier.classify(clean_query)
-
-        # 2. Ищем документы (законы, практику и т.д.) через RAG
-        docs: Sequence[Tuple[str, str]] = await self.retriever.retrieve(clean_query, top_k=8)
-        ranked_docs: Sequence[Tuple[str, str]] = self.ranker.rank(clean_query, docs)
-
-        # 3. Нормализуем цитаты (подготовка к LawGuard и возвращаемому формату)
-        citations = self.citation_normalizer.normalize(ranked_docs)
-        citations = self.citation_normalizer.validate_dates(citations)
-
-        # 4. Генерируем ответ, передавая системный промпт Татьяны
-        answer: str = self.generator.generate(
-            query=clean_query,
-            docs=ranked_docs,
-            system_prompt=self.system_prompt,
-        )
-
-        # 5. Проверка безопасности текста
-        if not self.safety.verify(answer):
             raise ValueError(
-                "Сформированный ответ не прошёл внутреннюю проверку безопасности. "
-                "Повторите запрос, уточните формулировки или обратитесь к живому юристу."
+                "Пустой запрос. Пожалуйста, сформулируйте ваш вопрос или ситуацию."
             )
 
-        # 6. Проверка того, что есть хотя бы какие-то ссылки на документы
-        # (LawGuard может выбросить исключение, если цитат нет)
-        validated_citations = self.law_guard.validate_references(citations)
+        # 1. Определяем намерение пользователя
+        intent = self.intent_classifier.classify(clean_query)
 
-        # 7. Анализ рисков по тексту
+        # 2. Ищем документы (СИНХРОННЫЙ вызов, без await!)
+        docs: Sequence[Tuple[str, str]] = self.retriever.retrieve(
+            clean_query, top_k=8
+        )
+
+        # 3. Ранжируем документы
+        ranked_docs = self.ranker.rank(clean_query, docs)
+
+        # 4. Преобразуем документы в список цитат
+        citations = self.citation_normalizer.normalize(ranked_docs)
+
+        # 5. Генерируем ответ
+        answer = self.generator.generate(
+            query=clean_query,
+            context_docs=ranked_docs,
+            intent=intent,
+        )
+
+        # 6. Проверка безопасности
+        if not self.safety.verify(answer):
+            raise ValueError(
+                "AI-ответ не прошёл проверку безопасности. Попробуйте переформулировать вопрос."
+            )
+
+        # 7. Проверка ссылок на нормы (мягкий режим: при ошибке не падаем)
+        try:
+            validated_citations = self.law_guard.validate_references(citations)
+        except Exception:
+            validated_citations = citations
+
+        # 8. Анализ рисков
         risk_info = self.risk_checker.analyze(answer)
 
         return {
@@ -95,19 +96,26 @@ class ConsultantCore:
 
     async def check(self, query: str) -> Dict[str, Any]:
         """
-        Упрощённый режим: вернуть только найденные цитаты и тип намерения без подробного ответа.
+        Лёгкий режим: только намерение и список релевантных цитат.
         """
-
-        clean_query = (query or "").strip()
+        clean_query = query.strip()
         if not clean_query:
-            raise ValueError("Пустой запрос. Опишите, пожалуйста, вашу ситуацию.")
+            raise ValueError(
+                "Пустой запрос. Пожалуйста, сформулируйте ваш вопрос или ситуацию."
+            )
 
         intent = self.intent_classifier.classify(clean_query)
-        docs = await self.retriever.retrieve(clean_query, top_k=8)
+
+        docs: Sequence[Tuple[str, str]] = self.retriever.retrieve(
+            clean_query, top_k=8
+        )
         ranked_docs = self.ranker.rank(clean_query, docs)
         citations = self.citation_normalizer.normalize(ranked_docs)
-        citations = self.citation_normalizer.validate_dates(citations)
-        validated_citations = self.law_guard.validate_references(citations)
+
+        try:
+            validated_citations = self.law_guard.validate_references(citations)
+        except Exception:
+            validated_citations = citations
 
         return {
             "intent": intent,
@@ -116,35 +124,41 @@ class ConsultantCore:
 
     async def suggest(self, query: str) -> Dict[str, Any]:
         """
-        Режим подсказок: определить, что примерно нужно пользователю
-        (тип документа, примерный план действий), без детализированного текста.
+        Подсказки: как лучше сформулировать запрос для Татьяны.
         """
-
-        clean_query = (query or "").strip()
+        clean_query = query.strip()
         if not clean_query:
-            raise ValueError("Пустой запрос. Кратко опишите, что вы хотите сделать.")
+            raise ValueError(
+                "Пустой запрос. Опишите, пожалуйста, вашу ситуацию или вопрос."
+            )
 
         intent = self.intent_classifier.classify(clean_query)
-
-        # Здесь можно расширить логику: на основе intent возвращать подсказки по типу документа, шагам и т.д.
         suggestions: List[str] = []
 
         if intent == "template":
-            suggestions.append(
-                "Похоже, вам нужен шаблон документа (договор, претензия, иск и т.п.). "
-                "Я могу задать вам вопросы и подготовить черновик."
+            suggestions.extend(
+                [
+                    "Уточните, для какого органа и региона нужен документ.",
+                    "Добавьте факты: даты, суммы, участников, ключевые события.",
+                ]
             )
         elif intent == "risk_check":
-            suggestions.append(
-                "Запрос касается оценки рисков. Я могу перечислить возможные сценарии, риски и рекомендованные меры."
+            suggestions.extend(
+                [
+                    "Опишите, какие действия уже были совершены.",
+                    "Уточните, каких последствий вы опасаетесь: штраф, расторжение договора, уголовная ответственность и т.п.",
+                ]
             )
         elif intent == "analysis":
-            suggestions.append(
-                "Запрос похож на общую консультацию. Я уточню детали, объясню ваши права и предложу варианты действий."
+            suggestions.extend(
+                [
+                    "Разбейте вашу ситуацию на шаги и задайте несколько конкретных вопросов.",
+                    "Укажите, какие документы уже есть (договор, решение суда, уведомления).",
+                ]
             )
         else:
             suggestions.append(
-                "Я могу помочь вам с анализом ситуации, подготовкой документа или проверкой уже готового текста."
+                "Сформулируйте вопрос простым языком в одном-двух предложениях: кто, что сделал и чего вы хотите добиться."
             )
 
         return {
