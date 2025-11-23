@@ -189,13 +189,13 @@ jobs:
           # === НОВЫЙ БЛОК: создание таблицы laws, если её нет ===
           echo "[DEPLOY] Инициализируем таблицу laws (если отсутствует)..."
           python << 'PYEOF'
-from app.db import Base, engine
-from app.laws.models import Law
+          from app.db import Base, engine
+          from app.laws.models import Law
 
-print("[INIT_LAWS] Creating laws table if not exists...")
-Base.metadata.create_all(bind=engine, tables=[Law.__table__])
-print("[INIT_LAWS] Done.")
-PYEOF
+          print("[INIT_LAWS] Creating laws table if not exists...")
+          Base.metadata.create_all(bind=engine, tables=[Law.__table__])
+          print("[INIT_LAWS] Done.")
+          PYEOF
           # === КОНЕЦ НОВОГО БЛОКА ===
 
           # === НОВЫЙ БЛОК: установка/обновление CRON для синхронизации законов ===
