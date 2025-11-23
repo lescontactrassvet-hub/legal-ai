@@ -188,7 +188,7 @@ jobs:
 
           # === НОВЫЙ БЛОК: создание таблицы laws, если её нет ===
           echo "[DEPLOY] Инициализируем таблицу laws (если отсутствует)..."
-          python - << 'PYEOF'
+          python << 'PYEOF'
 from app.db import Base, engine
 from app.laws.models import Law
 
