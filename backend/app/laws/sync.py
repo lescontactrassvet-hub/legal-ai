@@ -1,18 +1,23 @@
 """
-Автоматическая загрузка законов в таблицу laws из официального источника
+Автоматическая загрузка законов в таблицу laws из официальных источников
 (Официальный интернет-портал правовой информации — publication.pravo.gov.ru).
 
-Логика:
-  1) Берём RSS-ленту с портала (URL задаётся через переменную окружения LAWS_RSS_URL_MAIN).
-  2) Парсим элементы RSS (title, link, guid, pubDate).
-  3) Преобразуем в объекты Law.
-  4) Сохраняем в таблицу laws, не создавая дубликаты по (source, external_id).
+Вариант A:
+  - XML RSS-лента (общая):
+      https://publication.pravo.gov.ru/rss?rid=1
+  - API RSS по блокам:
+      http://publication.pravo.gov.ru/api/rss?pageSize=200
+      http://publication.pravo.gov.ru/api/rss?block=president&pageSize=200
+      http://publication.pravo.gov.ru/api/rss?block=government&pageSize=200
+      http://publication.pravo.gov.ru/api/rss?block=council_1&pageSize=200
+      http://publication.pravo.gov.ru/api/rss?block=council_2&pageSize=200
+      http://publication.pravo.gov.ru/api/rss?block=federal_authorities&pageSize=200
+      http://publication.pravo.gov.ru/api/rss?block=court&pageSize=200
+      http://publication.pravo.gov.ru/api/rss?block=international&pageSize=200
 
-Вся работа идёт только с уже существующей моделью Law:
-  source, external_id, number, title, summary,
-  law_type, country, language,
-  date_published, date_effective, link, created_at, updated_at
-— поля взяты из реального SQL-запроса backend'а.
+Все эти URL отдают RSS/XML, поэтому используем единый XML-парсер.
+
+Дубликаты режем по паре (source, external_id).
 """
 
 from __future__ import annotations
@@ -21,7 +26,7 @@ import logging
 import os
 import re
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import requests
 import xml.etree.ElementTree as ET
@@ -31,12 +36,51 @@ from app.laws.models import Law
 
 logger = logging.getLogger(__name__)
 
-# Официальный источник
 DEFAULT_SOURCE = "publication.pravo.gov.ru"
 
-# URL RSS-ленты берём из .env, чтобы не хардкодить
-# (например: https://publication.pravo.gov.ru/rss?rid=1 — "последние опубликованные акты")
-LAWS_RSS_URL_MAIN = os.getenv("LAWS_RSS_URL_MAIN")
+# --- Настройки источников -----------------------------------------------------
+
+# Основная XML-лента (можно переопределить через .env при желании)
+LAWS_XML_RSS_MAIN = os.getenv("LAWS_XML_RSS_MAIN", "https://publication.pravo.gov.ru/rss?rid=1")
+
+# Базовый URL API /api/rss (можно переопределить, но по умолчанию — официальный)
+LAWS_API_BASE = os.getenv("LAWS_API_BASE", "http://publication.pravo.gov.ru/api/rss")
+
+# JSON/extra источники для будущей панели управления:
+# в .env можно указать:
+#   LAWS_EXTRA_SOURCES=https://example.com/rss1.xml,https://example.com/rss2.xml
+LAWS_EXTRA_SOURCES = [
+    url.strip()
+    for url in os.getenv("LAWS_EXTRA_SOURCES", "").split(",")
+    if url.strip()
+]
+
+
+def _build_api_url(block: Optional[str]) -> str:
+    """
+    Собирает URL для /api/rss.
+    block == None  → общий список,
+    block == "president" / "government" / ... → конкретный блок.
+    """
+    if block:
+        return f"{LAWS_API_BASE}?block={block}&pageSize=200"
+    return f"{LAWS_API_BASE}?pageSize=200"
+
+
+# Список официальных API-источников по блокам + их классификация
+API_BLOCKS: List[Tuple[Optional[str], str]] = [
+    (None, "general"),                    # все публикации
+    ("president", "presidential_decree"),  # указы Президента
+    ("government", "government_resolution"),  # постановления Правительства
+    ("council_1", "federal_parliament"),  # Совет Федерации / федеральные акты
+    ("council_2", "federal_parliament"),  # Госдума / федеральные акты
+    ("federal_authorities", "ministerial_order"),  # ведомственные акты
+    ("court", "court_ruling"),            # судебные решения
+    ("international", "international_treaty"),  # международные акты
+]
+
+
+# --- Вспомогательные функции --------------------------------------------------
 
 
 def _parse_pub_date(value: Optional[str]) -> Optional[datetime]:
@@ -44,7 +88,7 @@ def _parse_pub_date(value: Optional[str]) -> Optional[datetime]:
     if not value:
         return None
     value = value.strip()
-    # Стандартный формат RSS: "Fri, 22 Nov 2025 15:32:00 +0300"
+    # Пример формата: "Fri, 22 Nov 2025 15:32:00 +0300"
     try:
         dt = datetime.strptime(value, "%a, %d %b %Y %H:%M:%S %z")
         return dt.astimezone(timezone.utc)
@@ -60,16 +104,23 @@ def _extract_number_from_title(title: str) -> Optional[str]:
     """
     if not title:
         return None
-    # Очень мягкий шаблон: ищем "№" и всё до конца слова/фразы
     m = re.search(r"№\s*([^\s,«\"]+)", title)
     if m:
         return f"№ {m.group(1)}"
     return None
 
 
+def _fetch_xml(url: str) -> ET.Element:
+    """Скачивает и парсит XML-документ."""
+    logger.info("Загрузка XML RSS: %s", url)
+    resp = requests.get(url, timeout=30)
+    resp.raise_for_status()
+    return ET.fromstring(resp.content)
+
+
 def fetch_laws_from_rss(url: str) -> List[Dict[str, object]]:
     """
-    Загружает и парсит RSS-ленту официального портала.
+    Универсальный парсер RSS/XML.
 
     Возвращает список словарей:
       {
@@ -80,11 +131,7 @@ def fetch_laws_from_rss(url: str) -> List[Dict[str, object]]:
         "number": str | None,
       }
     """
-    logger.info("Загрузка RSS ленты законов: %s", url)
-    resp = requests.get(url, timeout=20)
-    resp.raise_for_status()
-
-    root = ET.fromstring(resp.content)
+    root = _fetch_xml(url)
 
     items: List[Dict[str, object]] = []
     for item in root.findall(".//item"):
@@ -111,23 +158,21 @@ def fetch_laws_from_rss(url: str) -> List[Dict[str, object]]:
             }
         )
 
-    logger.info("Из RSS получено %d элементов", len(items))
+    logger.info("Из RSS %s получено %d элементов", url, len(items))
     return items
 
 
-def sync_rss_into_db(url: str) -> int:
+def _save_items_to_db(
+    items: List[Dict[str, object]],
+    law_type: str,
+    source: str = DEFAULT_SOURCE,
+) -> int:
     """
-    Основная функция синхронизации: загружает RSS и записывает новые акты в таблицу laws.
+    Сохраняет элементы в таблицу laws.
 
-    Возвращает количество НОВЫХ добавленных записей.
+    Дубликаты (source, external_id) игнорируются.
+    Возвращает количество НОВЫХ записей.
     """
-    if not url:
-        logger.error(
-            "LAWS_RSS_URL_MAIN не задан. Укажите URL RSS-канала в переменной окружения."
-        )
-        return 0
-
-    items = fetch_laws_from_rss(url)
     if not items:
         return 0
 
@@ -139,11 +184,10 @@ def sync_rss_into_db(url: str) -> int:
             external_id = str(item["external_id"])
             link = str(item["link"])
 
-            # Проверка на дубликат: та же пара (source, external_id)
             existing = (
                 session.query(Law)
                 .filter(
-                    Law.source == DEFAULT_SOURCE,
+                    Law.source == source,
                     Law.external_id == external_id,
                 )
                 .first()
@@ -155,14 +199,13 @@ def sync_rss_into_db(url: str) -> int:
             number = item.get("number")
             date_published = item.get("date_published")
 
-            # Заполняем только то, что знаем точно. Остальное оставляем None.
             law = Law(
-                source=DEFAULT_SOURCE,
+                source=source,
                 external_id=external_id,
                 number=number,
                 title=title,
                 summary=None,
-                law_type="federal_act",  # мягкая метка, можно доработать классификацию
+                law_type=law_type,
                 country="RU",
                 language="ru",
                 date_published=date_published,
@@ -175,9 +218,18 @@ def sync_rss_into_db(url: str) -> int:
 
         if created:
             session.commit()
-            logger.info("В таблицу laws добавлено %d новых записей", created)
+            logger.info(
+                "В таблицу laws добавлено %d новых записей (law_type=%s, source=%s)",
+                created,
+                law_type,
+                source,
+            )
         else:
-            logger.info("Новых законов для добавления нет")
+            logger.info(
+                "Новых законов для добавления нет (law_type=%s, source=%s)",
+                law_type,
+                source,
+            )
 
     except Exception:
         session.rollback()
@@ -189,27 +241,96 @@ def sync_rss_into_db(url: str) -> int:
     return created
 
 
-def sync_all_sources() -> int:
-    """
-    Точка входа для cron / ручного запуска.
+# --- Публичные функции синхронизации -----------------------------------------
 
-    Сейчас используем только один официальный источник — RSS портала публикаций.
-    В будущем сюда можно добавить другие источники (Минюст, Правительство и т.п.).
+
+def sync_xml_main() -> int:
     """
-    if not LAWS_RSS_URL_MAIN:
-        logger.error(
-            "Переменная LAWS_RSS_URL_MAIN не задана. "
-            "Укажите URL RSS-канала publication.pravo.gov.ru в .env."
-        )
+    Синхронизация по основной XML-ленте (rid=1).
+    Считаем её общим потоком "general".
+    """
+    if not LAWS_XML_RSS_MAIN:
+        logger.error("LAWS_XML_RSS_MAIN не задан.")
         return 0
 
-    logger.info("Запуск синхронизации законов из RSS...")
-    total = sync_rss_into_db(LAWS_RSS_URL_MAIN)
-    logger.info("Синхронизация завершена. Добавлено %d новых актов.", total)
+    logger.info("Синхронизация из XML RSS (main): %s", LAWS_XML_RSS_MAIN)
+    items = fetch_laws_from_rss(LAWS_XML_RSS_MAIN)
+    return _save_items_to_db(items, law_type="general", source=DEFAULT_SOURCE)
+
+
+def sync_api_blocks() -> int:
+    """
+    Синхронизация по всем /api/rss?block=...&pageSize=200.
+
+    Для каждого блока используем свой law_type (presidential_decree, government_resolution и т.д.).
+    """
+    total_created = 0
+
+    for block, law_type in API_BLOCKS:
+        url = _build_api_url(block)
+        logger.info("Синхронизация из API RSS: %s (law_type=%s)", url, law_type)
+        try:
+            items = fetch_laws_from_rss(url)
+        except Exception:
+            logger.exception("Ошибка при загрузке %s", url)
+            continue
+
+        created = _save_items_to_db(items, law_type=law_type, source=DEFAULT_SOURCE)
+        total_created += created
+
+    return total_created
+
+
+def sync_extra_sources() -> int:
+    """
+    Синхронизация с дополнительных источников, заданных в .env (LAWS_EXTRA_SOURCES).
+
+    Это задел для панели управления: позже панель сможет управлять этим списком,
+    сейчас он читается из переменной окружения.
+    """
+    total_created = 0
+    if not LAWS_EXTRA_SOURCES:
+        return 0
+
+    for url in LAWS_EXTRA_SOURCES:
+        logger.info("Синхронизация из дополнительного источника: %s", url)
+        try:
+            items = fetch_laws_from_rss(url)
+        except Exception:
+            logger.exception("Ошибка при загрузке дополнительного источника %s", url)
+            continue
+
+        # Дополнительные источники помечаем отдельным source
+        created = _save_items_to_db(items, law_type="extra", source=url)
+        total_created += created
+
+    return total_created
+
+
+def sync_all_sources() -> int:
+    """
+    Главная точка входа (cron / ручной запуск).
+
+    Вариант A:
+      1) Основная XML-лента publication.pravo.gov.ru/rss?rid=1
+      2) Все блоки /api/rss?block=...&pageSize=200
+      3) Дополнительные источники из LAWS_EXTRA_SOURCES (для панели управления)
+
+    Дубликаты автоматически игнорируются.
+    """
+    logging.basicConfig(level=logging.INFO)
+
+    logger.info("=== Запуск синхронизации законов (all sources) ===")
+    total = 0
+
+    total += sync_xml_main()
+    total += sync_api_blocks()
+    total += sync_extra_sources()
+
+    logger.info("=== Синхронизация завершена. Всего добавлено %d актов. ===", total)
     return total
 
 
 if __name__ == "__main__":
     # Позволяет запускать: python -m app.laws.sync
-    logging.basicConfig(level=logging.INFO)
     sync_all_sources()
