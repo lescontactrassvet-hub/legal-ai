@@ -1,0 +1,62 @@
+name: Repo analyzer (auto)
+
+on:
+  # Автоматический запуск раз в сутки (02:00 UTC)
+  schedule:
+    - cron: "0 2 * * *"
+
+  # Ручной запуск из Actions при необходимости
+  workflow_dispatch:
+    inputs:
+      update_readme:
+        description: "Также обновить авто-блок структуры в README.md?"
+        required: false
+        default: "false"
+
+jobs:
+  analyze:
+    name: Run full repo analyzer
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write  # нужно для авто-коммита
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run Repo Analyzer v2
+        run: |
+          python tools/repo_analyzer.py
+
+      - name: Optionally update README auto-structure block
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.update_readme == 'true'
+        run: |
+          echo "[INFO] Updating README.md auto-structure block..."
+          python tools/update_readme.py --update-readme
+
+      - name: Upload analysis artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: repo-analysis
+          path: |
+            Repo_LegalAI_Structure.txt
+            Repo_LegalAI_Analysis.txt
+
+      - name: Commit changes (if any)
+        run: |
+          if git status --porcelain | grep -q "."; then
+            echo "[INFO] Changes detected, committing..."
+            git config user.name "LegalAI Repo Bot"
+            git config user.email "repo-bot@legalai.local"
+            git add Repo_LegalAI_Structure.txt Repo_LegalAI_Analysis.txt README.md || true
+            git commit -m "chore(docs): auto repo analysis"
+            git push
+          else
+            echo "[INFO] No changes to commit."
+          fi
