@@ -46,7 +46,9 @@ jobs:
       - name: Run backend tests
         working-directory: backend
         run: |
-          if ls tests 1>/dev/null 2>&1; then
+          if [ -d "tests" ]; then
+            echo "Running pytest..."
             pytest
           else
-            echo "No tests/ directory found in backend/, nothing to run."
+            echo "No tests directory found. Skipping backend tests."
+          fi
