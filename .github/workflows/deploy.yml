@@ -203,7 +203,7 @@ jobs:
             echo "[DEPLOY] Обновляем cron-задачу для синхронизации законов..."
             bash "${PROJECT_ROOT}/deploy/infra/setup_laws_cron.sh" || echo "[DEPLOY] setup_laws_cron.sh завершился с ошибкой"
           else
-            echo "[DEPLOY] ВНИМАНИЕ: setup_laws_cron.sh не найден, cron для законов не обновлён."
+            echo "[DEPLOY] ВНИМАНИЕ: setup_laws_crон.sh не найден, cron для законов не обновлён."
           fi
           # === КОНЕЦ БЛОКА CRON ===
 
