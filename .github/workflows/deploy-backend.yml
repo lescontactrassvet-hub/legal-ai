@@ -1,15 +1,23 @@
 name: Deploy backend
 
 on:
-  # запуск вручную из Actions
+  # Ручной запуск из вкладки Actions
   workflow_dispatch:
 
-  # вызов из deploy.yml
-  workflow_call:
+  # Авто-запуск при изменениях в backend или самом workflow
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-backend.yml"
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
 
 jobs:
   deploy-backend:
-    name: Deploy backend to server
     runs-on: ubuntu-latest
 
     env:
@@ -22,45 +30,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # --- СБОРКА ФРОНТЕНДА ПЕРЕД RSYNC ---
-
-      - name: Detect frontend
-        id: detect-fe
-        run: |
-          if [ -f "frontend/package.json" ]; then
-            echo "has_fe=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_fe=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Set up Node (if frontend exists)
-        if: steps.detect-fe.outputs.has_fe == 'true'
-        uses: actions/setup-node@v4
+      - name: Set up Python (for future tooling if needed)
+        uses: actions/setup-python@v5
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: |
-            frontend/package-lock.json
-            frontend/package.json
+          python-version: "3.12"
 
-      - name: Build frontend (if present)
-        if: steps.detect-fe.outputs.has_fe == 'true'
-        working-directory: frontend
-        run: |
-          if [ -f "package-lock.json" ]; then
-            npm ci
-          else
-            npm install
-          fi
-
-          if npm run | grep -q "build"; then
-            npm run build
-          else
-            echo "No build script in package.json, skipping build."
-          fi
-
-      # --- ДАЛЬШЕ КАК РАНЬШЕ: SSH + RSYNC + ДЕПЛОЙ ---
-
+      # Подготавливаем SSH-ключ для доступа к серверу
       - name: Prepare SSH key
         run: |
           mkdir -p ~/.ssh
@@ -71,7 +46,7 @@ jobs:
         run: |
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
-      # Бэкап проекта на сервере ДО rsync
+      # Бэкап проекта на сервере ДО rsync (на всякий случай)
       - name: Backup project on server (pre-rsync)
         run: |
           ssh "${SSH_USER}@${SSH_HOST}" 'bash -s' << 'EOF'
@@ -89,13 +64,14 @@ jobs:
               --warning=no-file-changed \
               --exclude='./backups' \
               --exclude='./deploy_logs' \
+              --exclude='./data' \
               -C /srv legal-ai || true
           else
             echo "[BACKUP] Каталог ${PROJECT_ROOT} не найден, бэкап не требуется."
           fi
           EOF
 
-      # Синхронизация кода на сервере (repo -> /srv/legal-ai)
+      # Синхронизация кода (но НЕ данных и БД) на сервер
       - name: Rsync project to server
         run: |
           rsync -az --delete \
@@ -103,6 +79,9 @@ jobs:
             --exclude ".github" \
             --exclude "node_modules" \
             --exclude "frontend/node_modules" \
+            --exclude "data/" \
+            --exclude "backend/legalai.db" \
+            --exclude "backend/dev.db" \
             ./ "${SSH_USER}@${SSH_HOST}:/srv/legal-ai/"
 
       # Основной деплой-скрипт на сервере
@@ -114,16 +93,43 @@ jobs:
           PROJECT_ROOT="/srv/legal-ai"
           BACKUP_ROOT="${PROJECT_ROOT}/backups"
           LOG_ROOT="${PROJECT_ROOT}/deploy_logs"
+          DATA_ROOT="${PROJECT_ROOT}/data"
+          OLD_DB="${PROJECT_ROOT}/backend/legalai.db"
+          NEW_DB="${DATA_ROOT}/legalai.db"
           TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
           LOG_FILE="${LOG_ROOT}/deploy_${TIMESTAMP}.log"
 
           mkdir -p "$LOG_ROOT"
+          mkdir -p "$DATA_ROOT"
 
           # Логируем все действия деплоя в файл + на экран
           exec > >(tee -a "$LOG_FILE") 2>&1
 
           echo "[DEPLOY] Запуск деплоя: ${TIMESTAMP}"
           echo "[DEPLOY] PROJECT_ROOT=${PROJECT_ROOT}"
+          echo "[DEPLOY] DATA_ROOT=${DATA_ROOT}"
+
+          # --- Одноразовый перенос старой БД в /data ---
+          if [ -f "$OLD_DB" ] && [ ! -f "$NEW_DB" ]; then
+            echo "[DB] Обнаружена старая база ${OLD_DB}, переносим в ${NEW_DB}"
+            mv "$OLD_DB" "$NEW_DB"
+          else
+            echo "[DB] Перенос базы не требуется (старой БД нет или новая уже существует)."
+          fi
+
+          # --- Гарантируем наличие файла БД ---
+          if [ ! -f "$NEW_DB" ]; then
+            echo "[DB] Файл БД отсутствует → создаём новый пустой SQLite"
+            if command -v sqlite3 >/dev/null 2>&1; then
+              sqlite3 "$NEW_DB" "VACUUM;" || true
+            else
+              echo "[DB] ВНИМАНИЕ: sqlite3 не установлен, создаём пустой файл БД"
+              touch "$NEW_DB"
+            fi
+          fi
+
+          chmod 666 "$NEW_DB" || true
+          echo "[DB] Итоговый файл БД: $NEW_DB"
 
           cd "${PROJECT_ROOT}/backend"
 
@@ -147,13 +153,14 @@ jobs:
 
           if [ "$REQ_HASH_NEW" != "$REQ_HASH_OLD" ]; then
             echo "[DEPLOY] Зависимости изменились, устанавливаем..."
+            pip install --upgrade pip
             pip install -r requirements.txt
             echo "$REQ_HASH_NEW" > "$REQ_HASH_FILE"
           else
             echo "[DEPLOY] Зависимости НЕ изменились, пропускаем pip install."
           fi
 
-          # Безопасное обновление .env (с бэкапом и установкой SENTRY_DSN)
+          # Безопасное обновление .env (с бэкапом и установкой DATABASE_URL/SENTRY_DSN)
           ENV_FILE=".env"
           if [ -f "$ENV_FILE" ]; then
             ENV_BAK="${ENV_FILE}.$(date +%Y%m%d-%H%M%S).bak"
@@ -164,15 +171,20 @@ jobs:
             touch "$ENV_FILE"
           fi
 
+          # DATABASE_URL → всегда на /srv/legal-ai/data/legalai.db
+          sed -i '/^DATABASE_URL=/d' "$ENV_FILE"
+          echo "DATABASE_URL=sqlite:////srv/legal-ai/data/legalai.db" >> "$ENV_FILE"
+
           # Удаляем старую строку SENTRY_DSN, если была
           sed -i '/^SENTRY_DSN=/d' "$ENV_FILE"
           # Добавляем актуальное значение (может быть пустым — не ошибка)
           echo "SENTRY_DSN=${SENTRY_DSN}" >> "$ENV_FILE"
 
-          echo "[DEPLOY] Текущее значение SENTRY_DSN в .env:"
+          echo "[DEPLOY] Текущее значение DATABASE_URL и SENTRY_DSN в .env:"
+          grep '^DATABASE_URL=' "$ENV_FILE" || echo "[DEPLOY] DATABASE_URL не установлен"
           grep '^SENTRY_DSN=' "$ENV_FILE" || echo "[DEPLOY] SENTRY_DSN не установлен"
 
-          # === Инициализация таблицы laws (если её нет) ===
+          # === Инициализируем таблицу laws (если отсутствует) ===
           echo "[DEPLOY] Инициализируем таблицу laws (если отсутствует)..."
           python << 'PYEOF'
           from app.db import Base, engine
@@ -222,10 +234,11 @@ jobs:
             echo "[ROLLBACK] Останавливаем legalai.service..."
             sudo systemctl stop legalai.service || true
 
-            echo "[ROLLBACK] Очищаем текущий проект (кроме backups и deploy_logs)..."
+            echo "[ROLLBACK] Очищаем текущий проект (кроме backups, deploy_logs и data)..."
             find "${PROJECT_ROOT}" -mindepth 1 -maxdepth 1 \
               ! -name 'backups' \
               ! -name 'deploy_logs' \
+              ! -name 'data' \
               -exec rm -rf {} \;
 
             echo "[ROLLBACK] Восстанавливаем файлы из бэкапа..."
