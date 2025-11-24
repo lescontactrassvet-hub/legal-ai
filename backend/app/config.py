@@ -14,8 +14,10 @@ class Settings(BaseSettings):
         extra="allow",
     )
 
-    # База данных (по умолчанию SQLite в корне backend)
-    DATABASE_URL: str = "sqlite:///./legalai.db"
+    # База данных.
+    # По умолчанию используем SQLite-файл в /srv/legal-ai/data/legalai.db
+    # (на сервере путь может быть переопределён через переменную окружения/значение в .env).
+    DATABASE_URL: str = "sqlite:////srv/legal-ai/data/legalai.db"
 
     # Секрет для JWT / сессий (обязательно переопределим в .env)
     SECRET_KEY: str = "CHANGE_ME_PLEASE"
