@@ -41,9 +41,6 @@ logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
 
-# --- Вспомогательные функции ---
-
-
 def _clean_text(text: str) -> str:
     """Минимальная очистка текста: убираем лишние пробелы и пустые строки."""
     lines = [line.strip() for line in text.splitlines()]
@@ -54,20 +51,12 @@ def _clean_text(text: str) -> str:
 def _extract_text_from_html(html: str) -> str:
     """Преобразует HTML документа в простой текст."""
     soup = BeautifulSoup(html, "html.parser")
-
-    # При необходимости потом можно сузить выбор до основного блока документа.
     text = soup.get_text(separator="\n")
     return _clean_text(text)
 
 
 def fetch_full_text_for_law(law: Law, session: Session, timeout: int = 15) -> Optional[str]:
-    """Скачивает и возвращает полный текст для одного закона.
-
-    Ничего не коммитит — только HTTP и парсинг.
-    Возвращает:
-      - строку полного текста, если успешно;
-      - None, если не удалось скачать/распарсить.
-    """
+    """Скачивает и возвращает полный текст для одного закона."""
     if not law.link:
         logger.warning("Law id=%s has no link, skipping", law.id)
         return None
@@ -107,9 +96,6 @@ def fetch_full_text_for_law(law: Law, session: Session, timeout: int = 15) -> Op
         return None
 
     return full_text
-
-
-# --- Основная батч-функция ---
 
 
 def fetch_full_text_batch(limit: int = 200) -> None:
@@ -167,9 +153,6 @@ def fetch_full_text_batch(limit: int = 200) -> None:
             updated,
             skipped,
         )
-
-
-# --- Точка входа ---
 
 
 def main() -> None:
