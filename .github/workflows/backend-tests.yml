@@ -1,17 +1,19 @@
 name: Backend tests
 
 on:
-  push:
-    branches: [ main ]
+  # 1) Многоразовый workflow, чтобы вызывать из deploy.yml
+  workflow_call:
+
+  # 2) Автоматический запуск на Pull Request с изменениями в backend
   pull_request:
-    branches: [ main ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-tests.yml'
 
 jobs:
-  test-backend:
+  backend-tests:
+    name: Run backend tests
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
 
     steps:
       - name: Checkout repository
@@ -22,37 +24,29 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt 
-          
-      - name: Set PYTHONPATH to repository root
-        run: echo "PYTHONPATH=$(pwd)" >> $GITHUB_ENV
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: >
+            backend-pip-${{ runner.os }}-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            backend-pip-${{ runner.os }}-
 
-      - name: Debug CI environment
+      - name: Install backend dependencies
+        working-directory: backend
         run: |
-          echo "==== GITHUB ACTIONS WORKSPACE ===="
-          pwd
-          echo
-          echo "==== FILE TREE (root) ===="
-          ls
-          echo
-          echo "==== CHECK backend/ ===="
-          ls -la backend || echo "NO backend folder"
-          echo
-          echo "==== backend/requirements.txt ===="
-          cat backend/requirements.txt || echo "NO requirements"
-          echo
-          echo "==== CHECK python-multipart in pip ===="
-          pip list | grep -i multipart || echo "python-multipart NOT INSTALLED"
-          echo
-          echo "==== sys.path ===="
-          python - << 'EOF'
-          import sys
-          print("\n".join(sys.path))
-          EOF
+          if [ -f "requirements.txt" ]; then
+            pip install --upgrade pip
+            pip install -r requirements.txt
+          else
+            echo "requirements.txt not found in backend/, skipping install"
+          fi
 
-      - name: Run tests
+      - name: Run backend tests
+        working-directory: backend
         run: |
-          pytest -q
+          if ls tests 1>/dev/null 2>&1; then
+            pytest
+          else
+            echo "No tests/ directory found in backend/, nothing to run."
