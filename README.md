@@ -1,4 +1,12 @@
 # LegalAI Backend
+## Структура репозитория (обновляется автоматически)
+
+<!-- AUTO-STRUCTURE-START -->
+Структура будет сгенерирована ботом Repo Analyzer v2.
+Запусти workflow `Docs / Repo structure update` или `Repo analyzer (auto)`,
+чтобы обновить этот блок автоматически.
+<!-- AUTO-STRUCTURE-END -->
+
 
 This repository contains the **LegalAI** backend service built with [FastAPI](https://fastapi.tiangolo.com/). It provides API endpoints for user management and authentication, and will serve as the foundation for the LegalDocAI document generation module.
 
