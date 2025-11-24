@@ -12,6 +12,10 @@ on:
       - "backend/**"
       - ".github/workflows/deploy-backend.yml"
 
+  # Позволяет использовать этот workflow как reusable
+  # из .github/workflows/deploy.yml через "uses: ./.github/workflows/deploy-backend.yml"
+  workflow_call:
+
 concurrency:
   group: deploy-backend
   cancel-in-progress: false
@@ -251,18 +255,4 @@ jobs:
 
             set +e
             HTTP_CODE_AFTER="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/health || echo '000')"
-            set -e
-            echo "[ROLLBACK] Код ответа /health после отката: ${HTTP_CODE_AFTER}"
-
-            if [ "$HTTP_CODE_AFTER" != "200" ]; then
-              echo "[FATAL] Откат выполнен, но сервис всё равно не вернул 200. Требуется ручная проверка."
-              exit 1
-            fi
-
-            echo "[ROLLBACK] Откат успешно завершён."
-          else
-            echo "[DEPLOY] /health вернул 200 — деплой успешен."
-          fi
-
-          echo "[DEPLOY] Скрипт деплоя завершён."
-          EOF
+            set
