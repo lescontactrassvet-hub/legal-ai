@@ -1,12 +1,14 @@
 from datetime import date
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.laws.models import Law
 from app.laws.schemas import LawCreate, LawRead, LawSearchResult
+from app.laws.sync import sync_all_sources
+from app.laws.fetch_full_text import fetch_full_text_batch
 
 router = APIRouter(
     prefix="/laws",
@@ -66,9 +68,11 @@ def search_laws(
         (Law.title.ilike(pattern)) | (Law.summary.ilike(pattern))
     )
 
-    return query.order_by(
-        Law.date_effective.desc().nullslast()
-    ).limit(limit).all()
+    return (
+        query.order_by(Law.date_effective.desc().nullslast())
+        .limit(limit)
+        .all()
+    )
 
 
 @router.get("/today", response_model=List[LawSearchResult])
@@ -84,3 +88,17 @@ def laws_today(country: str = "RU", db: Session = Depends(get_db)):
         .order_by(Law.date_published.desc().nullslast())
         .all()
     )
+
+
+@router.post("/sync-all", status_code=status.HTTP_202_ACCEPTED)
+def sync_all_laws(background_tasks: BackgroundTasks):
+    """
+    Ручной запуск полной синхронизации:
+      1) загрузка законов из всех источников;
+      2) дозагрузка полного текста для части записей.
+
+    Использовать только из доверенной админки / Postman.
+    """
+    background_tasks.add_task(sync_all_sources)
+    background_tasks.add_task(fetch_full_text_batch, 200)
+    return {"detail": "Синхронизация запущена в фоне"}
