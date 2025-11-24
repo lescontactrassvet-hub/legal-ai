@@ -17,45 +17,64 @@ function applyTheme(theme) {
   localStorage.setItem('theme', theme);
 
   if (toggle) {
-    toggle.textContent = theme === 'dark' ? '☾ Тёмная' : '☀ Светлая';
-    toggle.setAttribute(
-      'aria-label',
-      theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'
-    );
+    toggle.textContent = theme === 'dark' ? '🌙' : '☀️';
   }
 }
 
 function initTheme() {
   const saved = localStorage.getItem('theme');
-  const preferred = saved || 'light';
-  applyTheme(preferred);
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = saved || (prefersDark ? 'dark' : 'light');
+  applyTheme(theme);
 
   const toggle = document.getElementById('theme-toggle');
   if (toggle) {
     toggle.addEventListener('click', () => {
-      const current =
-        document.documentElement.getAttribute('data-theme') || 'light';
-      const next = current === 'light' ? 'dark' : 'light';
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
       applyTheme(next);
     });
   }
 }
 
-/* === Ads handling (placeholder, позже привяжем к API) === */
+/* === Basic auth helpers === */
 
-function initAdSlots() {
-  const adSlot = document.getElementById('ad-slot-main');
-  if (!adSlot) return;
+function getAuthToken() {
+  return localStorage.getItem('token');
+}
 
-  const plan = localStorage.getItem('plan') || 'free';
-  if (plan !== 'free') {
-    adSlot.classList.add('ad-hidden');
-    return;
+function setAuthToken(token) {
+  localStorage.setItem('token', token);
+}
+
+async function apiFetch(path, options = {}) {
+  const token = getAuthToken();
+  const headers = options.headers || {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
-  // TODO: заменить на загрузку кода с бэкенда (панель администратора)
-  adSlot.innerHTML =
-    '<div class="ad-placeholder">Рекламный блок (настраивается в панели администратора для бесплатных аккаунтов)</div>';
+  const res = await fetch(`${apiBase}${path}`, {
+    ...options,
+    headers,
+  });
+
+  if (!res.ok) {
+    let errorDetail = `Request failed with status ${res.status}`;
+    try {
+      const data = await res.json();
+      if (data.detail) errorDetail = data.detail;
+    } catch (e) {
+      // ignore JSON parse error
+    }
+    throw new Error(errorDetail);
+  }
+
+  const contentType = res.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    return res.json();
+  }
+  return res.text();
 }
 
 /* === Authentication functions === */
@@ -73,259 +92,86 @@ async function registerUser(username, email, password) {
       const error = await res.text();
       throw new Error(error || 'Registration failed');
     }
-    return await res.json();
+    showAlert('Registration successful. You can now log in.');
+    window.location.href = 'login.html';
   } catch (err) {
+    console.error(err);
     showAlert(err.message);
-    throw err;
   }
 }
 
-async function loginUser(username, password) {
+async function loginUser(email, password) {
   try {
-    const body = new URLSearchParams();
-    body.append('username', username);
-    body.append('password', password);
     const res = await fetch(`${apiBase}/auth/login`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type': 'application/json'
       },
-      body
+      body: JSON.stringify({ username: email, password })
     });
     if (!res.ok) {
       const error = await res.text();
       throw new Error(error || 'Login failed');
     }
-    return await res.json();
+    const data = await res.json();
+    setAuthToken(data.access_token);
+    window.location.href = 'dashboard.html';
   } catch (err) {
+    console.error(err);
     showAlert(err.message);
-    throw err;
   }
 }
 
-// General API fetch function with authorization
-async function apiFetch(path, options = {}) {
-  const token = localStorage.getItem('token');
-  const headers = options.headers || {};
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  const res = await fetch(`${apiBase}${path}`, {
-    ...options,
-    headers
-  });
-  if (!res.ok) {
-    const error = await res.text();
-    throw new Error(error || `Request to ${path} failed`);
-  }
-  return await res.json();
-}
-
-/* === Page initialization === */
+/* === DOMContentLoaded init === */
 
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
-  initAdSlots();
 
-  // Detect if on auth page or dashboard
-  const loginBox = document.getElementById('login-box');
-  const dashboard = document.getElementById('content');
-
-  if (loginBox) {
-    initAuthPage();
-  } else if (dashboard) {
-    initDashboardPage();
-  }
-});
-
-/* === Auth page logic === */
-
-function initAuthPage() {
-  const loginBtn = document.getElementById('login-btn');
-  const registerBtn = document.getElementById('register-btn');
-  const showRegister = document.getElementById('show-register');
-  const showLogin = document.getElementById('show-login');
-  const loginBox = document.getElementById('login-box');
-  const registerBox = document.getElementById('register-box');
-
-  // Переключение вкладок
-  const tabLogin = document.getElementById('tab-login');
-  const tabRegister = document.getElementById('tab-register');
-
-  function activateLogin() {
-    if (loginBox && registerBox) {
-      loginBox.style.display = 'block';
-      registerBox.style.display = 'none';
-    }
-    if (tabLogin && tabRegister) {
-      tabLogin.classList.add('active');
-      tabRegister.classList.remove('active');
-    }
-  }
-
-  function activateRegister() {
-    if (loginBox && registerBox) {
-      loginBox.style.display = 'none';
-      registerBox.style.display = 'block';
-    }
-    if (tabLogin && tabRegister) {
-      tabLogin.classList.remove('active');
-      tabRegister.classList.add('active');
-    }
-  }
-
-  if (showRegister) {
-    showRegister.addEventListener('click', (e) => {
+  // Registration page
+  const registerForm = document.getElementById('register-form');
+  if (registerForm) {
+    registerForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      activateRegister();
+      const username = document.getElementById('reg-username').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value.trim();
+      if (!username || !email || !password) {
+        showAlert('Please fill in all fields.');
+        return;
+      }
+      registerUser(username, email, password);
     });
   }
-  if (showLogin) {
-    showLogin.addEventListener('click', (e) => {
+
+  // Login page
+  const loginForm = document.getElementById('login-form');
+  if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      activateLogin();
-    });
-  }
-  if (tabLogin) {
-    tabLogin.addEventListener('click', activateLogin);
-  }
-  if (tabRegister) {
-    tabRegister.addEventListener('click', activateRegister);
-  }
-
-  // По умолчанию показываем логин
-  activateLogin();
-
-  // Handle login
-  if (loginBtn) {
-    loginBtn.addEventListener('click', async () => {
-      const username = document.getElementById('login-username').value.trim();
+      const email = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value.trim();
-      if (!username || !password) {
-        showAlert('Please enter both username and password');
+      if (!email || !password) {
+        showAlert('Please enter email and password.');
         return;
       }
-      try {
-        const data = await loginUser(username, password);
-        localStorage.setItem('token', data.access_token);
-        window.location.href = 'dashboard.html';
-      } catch (err) {
-        console.error(err);
-      }
+      loginUser(email, password);
     });
   }
 
-  // Handle registration (расширенная форма)
-  if (registerBtn) {
-    registerBtn.addEventListener('click', async () => {
-      const lastName = document
-        .getElementById('register-lastname')
-        .value.trim();
-      const firstName = document
-        .getElementById('register-firstname')
-        .value.trim();
-      const middleName = document
-        .getElementById('register-middlename')
-        .value.trim();
-      const phone = document
-        .getElementById('register-phone')
-        .value.trim();
-      const country = document
-        .getElementById('register-country')
-        .value.trim();
-      const username = document
-        .getElementById('register-username')
-        .value.trim();
-      const email = document
-        .getElementById('register-email')
-        .value.trim();
-      const password = document
-        .getElementById('register-password')
-        .value.trim();
-
-      if (!lastName || !firstName || !username || !email || !password) {
-        showAlert('Пожалуйста, заполните обязательные поля.');
-        return;
-      }
-
-      const extraProfile = {
-        lastName,
-        firstName,
-        middleName,
-        phone,
-        country
-      };
-      localStorage.setItem(
-        'pending_profile_extra',
-        JSON.stringify(extraProfile)
-      );
-
-      try {
-        await registerUser(username, email, password);
-        const data = await loginUser(username, password);
-        localStorage.setItem('token', data.access_token);
-        localStorage.setItem('plan', 'free');
-        window.location.href = 'welcome-free.html';
-      } catch (err) {
-        console.error(err);
-      }
-    });
-  }
-}
-
-/* === Dashboard logic === */
-
-function initDashboardPage() {
-  // Check if logged in
-  const token = localStorage.getItem('token');
-  if (!token) {
-    window.location.href = 'index.html';
-    return;
-  }
-
-  // Navigation
-  const navLinks = document.querySelectorAll('.nav-links a[data-page]');
-  navLinks.forEach((link) => {
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
-      navLinks.forEach((l) => l.classList.remove('active'));
-      document.querySelectorAll('.page').forEach((page) => {
-        page.classList.remove('active');
-      });
-      link.classList.add('active');
-      const pageId = `page-${link.dataset.page}`;
-      const page = document.getElementById(pageId);
-      if (page) {
-        page.classList.add('active');
-      }
-    });
-  });
-
-  // AI page
-  const aiBtn = document.getElementById('ai-ask-btn');
-  if (aiBtn) {
-    aiBtn.addEventListener('click', async () => {
-      const query = document.getElementById('ai-query').value.trim();
-      const responseEl = document.getElementById('ai-response');
-      if (!query) {
-        showAlert('Please enter your legal question.');
-        return;
-      }
-      responseEl.textContent = 'Processing...';
-      try {
-        const data = await apiFetch('/ai/chat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ query })
+  // Simple router for sidebar links (if present)
+  const navLinks = document.querySelectorAll('[data-nav]');
+  const pages = document.querySelectorAll('[data-page]');
+  if (navLinks.length && pages.length) {
+    navLinks.forEach((link) => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = link.getAttribute('data-nav');
+        pages.forEach((page) => {
+          page.classList.toggle('active', page.getAttribute('data-page') === target);
         });
-        responseEl.textContent = data.answer || 'No answer received.';
-      } catch (err) {
-        console.error(err);
-        showAlert(err.message);
-        responseEl.textContent = 'Error while processing your request.';
-      }
+        navLinks.forEach((l) => l.classList.remove('active'));
+        link.classList.add('active');
+      });
     });
   }
 
@@ -340,12 +186,13 @@ function initDashboardPage() {
         list.innerHTML = '';
         templates.forEach((t) => {
           const li = document.createElement('li');
-          li.textContent = t.name;
+          li.textContent = `${t.name} (${t.category})`;
           list.appendChild(li);
         });
       } catch (err) {
         console.error(err);
         showAlert(err.message);
+        list.innerHTML = 'Error loading templates.';
       }
     });
   }
@@ -361,28 +208,23 @@ function initDashboardPage() {
         list.innerHTML = '';
         cases.forEach((c) => {
           const li = document.createElement('li');
-          li.textContent = c.title;
+          li.textContent = `${c.case_number}: ${c.title}`;
           list.appendChild(li);
         });
       } catch (err) {
         console.error(err);
         showAlert(err.message);
+        list.innerHTML = 'Error loading cases.';
       }
     });
   }
 
-  // Profile page
-  const profileInfo = document.getElementById('profile-info');
-  if (profileInfo) {
-    (async () => {
-      try {
-        const profile = await apiFetch('/auth/profile');
-        profileInfo.textContent = `Username: ${profile.username} | Email: ${profile.email}`;
-      } catch (err) {
-        console.error(err);
-        showAlert(err.message);
-      }
-    })();
+  // Dashboard page: базовый хук для будущего чата Татьяны
+  // (здесь позже подключим единый чат к /ai/ask)
+  const dashboardEl = document.querySelector('[data-page="dashboard"]');
+  if (dashboardEl) {
+    // Точка расширения: сюда будем добавлять логику чата
+    console.log('Dashboard loaded: ready for Tatiana chat integration.');
   }
 
   // Logout
@@ -394,4 +236,4 @@ function initDashboardPage() {
       window.location.href = 'index.html';
     });
   }
-}
+});
