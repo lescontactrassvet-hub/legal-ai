@@ -1,0 +1,56 @@
+name: Docs / Repo structure update
+
+on:
+  workflow_dispatch:
+    inputs:
+      update_readme:
+        description: "Также обновить блок структуры в README.md и закоммитить изменения?"
+        required: false
+        default: "false"
+
+jobs:
+  docs-update:
+    name: Generate repo structure (and optionally update README)
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write   # нужно для авто-коммита
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate Repo_LegalAI_Structure.txt
+        run: |
+          python tools/update_readme.py
+
+      - name: Upload structure as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Repo_LegalAI_Structure
+          path: Repo_LegalAI_Structure.txt
+
+      - name: Optionally update README and commit
+        if: github.event.inputs.update_readme == 'true'
+        run: |
+          echo "[INFO] Updating README.md with auto-structure block..."
+
+          # обновляем README
+          python tools/update_readme.py --update-readme
+
+          # проверяем, есть ли изменения
+          if git status --porcelain | grep -q "."; then
+            echo "[INFO] Changes detected, committing..."
+            git config user.name "LegalAI Docs Bot"
+            git config user.email "docs-bot@legalai.local"
+            git add Repo_LegalAI_Structure.txt README.md || true
+            git commit -m "chore(docs): auto update repo structure"
+            git push
+          else
+            echo "[INFO] No changes to commit."
+          fi
