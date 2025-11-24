@@ -1,10 +1,10 @@
 name: Deploy backend
 
 on:
-  # можно запускать вручную из вкладки Actions
+  # запуск вручную из Actions
   workflow_dispatch:
 
-  # для вызова из deploy.yml
+  # вызов из deploy.yml
   workflow_call:
 
 jobs:
@@ -21,6 +21,45 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      # --- СБОРКА ФРОНТЕНДА ПЕРЕД RSYNC ---
+
+      - name: Detect frontend
+        id: detect-fe
+        run: |
+          if [ -f "frontend/package.json" ]; then
+            echo "has_fe=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_fe=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Node (if frontend exists)
+        if: steps.detect-fe.outputs.has_fe == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            frontend/package-lock.json
+            frontend/package.json
+
+      - name: Build frontend (if present)
+        if: steps.detect-fe.outputs.has_fe == 'true'
+        working-directory: frontend
+        run: |
+          if [ -f "package-lock.json" ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+          if npm run | grep -q "build"; then
+            npm run build
+          else
+            echo "No build script in package.json, skipping build."
+          fi
+
+      # --- ДАЛЬШЕ КАК РАНЬШЕ: SSH + RSYNC + ДЕПЛОЙ ---
 
       - name: Prepare SSH key
         run: |
