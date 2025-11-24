@@ -2,15 +2,15 @@
 Модуль для дозагрузки ПОЛНОГО текста законов в таблицу laws.full_text.
 
 Задача:
-  - найти записи, у которых full_text пустой, но есть official_url;
+  - найти записи, у которых full_text пустой, но есть link;
   - скачать страницу по ссылке;
   - вытащить текст и сохранить в БД.
 
-Запуск (НА СЕРВЕРЕ, не в Termux):
+Запуск НА СЕРВЕРЕ (Ubuntu, прод):
   cd /srv/legal-ai/backend
   .venv/bin/python -m app.laws.fetch_full_text
 
-Запуск локально (в Termux, если нужно протестировать):
+Запуск локально (Termux, если нужно протестировать):
   cd ~/legal-ai/backend
   .venv/bin/python -m app.laws.fetch_full_text
 """
@@ -45,31 +45,17 @@ logger.setLevel(logging.INFO)
 
 
 def _clean_text(text: str) -> str:
-    """Минимальная очистка текста.
-
-    Можно усложнить позже: убрать технические блоки, лишние пробелы и т.д.
-    """
+    """Минимальная очистка текста: убираем лишние пробелы и пустые строки."""
     lines = [line.strip() for line in text.splitlines()]
-    # убираем пустые строки по краям
     cleaned = "\n".join(line for line in lines if line)
     return cleaned.strip()
 
 
 def _extract_text_from_html(html: str) -> str:
-    """Преобразует HTML документа в простой текст.
-
-    Сейчас берём весь текст страницы. При необходимости
-    можно сузить до конкретного блока (например, по id).
-    """
+    """Преобразует HTML документа в простой текст."""
     soup = BeautifulSoup(html, "html.parser")
 
-    # На будущее: если понадобится, можно выбрать основной блок:
-    # main = soup.find(id="main") or soup.find("article") ...
-    # if main is not None:
-    #     text = main.get_text(separator="\n")
-    # else:
-    #     text = soup.get_text(separator="\n")
-
+    # При необходимости потом можно сузить выбор до основного блока документа.
     text = soup.get_text(separator="\n")
     return _clean_text(text)
 
@@ -82,11 +68,11 @@ def fetch_full_text_for_law(law: Law, session: Session, timeout: int = 15) -> Op
       - строку полного текста, если успешно;
       - None, если не удалось скачать/распарсить.
     """
-    if not law.official_url:
-        logger.warning("Law id=%s has no official_url, skipping", law.id)
+    if not law.link:
+        logger.warning("Law id=%s has no link, skipping", law.id)
         return None
 
-    url = law.official_url
+    url = law.link
     logger.info("Fetching full text for law id=%s url=%s", law.id, url)
 
     try:
@@ -112,7 +98,7 @@ def fetch_full_text_for_law(law: Law, session: Session, timeout: int = 15) -> Op
 
     try:
         full_text = _extract_text_from_html(resp.text)
-    except Exception as exc:  # парсинг HTML
+    except Exception as exc:
         logger.error("HTML parse error for law id=%s: %s", law.id, exc)
         return None
 
@@ -129,16 +115,15 @@ def fetch_full_text_for_law(law: Law, session: Session, timeout: int = 15) -> Op
 def fetch_full_text_batch(limit: int = 200) -> None:
     """Обрабатывает не более `limit` законов за один запуск.
 
-    Выбирает записи, где full_text пустой, но есть official_url.
+    Выбирает записи, где full_text пустой, но есть link.
     """
     logger.info("Starting full-text batch for laws (limit=%s)", limit)
 
     with SessionLocal() as session:
-        # Выбираем только те законы, где full_text NULL или пустая строка
         stmt = (
             select(Law)
             .where(
-                (Law.official_url.isnot(None))
+                (Law.link.isnot(None))
                 & ((Law.full_text.is_(None)) | (Law.full_text == ""))
             )
             .order_by(Law.id.asc())
@@ -168,11 +153,10 @@ def fetch_full_text_batch(limit: int = 200) -> None:
             law.full_text = text
             updated += 1
 
-            # Коммитим поштучно, чтобы не потерять всё при ошибке
             try:
                 session.add(law)
                 session.commit()
-            except Exception as exc:  # ошибка записи в БД
+            except Exception as exc:
                 session.rollback()
                 logger.error("DB error while saving law id=%s: %s", law.id, exc)
                 skipped += 1
@@ -185,21 +169,13 @@ def fetch_full_text_batch(limit: int = 200) -> None:
         )
 
 
-# --- Точка входа для запуска как скрипта ---
+# --- Точка входа ---
 
 
 def main() -> None:
-    """CLI-точка входа.
-
-    Можно запускать так:
-      python -m app.laws.fetch_full_text
-    или
-      .venv/bin/python -m app.laws.fetch_full_text
-    """
-    # Позже можно добавить парсинг аргументов командной строки (limit и т.п.)
+    """CLI-точка входа."""
     fetch_full_text_batch(limit=200)
 
 
 if __name__ == "__main__":
     main()
-
