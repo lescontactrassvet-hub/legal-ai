@@ -10,6 +10,8 @@ class LawBase(BaseModel):
     number: Optional[str] = None
     title: str
     summary: Optional[str] = None
+    # полный текст хранится отдельно, может быть очень большим
+    full_text: Optional[str] = None
     law_type: Optional[str] = None
     country: str = Field(default="RU")
     language: str = Field(default="ru")
