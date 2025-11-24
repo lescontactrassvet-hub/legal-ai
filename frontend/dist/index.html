@@ -14,43 +14,66 @@
             --bg-light-elevated: #ffffff;
             --bg-dark: #020617;
             --bg-dark-elevated: #0b1220;
-            --accent: #2563eb;
-            --accent-soft: #3b82f6;
-            --accent-muted: rgba(37, 99, 235, 0.15);
-            --danger: #ef4444;
-            --success: #22c55e;
+
             --text-main-light: #0f172a;
             --text-muted-light: #64748b;
+
             --text-main-dark: #e5e7eb;
             --text-muted-dark: #9ca3af;
-            --border-soft-light: rgba(15, 23, 42, 0.08);
-            --border-soft-dark: rgba(148, 163, 184, 0.3);
-            --shadow-soft: 0 25px 60px rgba(15, 23, 42, 0.22);
-            --radius-xl: 18px;
-            --radius-2xl: 26px;
-            --transition-fast: 0.18s ease-out;
+
+            --accent: #2563eb;
+            --accent-soft: #dbeafe;
+            --accent-strong: #1d4ed8;
+
+            --border-subtle-light: rgba(148, 163, 184, 0.35);
+            --border-subtle-dark: rgba(51, 65, 85, 0.9);
+
+            --card-shadow-light: 0 18px 45px rgba(15, 23, 42, 0.18);
+            --card-shadow-dark: 0 18px 45px rgba(15, 23, 42, 0.75);
+
+            --radius-xl: 22px;
+        }
+
+        [data-theme="light"] {
+            --bg-main: var(--bg-light);
+            --bg-elevated: var(--bg-light-elevated);
+            --text-main: var(--text-main-light);
+            --text-muted: var(--text-muted-light);
+            --border-subtle: var(--border-subtle-light);
+        }
+
+        [data-theme="dark"] {
+            --bg-main: var(--bg-dark);
+            --bg-elevated: var(--bg-dark-elevated);
+            --text-main: var(--text-main-dark);
+            --text-muted: var(--text-muted-dark);
+            --border-subtle: var(--border-subtle-dark);
         }
 
         * {
             box-sizing: border-box;
         }
 
-        body {
+        html, body {
             margin: 0;
             padding: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
             "Segoe UI", sans-serif;
-            background: radial-gradient(circle at 0% 0%, #eff6ff 0, #e0f2fe 35%, #e6f2ff 100%);
-            color: var(--text-main-light);
+            background: radial-gradient(circle at top left, #1e293b 0, #020617 40%) fixed;
         }
 
-        body.dark {
-            background: radial-gradient(circle at 0% 0%, #020617 0, #020617 60%, #020617 100%);
-            color: var(--text-main-dark);
+        body {
+            min-height: 100vh;
+            color: var(--text-main);
+        }
+
+        body[data-theme="light"] {
+            background: radial-gradient(circle at top left, #e2f2ff 0, #e6f2ff 40%) fixed;
         }
 
         a {
             color: inherit;
+            text-decoration: none;
         }
 
         .shell {
@@ -64,637 +87,681 @@
             top: 0;
             z-index: 20;
             backdrop-filter: blur(20px);
-            background: linear-gradient(to right, rgba(226, 239, 255, 0.92), rgba(219, 234, 254, 0.9));
-            border-bottom: 1px solid var(--border-soft-light);
-            padding: 10px 18px;
+            b
+            background: linear-gradient(to right, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.85));
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        body[data-theme="light"] .topbar {
+            background: linear-gradient(to right, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.95));
+        }
+
+        .topbar-inner {
+            margin: 0 auto;
+            max-width: 1120px;
+            padding: 14px 16px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            gap: 16px;
+            color: #e5e7eb;
         }
 
-        body.dark .topbar {
-            background: linear-gradient(to right, rgba(15, 23, 42, 0.94), rgba(15, 23, 42, 0.9));
-            border-bottom-color: var(--border-soft-dark);
-        }
-
-        .topbar-left {
+        .topbar-logo-block {
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        /* Новый логотип */
         .logo-img-wrap {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
+            width: 32px;
+            height: 32px;
             border-radius: 999px;
-            padding: 2px;
-            background: radial-gradient(circle at 30% 20%, #020617 0, #020617 65%, #020617 100%);
+            background: radial-gradient(circle at 30% 20%, #38bdf8 0, #0f172a 60%, #020617 100%);
             box-shadow: 0 0 18px rgba(56, 189, 248, 0.7);
+            padding: 2px;
             overflow: hidden;
         }
 
         .logo-img {
-            display: block;
             width: 100%;
             height: 100%;
+            display: block;
             object-fit: cover;
         }
 
-        body.dark .logo-img-wrap {
-            background: radial-gradient(circle at 30% 20%, #020617 0, #020617 70%, #020617 100%);
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.9);
+        body[data-theme="dark"] .logo-img-wrap {
+            background: radial-gradient(circle at 30% 20%, #38bdf8 0, #020617 60%, #000 100%);
+            box-shadow: 0 0 22px rgba(56, 189, 248, 1);
         }
 
-        .topbar-title {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .topbar-title-main {
-            font-weight: 650;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
-            font-size: 14px;
-        }
-
-        .topbar-title-sub {
-            font-size: 11px;
-            color: var(--text-muted-light);
-        }
-
-        body.dark .topbar-title-sub {
-            color: var(--text-muted-dark);
-        }
-
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            border-radius: 999px;
-            padding: 6px 12px;
-            font-size: 11px;
-            border: 1px solid var(--border-soft-light);
-            background: rgba(255, 255, 255, 0.92);
-            color: var(--text-muted-light);
-        }
-
-        body.dark .pill {
-            border-color: var(--border-soft-dark);
-            background: rgba(15, 23, 42, 0.95);
-            color: var(--text-muted-dark);
-        }
-
-        .status-dot {
-            width: 9px;
-            height: 9px;
-            border-radius: 999px;
-            background: var(--success);
-            box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.25);
-        }
-
-        .status-dot.bad {
-            background: var(--danger);
-            box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.25);
-        }
-
-        .btn {
-            border-radius: 999px;
-            border: none;
-            outline: none;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 500;
-            padding: 8px 14px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: background var(--transition-fast), color var(--transition-fast),
-            transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent), var(--accent-soft));
-            color: white;
-            box-shadow: 0 16px 32px rgba(37, 99, 235, 0.4);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 20px 42px rgba(37, 99, 235, 0.5);
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--border-soft-light);
-            color: var(--text-main-light);
-        }
-
-        body.dark .btn-outline {
-            border-color: var(--border-soft-dark);
-            color: var(--text-main-dark);
-        }
-
-        .btn-outline:hover {
-            background: rgba(255, 255, 255, 0.12);
-        }
-
-        .btn-icon {
-            padding: 6px;
-            border-radius: 999px;
-            width: 30px;
-            height: 30px;
-            justify-content: center;
-        }
-
-        main {
-            flex: 1;
-        }
-
-        .hero {
-            max-width: 1100px;
-            margin: 26px auto 16px;
-            padding: 0 18px;
-            display: grid;
-            grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-            gap: 22px;
-            align-items: center;
-        }
-
-        @media (max-width: 960px) {
-            .hero {
-                grid-template-columns: 1fr;
-                margin-top: 20px;
-            }
-        }
-
-        .hero-main {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .hero-badge-row {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 11px;
-        }
-
-        .hero-badge {
-            border-radius: 999px;
-            padding: 4px 9px;
-            font-size: 11px;
-            background: rgba(22, 163, 74, 0.1);
-            color: var(--success);
-            border: 1px solid rgba(34, 197, 94, 0.3);
-        }
-
-        .hero-hint {
-            color: var(--text-muted-light);
-        }
-
-        body.dark .hero-hint {
-            color: var(--text-muted-dark);
-        }
-
-        .hero-title {
-            font-size: clamp(26px, 3.2vw, 32px);
-            font-weight: 760;
-            letter-spacing: 0.02em;
-        }
-
-        .hero-title span.em {
-            background: linear-gradient(135deg, #2563eb, #38bdf8);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-
-        .hero-subtitle {
-            font-size: 14px;
-            line-height: 1.6;
-            color: var(--text-muted-light);
-        }
-
-        body.dark .hero-subtitle {
-            color: var(--text-muted-dark);
-        }
-
-        .hero-actions-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 6px;
-        }
-
-        .hero-secondary-text {
-            font-size: 11px;
-            color: var(--text-muted-light);
-        }
-
-        body.dark .hero-secondary-text {
-            color: var(--text-muted-dark);
-        }
-
-        .hero-metrics-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 18px;
-            margin-top: 10px;
-        }
-
-        .metric {
+        .topbar-title-block {
             display: flex;
             flex-direction: column;
             gap: 2px;
         }
 
-        .metric-number {
-            font-weight: 700;
-            font-size: 16px;
+        .topbar-title {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
         }
 
-        .metric-label {
+        .topbar-subtitle {
             font-size: 11px;
-            color: var(--text-muted-light);
+            opacity: 0.9;
         }
 
-        body.dark .metric-label {
-            color: var(--text-muted-dark);
+        .topbar-spacer {
+            flex: 1;
         }
 
-        .hero-card {
-            border-radius: var(--radius-2xl);
-            padding: 16px 16px 18px;
-            background: radial-gradient(circle at top left, rgba(37, 99, 235, 0.16), rgba(255, 255, 255, 0.96));
-            border: 1px solid var(--border-soft-light);
-            box-shadow: var(--shadow-soft);
+        .topbar-links {
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .topbar-links a {
+            opacity: 0.85;
+            padding: 4px 7px;
+            border-radius: 999px;
+            transition: background 0.15s, opacity 0.15s, transform 0.12s;
+        }
+
+        .topbar-links a:hover {
+            opacity: 1;
+            background: rgba(15, 23, 42, 0.65);
+            transform: translateY(-0.5px);
+        }
+
+        .topbar-links .pill {
+            border-radius: 999px;
+            padding: 4px 10px;
+            border: 1px solid rgba(148, 163, 184, 0.5);
+            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        body[data-theme="light"] .topbar-links .pill {
+            background: rgba(15, 23, 42, 0.9);
+        }
+
+        .topbar-cta {
+            display: flex;
+            align-items: center;
             gap: 8px;
         }
 
-        body.dark .hero-card {
-            background: radial-gradient(circle at top left, rgba(37, 99, 235, 0.38), rgba(15, 23, 42, 0.98));
-            border-color: var(--border-soft-dark);
-        }
-
-        .hero-card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-        }
-
-        .hero-card-title-block {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .hero-card-title {
+        .topbar-cta .btn {
+            background: linear-gradient(135deg, #38bdf8, #2563eb);
+            color: #0b1120;
+            border: none;
+            border-radius: 999px;
+            padding: 6px 14px;
             font-size: 13px;
             font-weight: 600;
-        }
-
-        .hero-card-subtitle {
-            font-size: 11px;
-            color: var(--text-muted-light);
-        }
-
-        body.dark .hero-card-subtitle {
-            color: var(--text-muted-dark);
-        }
-
-        .hero-card-body {
-            font-size: 12px;
-            color: var(--text-muted-light);
-        }
-
-        body.dark .hero-card-body {
-            color: var(--text-muted-dark);
-        }
-
-        .hero-card-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            margin-top: 2px;
-        }
-
-        .chips-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .chip {
-            font-size: 10px;
-            padding: 3px 7px;
-            border-radius: 999px;
-            background: rgba(148, 163, 184, 0.16);
-            color: var(--text-muted-light);
-        }
-
-        body.dark .chip {
-            background: rgba(148, 163, 184, 0.22);
-            color: var(--text-muted-dark);
-        }
-
-        .status-pill-small {
+            cursor: pointer;
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 3px 7px;
-            border-radius: 999px;
-            font-size: 11px;
-            background: rgba(22, 163, 74, 0.08);
-            color: var(--success);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.7);
+            transition: box-shadow 0.18s ease, transform 0.12s ease;
         }
 
-        .status-pill-small.error {
-            background: rgba(239, 68, 68, 0.08);
-            color: var(--danger);
+        .topbar-cta .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.9);
         }
 
-        .status-dot-mini {
-            width: 7px;
-            height: 7px;
-            border-radius: 999px;
-            background: currentColor;
-        }
-
-        .ai-mini-input {
-            width: 100%;
-            border-radius: 12px;
-            border: 1px solid rgba(148, 163, 184, 0.65);
-            padding: 6px 8px;
-            font-size: 12px;
-            resize: vertical;
-            min-height: 40px;
-            max-height: 120px;
-            font-family: inherit;
-            box-sizing: border-box;
-            background: rgba(248, 250, 252, 0.95);
-        }
-
-        body.dark .ai-mini-input {
-            background: rgba(15, 23, 42, 0.9);
-            border-color: rgba(148, 163, 184, 0.75);
-            color: var(--text-main-dark);
-        }
-
-        .ai-mini-output {
-            margin-top: 6px;
-            padding: 6px 8px;
-            border-radius: 10px;
-            font-size: 11px;
-            line-height: 1.45;
-            background: rgba(219, 234, 254, 0.96);
-            color: #0f172a;
-            max-height: 110px;
-            overflow-y: auto;
-        }
-
-        body.dark .ai-mini-output {
-            background: rgba(30, 64, 175, 0.95);
+        .topbar-cta .btn-outline {
+            background: transparent;
             color: #e5e7eb;
+            border: 1px solid rgba(148, 163, 184, 0.5);
+            box-shadow: none;
         }
 
-        .ai-mini-output.empty {
-            opacity: 0.75;
-            font-style: italic;
+        .topbar-cta .btn-outline:hover {
+            background: rgba(15, 23, 42, 0.7);
         }
 
-        .sections {
-            max-width: 1100px;
-            margin: 4px auto 18px;
-            padding: 0 18px 16px;
-            display: grid;
-            grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+        .pill-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+            background: #22c55e;
+        }
+
+        .pill-dot-pulse {
+            position: relative;
+        }
+
+        .pill-dot-pulse::before {
+            content: "";
+            position: absolute;
+            inset: -4px;
+            border-radius: inherit;
+            border: 2px solid rgba(34, 197, 94, 0.75);
+            opacity: 0.25;
+            animation: ping 1.3s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+
+        @keyframes ping {
+            75%, 100% {
+                transform: scale(1.7);
+                opacity: 0;
+            }
+        }
+
+        .theme-toggle-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.5);
+            background: rgba(15, 23, 42, 0.4);
+            color: #e5e7eb;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.12s;
+        }
+
+        .theme-toggle-btn:hover {
+            transform: translateY(-0.5px);
+            background: rgba(15, 23, 42, 0.7);
+        }
+
+        .hero {
+            flex: 1;
+            margin: 0 auto;
+            max-width: 1120px;
+            padding: 26px 16px 40px;
+            display: flex;
+            flex-direction: column;
             gap: 18px;
         }
 
-        @media (max-width: 960px) {
+        .hero-inner {
+            display: grid;
+            grid-template-columns: minmax(0, 1.55fr) minmax(0, 1.15fr);
+            gap: 22px;
+        }
+
+        @media (max-width: 900px) {
+            .hero-inner {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+
+        .hero-main {
+            background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.96) 0, #020617 58%);
+            border-radius: var(--radius-xl);
+            padding: 24px 22px 22px;
+            box-shadow: var(--card-shadow-dark);
+            color: #e5e7eb;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+        }
+
+        body[data-theme="light"] .hero-main {
+            background: radial-gradient(circle at top left, #ffffff 0, #e2f2ff 55%);
+            box-shadow: var(--card-shadow-light);
+            color: #0f172a;
+        }
+
+        .hero-badge-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 999px;
+            padding: 5px 12px 5px 5px;
+            background: rgba(15, 23, 42, 0.85);
+            font-size: 11px;
+            border: 1px solid rgba(148, 163, 184, 0.4);
+        }
+
+        body[data-theme="light"] .hero-badge {
+            background: rgba(248, 250, 252, 0.98);
+            border-color: rgba(148, 163, 184, 0.4);
+        }
+
+        .hero-badge-icon {
+            width: 22px;
+            height: 22px;
+            border-radius: 999px;
+            background: radial-gradient(circle at 30% 20%, #38bdf8 0, #0369a1 50%, #020617 100%);
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.7);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #e5e7eb;
+            font-size: 13px;
+        }
+
+        .hero-badge-text-main {
+            font-weight: 600;
+        }
+
+        .hero-badge-text-sub {
+            opacity: 0.9;
+        }
+
+        .hero-title {
+            font-size: 32px;
+            line-height: 1.15;
+            letter-spacing: -0.03em;
+            margin: 0 0 10px;
+        }
+
+        @media (max-width: 600px) {
+            .hero-title {
+                font-size: 26px;
+            }
+        }
+
+        .hero-highlight {
+            background: linear-gradient(120deg, #38bdf8, #a855f7);
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .hero-subtitle {
+            margin: 0 0 16px;
+            font-size: 15px;
+            line-height: 1.5;
+            color: rgba(148, 163, 184, 0.95);
+        }
+
+        body[data-theme="light"] .hero-subtitle {
+            color: #475569;
+        }
+
+        .hero-metrics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .hero-metric-pill {
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.45);
+            padding: 5px 10px;
+            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(15, 23, 42, 0.7);
+        }
+
+        body[data-theme="light"] .hero-metric-pill {
+            background: rgba(248, 250, 252, 0.98);
+        }
+
+        .hero-metric-label {
+            opacity: 0.9;
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-top: 16px;
+        }
+
+        .btn-primary-lg {
+            background: linear-gradient(135deg, #38bdf8, #2563eb);
+            border-radius: 999px;
+            border: none;
+            padding: 9px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #0b1120;
+            box-shadow: 0 16px 35px rgba(15, 23, 42, 0.85);
+            transition: box-shadow 0.18s ease, transform 0.12s ease;
+        }
+
+        .btn-primary-lg:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 22px 45px rgba(15, 23, 42, 0.95);
+        }
+
+        .btn-ghost-lg {
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.5);
+            padding: 8px 14px;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            background: rgba(15, 23, 42, 0.4);
+            color: #e5e7eb;
+        }
+
+        body[data-theme="light"] .btn-ghost-lg {
+            background: rgba(248, 250, 252, 0.98);
+            color: #0f172a;
+        }
+
+        .hero-note {
+            margin-top: 12px;
+            font-size: 11px;
+            color: rgba(148, 163, 184, 0.9);
+        }
+
+        body[data-theme="light"] .hero-note {
+            color: #6b7280;
+        }
+
+        .hero-note .kbd {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+            monospace;
+            font-size: 10px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            background: rgba(15, 23, 42, 0.15);
+            border: 1px solid rgba(148, 163, 184, 0.4);
+        }
+
+        .hero-orbit-badge {
+            position: absolute;
+            right: -18px;
+            top: -20px;
+            width: 180px;
+            height: 180px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            opacity: 0.7;
+            background: radial-gradient(circle at 30% 20%, rgba(56, 189, 248, 0.08), transparent 55%);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 18px;
+        }
+
+        .hero-orbit-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            opacity: 0.85;
+        }
+
+        .hero-orbit-sub {
+            font-size: 10px;
+            opacity: 0.8;
+        }
+
+        .sections {
+            margin: 0 auto;
+            max-width: 1120px;
+            padding: 0 16px 42px;
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr);
+            gap: 18px;
+        }
+
+        @media (max-width: 920px) {
             .sections {
-                grid-template-columns: 1fr;
+                grid-template-columns: minmax(0, 1fr);
             }
         }
 
         .section-card {
-            border-radius: var(--radius-xl);
-            padding: 14px 14px 15px;
-            background: rgba(255, 255, 255, 0.96);
-            border: 1px solid var(--border-soft-light);
-            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
-            font-size: 12px;
+            background: radial-gradient(circle at top, rgba(15, 23, 42, 0.96) 0, #020617 70%);
+            border-radius: 22px;
+            padding: 18px 16px 18px;
+            box-shadow: var(--card-shadow-dark);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            color: #e5e7eb;
         }
 
-        body.dark .section-card {
-            background: rgba(15, 23, 42, 0.97);
-            border-color: var(--border-soft-dark);
-            box-shadow: 0 18px 42px rgba(0, 0, 0, 0.9);
+        body[data-theme="light"] .section-card {
+            background: radial-gradient(circle at top, #ffffff 0, #e2f2ff 70%);
+            box-shadow: var(--card-shadow-light);
+            color: #0f172a;
         }
 
         .section-title {
-            font-size: 13px;
+            font-size: 16px;
             font-weight: 600;
-            margin-bottom: 6px;
+            letter-spacing: -0.01em;
+            margin-bottom: 10px;
         }
 
         .section-list {
-            list-style: none;
+            margin: 0;
             padding: 0;
-            margin: 4px 0 0;
+            list-style: none;
+            display: grid;
+            gap: 8px;
         }
 
         .section-list li {
-            margin-bottom: 4px;
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            gap: 8px;
+            align-items: flex-start;
+            font-size: 13px;
+        }
+
+        .section-list .bullet {
+            width: 18px;
             display: flex;
-            gap: 6px;
+            justify-content: center;
+            margin-top: 2px;
         }
 
-        .section-list li span.bullet {
-            font-size: 12px;
-            margin-top: 1px;
+        .section-list .text {
+            color: var(--text-muted);
         }
 
-        .section-list li span.text {
-            font-size: 12px;
-        }
-
-        .link-muted {
-            color: inherit;
-            text-decoration: none;
-            border-bottom: 1px dashed rgba(148, 163, 184, 0.7);
-        }
-
-        .link-muted:hover {
-            border-bottom-style: solid;
+        .section-list strong {
+            color: var(--text-main);
         }
 
         .kbd {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+            monospace;
             font-size: 11px;
-            padding: 1px 5px;
+            padding: 2px 5px;
             border-radius: 4px;
-            border: 1px solid rgba(148, 163, 184, 0.72);
-            background: rgba(248, 250, 252, 0.95);
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            background: rgba(15, 23, 42, 0.15);
         }
 
-        body.dark .kbd {
-            background: rgba(15, 23, 42, 0.94);
-        }
-
-        footer {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 10px 18px 16px;
+        .footer {
+            border-top: 1px solid rgba(15, 23, 42, 0.85);
+            padding: 14px 16px 18px;
             font-size: 11px;
-            color: var(--text-muted-light);
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            flex-wrap: wrap;
+            color: rgba(148, 163, 184, 0.9);
+            background: rgba(15, 23, 42, 0.97);
         }
 
-        body.dark footer {
-            color: var(--text-muted-dark);
+        body[data-theme="light"] .footer {
+            background: rgba(15, 23, 42, 0.97);
+        }
+
+        .footer-inner {
+            margin: 0 auto;
+            max-width: 1120px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            justify-content: space-between;
+        }
+
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .footer-links a {
+            opacity: 0.8;
+        }
+
+        .footer-links a:hover {
+            opacity: 1;
+        }
+
+        .pill-secondary {
+            border-radius: 999px;
+            padding: 4px 10px;
+            border: 1px solid rgba(148, 163, 184, 0.7);
+            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        @media (max-width: 600px) {
+            .topbar-inner {
+                flex-wrap: wrap;
+            }
+            .topbar-links {
+                display: none;
+            }
+        }
+
+        .fade-in {
+            opacity: 0;
+            transform: translateY(4px);
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        .fade-in-delayed {
+            opacity: 0;
+            transform: translateY(4px);
+            animation: fadeInUp 0.9s ease-out forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
-<body>
+<body data-theme="dark">
 <div class="shell">
-    <!-- TOP BAR -->
     <header class="topbar">
-        <div class="topbar-left">
-            <div class="logo-img-wrap">
-                <img src="/assets/logo/legalai-logo-main.png"
-                     alt="LegalAI — цифровой юрист"
-                     class="logo-img">
+        <div class="topbar-inner">
+            <a href="index.html" class="topbar-logo-block">
+                <div class="logo-img-wrap">
+                    <img src="/Logo.png" alt="Logo" class="logo-img" />
+                </div>
+                <div class="topbar-title-block">
+                    <div class="topbar-title">LegalAI</div>
+                    <div class="topbar-subtitle">Юридический ИИ-ассистент нового поколения</div>
+                </div>
+            </a>
+            <div class="topbar-spacer"></div>
+            <nav class="topbar-links">
+                <a href="#features">Возможности</a>
+                <a href="#how-it-works">Как работает</a>
+                <span class="pill">
+                        <span class="pill-dot pill-dot-pulse"></span>
+                        <span>Статус: beta</span>
+                    </span>
+            </nav>
+            <div class="topbar-cta">
+                <button id="theme-toggle" class="theme-toggle-btn" type="button" aria-label="Toggle theme">
+                    🌓
+                </button>
+                <a href="login.html" class="btn btn-outline">
+                    Войти
+                </a>
+                <a href="register.html" class="btn">
+                    Начать бесплатно
+                </a>
             </div>
-            <div class="topbar-title">
-                <div class="topbar-title-main">LegalAI</div>
-                <div class="topbar-title-sub">Юридический ИИ-ассистент для документов и консультаций</div>
-            </div>
-        </div>
-        <div class="topbar-right">
-            <div class="pill">
-                <span class="status-dot" id="health-dot"></span>
-                <span id="health-label">Проверяем backend…</span>
-            </div>
-            <button class="btn btn-outline btn-icon" id="theme-toggle" title="Переключить тему">
-                🌓
-            </button>
-            <button class="btn btn-outline" onclick="window.location.href = '/dashboard';">
-                Панель
-            </button>
-            <button class="btn btn-primary" onclick="window.location.href = '/login';">
-                Войти
-            </button>
         </div>
     </header>
 
-    <!-- HERO -->
     <main>
         <section class="hero">
-            <!-- Левая часть -->
-            <div class="hero-main">
-                <div class="hero-badge-row">
-                    <span class="hero-badge">Stage 10 · продакшн</span>
-                    <span class="hero-hint">backend: <span id="backend-url-label"></span></span>
-                </div>
-                <h1 class="hero-title">
-                    Умный <span class="em">юридический ИИ-ассистент</span>
-                    для документов, дел и консультаций.
-                </h1>
-                <p class="hero-subtitle">
-                    LegalAI помогает анализировать документы, подготавливать договоры, искать судебную практику
-                    и получать предварительные ответы на сложные правовые вопросы.  
-                    Всё это — с поддержкой русскоязычных кейсов и возможностью масштабирования на другие страны.
-                </p>
-                <div class="hero-actions-row">
-                    <button class="btn btn-primary" onclick="window.location.href = '/register';">
-                        Начать бесплатно
-                    </button>
-                    <button class="btn btn-outline" onclick="window.location.href = '/dashboard';">
-                        Открыть панель управления
-                    </button>
-                </div>
-                <div class="hero-actions-row">
-                    <span class="hero-secondary-text">
-                        Уже есть аккаунт? <a href="/login" class="link-muted">Войти</a>.
-                    </span>
-                </div>
-                <div class="hero-metrics-row">
-                    <div class="metric">
-                        <div class="metric-number">3&nbsp;модуля</div>
-                        <div class="metric-label">Документы · ИИ-чат · Судебная практика</div>
+            <div class="hero-inner">
+                <!-- Левая часть: описание продукта -->
+                <div class="hero-main fade-in">
+                    <div class="hero-badge-row">
+                        <div class="hero-badge">
+                            <div class="hero-badge-icon">⚖️</div>
+                            <div>
+                                <div class="hero-badge-text-main">LegalAI — цифровой юрист «Татьяна»</div>
+                                <div class="hero-badge-text-sub">Документы, консультации и база законов в одном окне.</div>
+                            </div>
+                        </div>
+                        <div class="hero-metrics">
+                            <div class="hero-metric-pill">
+                                <span>🚀</span>
+                                <span class="hero-metric-label">MVP · beta · этап стабилизации</span>
+                            </div>
+                            <div class="hero-metric-pill">
+                                <span>📚</span>
+                                <span class="hero-metric-label">Собственная база законов + RAG</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="metric">
-                        <div class="metric-number">24/7</div>
-                        <div class="metric-label">Готов к работе на сервере</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-number">Stage&nbsp;10</div>
-                        <div class="metric-label">Стадия стабилизации и UX</div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Правая часть: мини-панель -->
-            <div class="hero-card">
-                <div class="hero-card-header">
-                    <div class="hero-card-title-block">
-                        <div class="hero-card-title">Быстрый тест ИИ-консультанта</div>
-                        <div class="hero-card-subtitle">Мини-консоль для эндпоинта /ai/ask (демо)</div>
-                    </div>
-                    <div id="backend-status-pill" class="status-pill-small">
-                        <span class="status-dot-mini"></span>
-                        <span id="backend-status-label">Неизвестно</span>
-                    </div>
-                </div>
-                <div class="hero-card-body">
-                    <p style="margin-top: 0; margin-bottom: 6px;">
-                        Напишите простой вопрос (без персональных данных).
-                        Запрос уйдёт на backend LegalAI по адресу <span class="kbd">/ai/ask</span>.
+                    <h1 class="hero-title">
+                        Юридический ИИ-ассистент, который помогает<br />
+                        <span class="hero-highlight">готовить документы и анализировать риски</span>.
+                    </h1>
+                    <p class="hero-subtitle">
+                        LegalAI соединяет гибридный поиск по законодательству, ИИ-консультанта «Татьяну» и 
+                        конструктор документов. Система разворачивается на вашем сервере, а данные клиентов 
+                        остаются под вашим контролем.
                     </p>
-                    <textarea id="ai-query" class="ai-mini-input"
-                              placeholder="Например: &quot;Какую информацию обязан содержать договор аренды офиса?&quot;"></textarea>
-                    <div class="hero-card-footer" style="margin-top: 8px;">
-                        <button class="btn btn-outline" type="button" onclick="sendAiAsk()">
-                            Отправить запрос
+
+                    <div class="hero-actions">
+                        <button class="btn-primary-lg" type="button" onclick="window.location.href='login.html'">
+                            <span>Открыть рабочую панель</span>
+                            <span>→</span>
                         </button>
-                        <span style="font-size: 10px;">
-                            При ошибке проверьте доступность backend и CORS.
-                        </span>
+                        <button class="btn-ghost-lg" type="button" onclick="openDocsPage()">
+                            <span>Посмотреть примеры и API</span>
+                        </button>
                     </div>
-                    <div id="ai-answer" class="ai-mini-output empty">
-                        Ответ ИИ появится здесь после успешного запроса.
+                    <div class="hero-note">
+                        <div>Весь backend развёрнут на <span class="kbd">https://api.legalai.su</span>, 
+                            фронтенд — на <span class="kbd">https://app.legalai.su</span>.</div>
+                        <div>Система поддерживает JWT-аутентификацию, логирование и Sentry (по желанию).</div>
+                    </div>
+
+                    <div class="hero-orbit-badge">
+                        <div>
+                            <div class="hero-orbit-label">LegalAI · Stage&nbsp;10</div>
+                            <div class="hero-orbit-sub">Стабилизация и подготовка к продакшен-релизу</div>
+                        </div>
                     </div>
                 </div>
-                <div class="hero-card-footer">
-                    <div class="chips-row">
-                        <span class="chip">FastAPI</span>
-                        <span class="chip">OpenAI / локальные модели</span>
-                        <span class="chip">RU / EN</span>
-                    </div>
-                    <button class="btn btn-outline" type="button" onclick="openSwagger()">
-                        Открыть Swagger /docs
-                    </button>
-                </div>
-            </div>
-        </section>
+
+            </section>
 
         <!-- Блоки с объяснениями -->
         <section class="sections">
@@ -718,21 +785,68 @@
                     <li>
                         <span class="bullet">🤖</span>
                         <span class="text">
-                            <strong>ИИ-консультант.</strong> Предварительные ответы по правовым вопросам, анализ текста
-                            договоров, работа с файлами (PDF, изображения, аудио).
+                            <strong>ИИ-консультант «Татьяна».</strong> Анализ ситуаций, подсказка норм права и
+                            подготовка черновиков документов на основе вашей базы законов.
                         </span>
                     </li>
                     <li>
-                        <span class="bullet">🛡️</span>
+                        <span class="bullet">🧠</span>
                         <span class="text">
-                            <strong>Безопасность.</strong> Авторизация, JWT, двухфакторная аутентификация,
-                            защищённый доступ к данным.
+                            <strong>RAG-подход.</strong> Сначала поиск по базе законов, затем формирование ответа ИИ
+                            с указанием источников.
+                        </span>
+                    </li>
+                    <li>
+                        <span class="bullet">📈</span>
+                        <span class="text">
+                            <strong>Логи и мониторинг.</strong> Метрики, Sentry (опционально) и отчёты по
+                            использованию системы.
                         </span>
                     </li>
                 </ul>
             </article>
 
-            <article class="section-card">
+            <article class="section-card" id="how-it-works">
+                <div class="section-title">Как это работает технически</div>
+                <ul class="section-list">
+                    <li>
+                        <span class="bullet">1️⃣</span>
+                        <span class="text">
+                            Ваш вопрос попадает в backend (<span class="kbd">FastAPI</span>), где вызывается
+                            модуль ИИ-консультанта.
+                        </span>
+                    </li>
+                    <li>
+                        <span class="bullet">2️⃣</span>
+                        <span class="text">
+                            Включается гибридный поиск по базе законов:
+                            <span class="kbd">FTS5 + векторный индекс (HNSW)</span>, подготовленный заранее.
+                        </span>
+                    </li>
+                    <li>
+                        <span class="bullet">3️⃣</span>
+                        <span class="text">
+                            Из найденных документов формируются выдержки и структура цитирования (статья, номер,
+                            дата, ссылка).
+                        </span>
+                    </li>
+                    <li>
+                        <span class="bullet">4️⃣</span>
+                        <span class="text">
+                            ИИ-модуль («Татьяна») формирует ответ понятным языком, с учётом контекста и рисков.
+                        </span>
+                    </li>
+                    <li>
+                        <span class="bullet">5️⃣</span>
+                        <span class="text">
+                            Ответ вместе с цитатами и рисками возвращается на фронтенд и отображается в едином
+                            рабочем интерфейсе.
+                        </span>
+                    </li>
+                </ul>
+            </article>
+
+            <article class="section-card" id="features">
                 <div class="section-title">Для кого это создаётся</div>
                 <ul class="section-list">
                     <li>
@@ -745,201 +859,98 @@
                     <li>
                         <span class="bullet">🏢</span>
                         <span class="text">
-                            Малый и средний бизнес: договоры с контрагентами, типовые формы, первичный анализ рисков.
+                            Малый и средний бизнес: договоры с контрагентами, персоналом, аренда, 
+                            претензии, акты, соглашения.
                         </span>
                     </li>
                     <li>
-                        <span class="bullet">🌍</span>
+                        <span class="bullet">⚙️</span>
                         <span class="text">
-                            Проект изначально ориентирован на русскоязычную аудиторию, но архитектура
-                            позволяет масштабировать его под страны СНГ, Европу и другие регионы.
+                            Разработчики и интеграторы, которым нужен готовый backend с понятным API,
+                            CI/CD и документацией.
+                        </span>
+                    </li>
+                    <li>
+                        <span class="bullet">🧩</span>
+                        <span class="text">
+                            Команды, которые хотят развивать свою юридическую базу, а не зависеть от внешних
+                            «чёрных ящиков».
                         </span>
                     </li>
                 </ul>
-                <p style="margin-top: 8px; font-size: 11px; color: inherit;">
-                    Важно: LegalAI не заменяет юриста и не является официальной юридической консультацией.
-                    Это инструмент для ускорения работы и подготовки черновиков.
-                </p>
+            </article>
+
+            <article class="section-card">
+                <div class="section-title">Что уже сделано в MVP</div>
+                <ul class="section-list">
+                    <li>
+                        <span class="bullet">✅</span>
+                        <span class="text">
+                            Backend на FastAPI, настроенный под деплой на отдельный сервер (Ubuntu, systemd, nginx).
+                        </span>
+                    </li>
+                    <li>
+                        <span class="bullet">✅</span>
+                        <span class="text">
+                            Базовая аутентификация (регистрация, вход, профайл), JWT-токены.
+                        </span>
+                    </li>
+                    <li>
+                        <span class="bullet">✅</span>
+                        <span class="text">
+                            Загрузка и синхронизация базы законов с официального источника (publication.pravo.gov.ru).
+                        </span>
+                    </li>
+                    <li>
+                        <span class="bullet">✅</span>
+                        <span class="text">
+                            Гибридный поиск по законам и подготовка векторных индексов для RAG-подхода.
+                        </span>
+                    </li>
+                    <li>
+                        <span class="bullet">🔄</span>
+                        <span class="text">
+                            Интеграция ИИ-модуля «Татьяна» с единым чатом на панели (этап стабилизации и UX).
+                        </span>
+                    </li>
+                </ul>
             </article>
         </section>
     </main>
 
-    <!-- FOOTER -->
-    <footer>
-        <div>
-            © <span id="year"></span> LegalAI. Не является юридической консультацией.
-        </div>
-        <div>
-            Backend: <span class="kbd" id="backend-url-footer"></span> ·
-            API: <a href="#" id="swagger-link" class="link-muted" target="_blank" rel="noreferrer">/docs</a> ·
-            Панель: <a href="/dashboard" class="link-muted">/dashboard</a>
+    <footer class="footer">
+        <div class="footer-inner">
+            <div>© <span id="year"></span> LegalAI. Внутренний прототип юридического ИИ-ассистента.</div>
+            <div class="footer-links">
+                <a href="legal-notice.html">Правовая информация</a>
+                <span>•</span>
+                <a href="pricing.html">Тарифы (черновик)</a>
+                <span>•</span>
+                <span class="pill-secondary">
+                        <span>Backend: FastAPI</span>
+                        <span>•</span>
+                        <span>CI/CD: GitHub Actions</span>
+                    </span>
+            </div>
         </div>
     </footer>
 </div>
 
+<script src="/js/app.js"></script>
 <script>
-    // Тема (светлая/тёмная) — логика как в dashboard
-    (function () {
-        const body = document.body;
-        const THEME_KEY = 'legalai_theme';
-
-        function applyTheme(theme) {
-            if (theme === 'dark') {
-                body.classList.add('dark');
-            } else {
-                body.classList.remove('dark');
-            }
-        }
-
-        function toggleTheme() {
-            const current = body.classList.contains('dark') ? 'dark' : 'light';
-            const next = current === 'dark' ? 'light' : 'dark';
-            localStorage.setItem(THEME_KEY, next);
-            applyTheme(next);
-        }
-
-        const savedTheme = localStorage.getItem(THEME_KEY) || 'light';
-        applyTheme(savedTheme);
-
-        const toggleBtn = document.getElementById('theme-toggle');
-        if (toggleBtn) {
-            toggleBtn.addEventListener('click', toggleTheme);
-        }
-    })();
-
-    // Определение API_BASE: продакшн vs локально
-    const API_BASE = (function () {
-        const host = window.location.hostname;
-        if (host.endsWith('legalai.su')) {
-            return 'https://api.legalai.su';
-        }
-        return 'http://127.0.0.1:8000';
-    })();
-
-    document.getElementById('backend-url-label').textContent = API_BASE;
-    document.getElementById('backend-url-footer').textContent = API_BASE;
-    const swaggerLink = document.getElementById('swagger-link');
-    if (swaggerLink) {
-        swaggerLink.href = API_BASE + '/docs';
+    function openDocsPage() {
+        window.open('https://api.legalai.su/docs', '_blank');
     }
 
-    function formatTime(date) {
-        return date.toLocaleTimeString('ru-RU', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    }
-
+    // Проверка доступности backend (используется только внутри, UI-индикатор убран)
     async function runHealthCheck() {
-        const dot = document.getElementById('health-dot');
-        const label = document.getElementById('health-label');
-        const statusPill = document.getElementById('backend-status-pill');
-        const statusLabel = document.getElementById('backend-status-label');
-
-        if (!dot || !label || !statusPill || !statusLabel) return;
-
-        dot.classList.remove('bad');
-        statusPill.classList.remove('error');
-        label.textContent = 'Проверяем backend…';
-        statusLabel.textContent = 'Проверяем…';
-
         try {
-            const res = await fetch(API_BASE + '/health', {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-
+            const res = await fetch('https://api.legalai.su/health', { method: 'GET' });
             if (!res.ok) {
-                dot.classList.add('bad');
-                statusPill.classList.add('error');
-                label.textContent = 'Ошибка: ' + res.status;
-                statusLabel.textContent = 'Ошибка ' + res.status;
-                return;
-            }
-
-            let data = null;
-            try {
-                data = await res.json();
-            } catch (e) {}
-
-            dot.classList.remove('bad');
-            statusPill.classList.remove('error');
-            label.textContent = 'Backend онлайн (' + formatTime(new Date()) + ')';
-            statusLabel.textContent = 'Работает';
-
-            if (data && (data.status || data.detail)) {
-                // Можно при желании куда-то вывести текст
+                console.warn('Backend health check failed:', res.status);
             }
         } catch (err) {
-            dot.classList.add('bad');
-            statusPill.classList.add('error');
-            label.textContent = 'Backend недоступен';
-            statusLabel.textContent = 'Недоступен';
-        }
-    }
-
-    function openSwagger() {
-        window.open(API_BASE + '/docs', '_blank', 'noopener');
-    }
-
-    async function sendAiAsk() {
-        const textarea = document.getElementById('ai-query');
-        const output = document.getElementById('ai-answer');
-        if (!textarea || !output) return;
-
-        const query = (textarea.value || '').trim();
-        if (!query) {
-            alert('Введите текст вопроса перед отправкой.');
-            return;
-        }
-
-        output.classList.remove('empty');
-        output.textContent = 'Отправляем запрос…';
-
-        try {
-            const res = await fetch(API_BASE + '/ai/ask', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ query: query })
-            });
-
-            if (!res.ok) {
-                let detail = res.status + ' ' + res.statusText;
-                try {
-                    const errJson = await res.json();
-                    if (errJson && errJson.detail) {
-                        detail = errJson.detail;
-                    }
-                } catch (e) {}
-
-                output.textContent =
-                    'Ошибка ответа от /ai/ask: ' + detail +
-                    '. Возможно, требуется авторизация или модуль ИИ отключён.';
-                return;
-            }
-
-            let data;
-            try {
-                data = await res.json();
-            } catch (e) {
-                output.textContent = 'Ответ получен, но не удалось прочитать JSON.';
-                return;
-            }
-
-            if (data && (data.answer || data.detail || typeof data === 'string')) {
-                const answer = data.answer || data.detail || data.toString();
-                output.textContent = answer;
-            } else {
-                output.textContent = 'Ответ от ИИ получен, но в нестандартном формате.';
-            }
-        } catch (err) {
-            output.textContent =
-                'Не удалось отправить запрос к /ai/ask. Проверьте доступность backend и настройки CORS.';
+            console.warn('Backend health check error:', err);
         }
     }
 
