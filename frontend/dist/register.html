@@ -14,23 +14,22 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            height: 100vh;
         }
 
         .card {
             background: white;
-            width: 400px;
-            max-width: 95%;
+            width: 420px;
             padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0px 6px 20px rgba(0,0,0,0.15);
+            border-radius: 20px;
+            box-shadow: 0px 8px 24px rgba(0,0,0,0.15);
         }
 
         h1 {
             margin: 0 0 20px 0;
-            font-size: 24px;
-            color: #1A4C91;
+            font-size: 26px;
             text-align: center;
+            color: #1A4C91;
         }
 
         label {
@@ -39,7 +38,7 @@
             display: block;
         }
 
-        input, select {
+        input {
             width: 100%;
             padding: 10px 12px;
             margin-top: 6px;
@@ -64,28 +63,37 @@
         }
 
         button:hover {
-            background: #2E63D4;
+            background: #0053D6;
         }
 
         .link {
             margin-top: 15px;
             text-align: center;
             font-size: 14px;
+            color: #1A4C91;
         }
 
         .link a {
+            color: #3A7AFE;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .link a:hover {
             text-decoration: underline;
-            color: #1A4C91;
         }
 
         .terms {
             font-size: 12px;
-            color: #1A4C91;
-            margin-top: 6px;
+            color: #4A4A4A;
         }
 
         .terms a {
-            color: #1A4C91;
+            color: #3A7AFE;
+            text-decoration: none;
+        }
+
+        .terms a:hover {
             text-decoration: underline;
         }
 
@@ -113,8 +121,7 @@
     <div class="card">
         <h1>Регистрация</h1>
 
-        <!-- ВАЖНО: action оставляем /auth/register, backend просто получит больше полей -->
-        <form id="register-form" action="/auth/register" method="POST">
+        <form id="register-form">
             <label>Фамилия</label>
             <input name="last_name" type="text" placeholder="Введите фамилию" required>
 
@@ -125,37 +132,16 @@
             <input name="middle_name" type="text" placeholder="Введите отчество (если есть)">
 
             <label>Год рождения</label>
-            <input
-                name="birth_year"
-                type="number"
-                placeholder="Например, 1985"
-                min="1900"
-                max="2025"
-                required
-            >
+            <input name="birth_year" type="number" min="1900" max="2100" placeholder="Например: 1975" required>
 
             <label>Email</label>
-            <input name="email" type="email" placeholder="Введите email" required>
+            <input name="email" type="email" placeholder="Ваш email" required>
 
             <label>Телефон</label>
-            <input
-                id="phone"
-                name="phone"
-                type="tel"
-                placeholder="+7 900 000-00-00"
-                pattern="^\+?[0-9\s\-]{7,20}$"
-                required
-            >
+            <input id="phone" name="phone" type="tel" placeholder="+7 900 000 00 00" required>
 
             <label>Подтвердите телефон</label>
-            <input
-                id="phone_confirm"
-                name="phone_confirm"
-                type="tel"
-                placeholder="Повторите номер телефона"
-                pattern="^\+?[0-9\s\-]{7,20}$"
-                required
-            >
+            <input id="phone_confirm" name="phone_confirm" type="tel" placeholder="Повторите телефон" required>
 
             <label>Страна</label>
             <input name="country" type="text" placeholder="Страна" required>
@@ -192,20 +178,100 @@
     </div>
 
     <script>
-        const form = document.getElementById('register-form');
-        const phone = document.getElementById('phone');
-        const phoneConfirm = document.getElementById('phone_confirm');
-        const errorBlock = document.getElementById('error-message');
+        // Базовый URL backend-API
+        const API_BASE = window.LEGALAI_API_BASE || "https://api.legalai.su";
+        // Правильный эндпоинт регистрации по swagger: /авторизация/зарегистрироваться
+        const REGISTER_ENDPOINT =
+            window.LEGALAI_REGISTER_ENDPOINT ||
+            (API_BASE + "/авторизация/зарегистрироваться");
 
-        form.addEventListener('submit', function (e) {
-            errorBlock.style.display = 'none';
-            errorBlock.textContent = '';
+        const form = document.getElementById("register-form");
+        const phone = document.getElementById("phone");
+        const phoneConfirm = document.getElementById("phone_confirm");
+        const errorBlock = document.getElementById("error-message");
+
+        function showError(message) {
+            errorBlock.textContent = message;
+            errorBlock.style.display = "block";
+        }
+
+        form.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            errorBlock.style.display = "none";
+            errorBlock.textContent = "";
 
             if (phone.value.trim() !== phoneConfirm.value.trim()) {
-                e.preventDefault();
-                errorBlock.textContent = 'Телефон и подтверждение телефона не совпадают.';
-                errorBlock.style.display = 'block';
+                showError("Телефон и подтверждение телефона не совпадают.");
                 return;
+            }
+
+            const formData = new FormData(form);
+
+            const payload = {
+                last_name: (formData.get("last_name") || "").toString().trim(),
+                first_name: (formData.get("first_name") || "").toString().trim(),
+                middle_name: (formData.get("middle_name") || "").toString().trim() || null,
+                birth_year: formData.get("birth_year")
+                    ? Number(formData.get("birth_year"))
+                    : null,
+                email: (formData.get("email") || "").toString().trim(),
+                phone: (formData.get("phone") || "").toString().trim(),
+                country: (formData.get("country") || "").toString().trim(),
+                city: (formData.get("city") || "").toString().trim(),
+                username: (formData.get("username") || "").toString().trim(),
+                password: (formData.get("password") || "").toString(),
+            };
+
+            try {
+                const response = await fetch(REGISTER_ENDPOINT, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify(payload),
+                });
+
+                if (!response.ok) {
+                    let msg = `Не удалось создать аккаунт (код ${response.status}).`;
+
+                    try {
+                        const data = await response.json();
+                        if (data && data.detail) {
+                            if (Array.isArray(data.detail)) {
+                                msg = data.detail
+                                    .map((item) => {
+                                        if (!item) return "";
+                                        if (typeof item === "string") return item;
+                                        return item.msg || item.message || "";
+                                    })
+                                    .filter(Boolean)
+                                    .join("; ");
+                            } else if (typeof data.detail === "string") {
+                                msg = data.detail;
+                            } else if (data.detail.message) {
+                                msg = data.detail.message;
+                            }
+                        }
+                    } catch (_) {
+                        try {
+                            const text = await response.text();
+                            if (text) {
+                                msg = text;
+                            }
+                        } catch (_) {}
+                    }
+
+                    showError(msg);
+                    return;
+                }
+
+                // Успешная регистрация — переходим на страницу входа
+                window.location.href = "/login";
+            } catch (err) {
+                console.error("Register error", err);
+                showError("Возникла ошибка при обращении к серверу. Попробуйте позже.");
             }
         });
     </script>
