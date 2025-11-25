@@ -1,0 +1,42 @@
+LEGALAI REPOSITORY ANALYSIS
+================================
+Generated (UTC): 2025-11-25T03:15:58Z
+Root path: /home/runner/work/legal-ai/legal-ai
+
+1) Top-level directories summary
+--------------------------------
+Directory               Files   Code files   Code lines
+------------------------------------------------------------
+.                          44            7          406
+backend                   117           95         4046
+deploy                      1            0            0
+frontend                    5            5          137
+scripts                     3            0            0
+tools                       2            2          290
+
+
+2) Language statistics
+----------------------
+Language                Files        Lines
+--------------------------------------------------
+JSON                        6          275
+JavaScript/TypeScript        5          137
+Markdown                    2          151
+Other                      63            0
+Python                     95         4316
+YAML                        1            0
+
+
+3) GitHub Actions workflows
+---------------------------
+- backend-tests.yml: Backend tests
+- deploy-backend.yml: Deploy backend
+- deploy.yml: Deploy LegalAI
+- frontend-ci.yml: Frontend CI
+- repo-analyzer.yml: Repo analyzer (auto)
+
+
+4) Notes
+--------
+- Repo_LegalAI_Structure.txt содержит детальную структуру репозитория.
+- Данный отчёт генерируется автоматически ботом Repo Analyzer v2.
