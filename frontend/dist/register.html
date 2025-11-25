@@ -42,11 +42,17 @@
             width: 100%;
             padding: 10px 12px;
             margin-top: 6px;
-            margin-bottom: 12px;
+            margin-bottom: 6px;
             border-radius: 10px;
             border: 1px solid #D2E3FF;
             font-size: 15px;
             box-sizing: border-box;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #6A6A6A;
+            margin-bottom: 8px;
         }
 
         button {
@@ -109,6 +115,24 @@
             margin-top: 3px;
         }
 
+        .password-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .password-row input[type="password"],
+        .password-row input[type="text"] {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .show-pass-label {
+            font-size: 12px;
+            white-space: nowrap;
+            color: #1A4C91;
+        }
+
         .error {
             color: #B3261E;
             font-size: 13px;
@@ -150,10 +174,25 @@
             <input name="city" type="text" placeholder="Город или район" required>
 
             <label>Логин</label>
-            <input name="username" type="text" placeholder="Придумайте логин" required>
+            <input name="username" type="text" placeholder="Латинские буквы и цифры, от 3 до 30 символов" required>
+            <div class="hint">
+                Логин будет использоваться для входа в систему. Разрешены латинские буквы и цифры,
+                без пробелов. Пример: <b>legalai_admin</b>, <b>user123</b>.
+            </div>
 
             <label>Пароль</label>
-            <input name="password" type="password" placeholder="Придумайте пароль" required>
+            <div class="password-row">
+                <input id="password" name="password" type="password"
+                       placeholder="Минимум 8 символов, буквы и цифры" required>
+                <label class="show-pass-label">
+                    <input type="checkbox" id="toggle-password">
+                    Показать
+                </label>
+            </div>
+            <div class="hint">
+                Рекомендуется использовать минимум 8 символов: буквы в разных регистрах и цифры.
+                Не используйте простой пароль вроде <b>123456</b>.
+            </div>
 
             <div id="error-message" class="error" style="display:none;"></div>
 
@@ -180,20 +219,30 @@
     <script>
         // Базовый URL backend-API
         const API_BASE = window.LEGALAI_API_BASE || "https://api.legalai.su";
-        // Правильный эндпоинт регистрации по swagger: /авторизация/зарегистрироваться
+        // Реальный эндпоинт регистрации по README backend
         const REGISTER_ENDPOINT =
             window.LEGALAI_REGISTER_ENDPOINT ||
-            (API_BASE + "/авторизация/зарегистрироваться");
+            (API_BASE + "/auth/register");
 
         const form = document.getElementById("register-form");
         const phone = document.getElementById("phone");
         const phoneConfirm = document.getElementById("phone_confirm");
+        const passwordInput = document.getElementById("password");
+        const togglePassword = document.getElementById("toggle-password");
         const errorBlock = document.getElementById("error-message");
 
         function showError(message) {
             errorBlock.textContent = message;
             errorBlock.style.display = "block";
         }
+
+        togglePassword.addEventListener("change", function () {
+            if (togglePassword.checked) {
+                passwordInput.type = "text";
+            } else {
+                passwordInput.type = "password";
+            }
+        });
 
         form.addEventListener("submit", async function (e) {
             e.preventDefault();
@@ -208,29 +257,29 @@
 
             const formData = new FormData(form);
 
+            const username = (formData.get("username") || "").toString().trim();
+            const email = (formData.get("email") || "").toString().trim();
+            const password = (formData.get("password") || "").toString();
+
+            if (!username || !email || !password) {
+                showError("Логин, email и пароль обязательны для регистрации.");
+                return;
+            }
+
             const payload = {
-                last_name: (formData.get("last_name") || "").toString().trim(),
-                first_name: (formData.get("first_name") || "").toString().trim(),
-                middle_name: (formData.get("middle_name") || "").toString().trim() || null,
-                birth_year: formData.get("birth_year")
-                    ? Number(formData.get("birth_year"))
-                    : null,
-                email: (formData.get("email") || "").toString().trim(),
-                phone: (formData.get("phone") || "").toString().trim(),
-                country: (formData.get("country") || "").toString().trim(),
-                city: (formData.get("city") || "").toString().trim(),
-                username: (formData.get("username") || "").toString().trim(),
-                password: (formData.get("password") || "").toString(),
+                username,
+                email,
+                password
             };
 
             try {
                 const response = await fetch(REGISTER_ENDPOINT, {
                     method: "POST",
                     headers: {
-                        "Content-Type": "application/json",
+                        "Content-Type": "application/json"
                     },
                     credentials: "include",
-                    body: JSON.stringify(payload),
+                    body: JSON.stringify(payload)
                 });
 
                 if (!response.ok) {
@@ -267,11 +316,11 @@
                     return;
                 }
 
-                // Успешная регистрация — переходим на страницу входа
+                // Успешная регистрация — перенаправляем на страницу входа
                 window.location.href = "/login";
             } catch (err) {
                 console.error("Register error", err);
-                showError("Возникла ошибка при обращении к серверу. Попробуйте позже.");
+                showError("Возникла ошибка при обращении к серверу: " + (err && err.message ? err.message : "Попробуйте позже."));
             }
         });
     </script>
