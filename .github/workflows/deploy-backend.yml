@@ -37,7 +37,7 @@ jobs:
           script: |
             set -euo pipefail
 
-            echo "[DEPLOY] Переходим в каталог бекенда..."
+            echo "[DEPLOY] Переходим в каталог бэкенда..."
             cd /srv/legal-ai/backend
 
             echo "[DEPLOY] Останавливаем сервис..."
@@ -52,16 +52,28 @@ jobs:
             echo "[DEPLOY] Обновляем зависимости..."
             pip install -r requirements.txt
 
-            echo "[DEPLOY] Применяем миграции (если настроен Alembic)..."
-            alembic upgrade head || true
+            echo "[DEPLOY] Применяем миграции (если установлен Alembic)..."
+            if command -v alembic >/dev/null 2>&1; then
+              alembic upgrade head || true
+            else
+              echo "[DEPLOY] Alembic не найден, миграции пропущены."
+            fi
 
             echo "[DEPLOY] Перезапускаем сервис..."
             systemctl restart legalai.service
 
-            echo "[DEPLOY] Ждём 5 секунд и проверяем /health..."
-            sleep 5
+            echo "[DEPLOY] Ждём 10 секунд и проверяем /health (до 2 попыток)..."
+            sleep 10
+
             STATUS_CODE=$(curl -k -s -o /dev/null -w "%{http_code}" https://api.legalai.su/health || echo "000")
-            echo "[DEPLOY] Код ответа /health: ${STATUS_CODE}"
+            echo "[DEPLOY] Первая проверка /health: ${STATUS_CODE}"
+
+            if [ "${STATUS_CODE}" != "200" ]; then
+              echo "[DEPLOY] Повторная проверка через 5 секунд..."
+              sleep 5
+              STATUS_CODE=$(curl -k -s -o /dev/null -w "%{http_code}" https://api.legalai.su/health || echo "000")
+              echo "[DEPLOY] Вторая проверка /health: ${STATUS_CODE}"
+            fi
 
             if [ "${STATUS_CODE}" != "200" ]; then
               echo "[DEPLOY] /health вернул ${STATUS_CODE}, деплой считаем неуспешным."
