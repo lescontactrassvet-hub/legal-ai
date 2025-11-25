@@ -1,66 +1,111 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from typing import Optional, List
 
-# ВАЖНО: корень проекта в CI/на сервере — папка "backend",
-# внутри неё пакеты "app", "ai", "routers" и др.
-# Поэтому импортируем так, а не "from backend.ai.core ...".
-from ai.core import ConsultantCore
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field, HttpUrl
 
 router = APIRouter(
     prefix="/ai",
-    tags=["AI"],
+    tags=["ai"],
 )
 
+MAX_QUESTION_LEN = 4000
 
-class QueryRequest(BaseModel):
-    """Запрос к ЮИИ Татьяне."""
-    query: str = Field(
+
+class ChatRequest(BaseModel):
+    """Запрос к ИИ-консультанту Татьяне.
+
+    Фронтенд может отправлять текст либо в поле message, либо в question.
+    Мы поддерживаем оба варианта, чтобы не ломать разные версии UI.
+    """
+    message: Optional[str] = Field(
+        None, description="Текст вопроса пользователя (основное поле)"
+    )
+    question: Optional[str] = Field(
+        None, description="Альтернативное поле для текста (для старых фронтов)"
+    )
+    language: Optional[str] = Field(
+        None, description="Желаемый язык ответа: ru / en и т.п."
+    )
+
+    def normalized_text(self) -> str:
+        """Берём текст из message или question и приводим к нормальной строке."""
+        text = (self.message or self.question or "").strip()
+        return text
+
+
+class Citation(BaseModel):
+    """Ссылка на норму права / документ."""
+
+    id: str = Field(
         ...,
-        min_length=3,
-        description="Вопрос пользователя или описание ситуации.",
+        description="Краткое обозначение нормы: ст. 10 ГК РФ, Постановление Правительства № ... и т.п.",
+    )
+    title: Optional[str] = Field(
+        None, description="Полное название закона или документа"
+    )
+    url: Optional[HttpUrl] = Field(
+        None, description="Ссылка на официальный текст (консультант/Гарант/Госправо)"
     )
 
 
-consultant = ConsultantCore()
+class AiResponse(BaseModel):
+    """Ответ ИИ-консультанта для фронтенда dashboard.html."""
+
+    answer: str = Field(..., description="Текст ответа Татьяны")
+    citations: List[Citation] = Field(
+        default_factory=list,
+        description="Список найденных норм права (пока может быть пустым)",
+    )
+    document_draft: Optional[str] = Field(
+        None,
+        description=(
+            "Черновик документа, если удалось его сформировать. "
+            "Фронтенд кладёт это поле в редактор под чатом."
+        ),
+    )
 
 
-@router.post("/ask")
-async def ask_endpoint(req: QueryRequest):
+@router.post("/ask", response_model=AiResponse)
+async def ask_ai(payload: ChatRequest) -> AiResponse:
     """
-    Основной эндпоинт диалога с ЮИИ Татьяной.
+    Главный эндпоинт чата Татьяны.
 
-    Возвращает словарь вида:
-    {
-        "answer": "...",
-        "citations": [...],
-        "intent": "...",
-        "risk_info": {...}
-    }
-    (точная структура зависит от ConsultantCore)
+    На этом этапе работает в демонстрационном режиме:
+    - принимает текст вопроса;
+    - возвращает понятный пользователю ответ;
+    - формирует примерный черновик документа;
+    - структуру ответа мы делаем сразу "боевую", чтобы позже просто
+      подключить реальный ИИ/БД законов без изменений фронтенда.
     """
-    try:
-        return await consultant.ask(req.query)
-    except ValueError as e:
-        # Контролируемые ошибки валидации/проверок
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        # Защита от падения оркестратора
-        raise HTTPException(status_code=500, detail=f"AI error: {e}")
+    text = payload.normalized_text()
+    if not text:
+        raise HTTPException(status_code=400, detail="Пустой запрос")
 
+    # На всякий случай ограничим длину, чтобы не убить бэкенд слишком длинным текстом
+    if len(text) > MAX_QUESTION_LEN:
+        text = text[:MAX_QUESTION_LEN]
 
-@router.post("/check")
-async def check_endpoint(req: QueryRequest):
-    """
-    Проверка/поиск норм без развёрнутого ответа.
-    Возвращает только ссылки/цитаты и мета-информацию.
-    """
-    return await consultant.check(req.query)
+    # TODO: сюда позже подключим реальный анализ законодательства и моделей ИИ
+    base_answer = (
+        "Пока ИИ-консультант Татьяна работает в демонстрационном режиме.\n\n"
+        "Ваш запрос:\n"
+        f"«{text}»\n\n"
+        "На следующем этапе мы подключим полноценный анализ законодательства, "
+        "поиск по базе законов и генерацию формулировок. "
+        "Пожалуйста, используйте этот ответ только как черновик и обязательно "
+        "проверьте его перед применением."
+    )
 
+    draft = (
+        "ЧЕРНОВИК ДОКУМЕНТА (демо-режим)\n\n"
+        f"Основание: запрос пользователя «{text}».\n\n"
+        "Здесь будет формироваться текст договора, заявления или иного документа. "
+        "После подключения базы законов и моделей Татьяна сможет подставлять "
+        "конкретные статьи и более точные формулировки.\n"
+    )
 
-@router.post("/suggest")
-async def suggest_endpoint(req: QueryRequest):
-    """
-    Подсказки по тому, какой следующий шаг или документ подойдёт.
-    Пока может возвращать заглушку — зависит от реализации ConsultantCore.
-    """
-    return await consultant.suggest(req.query)
+    return AiResponse(
+        answer=base_answer,
+        citations=[],  # позже сюда добавим реальные ссылки на нормы
+        document_draft=draft,
+    )
