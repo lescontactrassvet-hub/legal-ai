@@ -14,47 +14,57 @@ function applyTheme(theme) {
   const toggle = document.getElementById('theme-toggle');
 
   root.setAttribute('data-theme', theme);
-  localStorage.setItem('theme', theme);
-
   if (toggle) {
-    toggle.textContent = theme === 'dark' ? '🌙' : '☀️';
+    toggle.checked = theme === 'dark';
   }
+  localStorage.setItem('theme', theme);
 }
 
 function initTheme() {
   const saved = localStorage.getItem('theme');
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   const theme = saved || (prefersDark ? 'dark' : 'light');
   applyTheme(theme);
 
   const toggle = document.getElementById('theme-toggle');
   if (toggle) {
-    toggle.addEventListener('click', () => {
-      const current = document.documentElement.getAttribute('data-theme') || 'dark';
-      const next = current === 'dark' ? 'light' : 'dark';
-      applyTheme(next);
+    toggle.addEventListener('change', () => {
+      applyTheme(toggle.checked ? 'dark' : 'light');
     });
   }
 }
 
-/* === Basic auth helpers === */
+/* === Token handling === */
 
 function getAuthToken() {
-  return localStorage.getItem('token');
+  try {
+    return localStorage.getItem('token');
+  } catch {
+    return null;
+  }
 }
 
 function setAuthToken(token) {
-  localStorage.setItem('token', token);
+  try {
+    localStorage.setItem('token', token);
+  } catch {
+    // ignore storage errors
+  }
 }
 
+/* === API helper === */
+
 async function apiFetch(path, options = {}) {
+  const url = `${apiBase}${path}`;
   const token = getAuthToken();
+
   const headers = options.headers || {};
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
+  headers['Accept'] = 'application/json';
 
-  const res = await fetch(`${apiBase}${path}`, {
+  const res = await fetch(url, {
     ...options,
     headers,
   });
@@ -63,8 +73,12 @@ async function apiFetch(path, options = {}) {
     let errorDetail = `Request failed with status ${res.status}`;
     try {
       const data = await res.json();
-      if (data.detail) errorDetail = data.detail;
-    } catch (e) {
+      if (data && data.detail) {
+        errorDetail = Array.isArray(data.detail)
+          ? data.detail.map((d) => d.msg || d.message || d).join('; ')
+          : data.detail;
+      }
+    } catch {
       // ignore JSON parse error
     }
     throw new Error(errorDetail);
@@ -100,15 +114,23 @@ async function registerUser(username, email, password) {
   }
 }
 
-async function loginUser(email, password) {
+// ИСПРАВЛЕНО: логин теперь отправляет данные в формате x-www-form-urlencoded,
+// как реально ждёт backend (OAuth2PasswordRequestForm: username + password).
+async function loginUser(login, password) {
   try {
+    // Формируем тело запроса: username и password
+    const body = new URLSearchParams();
+    body.append('username', login);
+    body.append('password', password);
+
     const res = await fetch(`${apiBase}/auth/login`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify({ username: email, password })
+      body,
     });
+
     if (!res.ok) {
       const error = await res.text();
       throw new Error(error || 'Login failed');
@@ -122,9 +144,10 @@ async function loginUser(email, password) {
   }
 }
 
-/* === DOMContentLoaded init === */
+/* === Initialization on DOMContentLoaded === */
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Theme init
   initTheme();
 
   // Registration page
@@ -154,6 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showAlert('Please enter email and password.');
         return;
       }
+      // email/логин передаём как login → на бэкенд идёт в поле username
       loginUser(email, password);
     });
   }
@@ -183,37 +207,36 @@ document.addEventListener('DOMContentLoaded', () => {
       list.innerHTML = 'Loading...';
       try {
         const templates = await apiFetch('/documents/templates');
-        list.innerHTML = '';
-        templates.forEach((t) => {
-          const li = document.createElement('li');
-          li.textContent = `${t.name} (${t.category})`;
-          list.appendChild(li);
-        });
+        if (!Array.isArray(templates)) {
+          list.innerHTML = 'No templates found.';
+          return;
+        }
+        list.innerHTML = templates
+          .map((t) => `<li>${t.name || t.id}</li>`)
+          .join('');
       } catch (err) {
         console.error(err);
-        showAlert(err.message);
         list.innerHTML = 'Error loading templates.';
       }
     });
   }
 
-  // Cases page
   const loadCasesBtn = document.getElementById('load-cases-btn');
   if (loadCasesBtn) {
     loadCasesBtn.addEventListener('click', async () => {
       const list = document.getElementById('cases-list');
       list.innerHTML = 'Loading...';
       try {
-        const cases = await apiFetch('/cases');
-        list.innerHTML = '';
-        cases.forEach((c) => {
-          const li = document.createElement('li');
-          li.textContent = `${c.case_number}: ${c.title}`;
-          list.appendChild(li);
-        });
+        const cases = await apiFetch('/legal-cases/search?query=example');
+        if (!Array.isArray(cases)) {
+          list.innerHTML = 'No cases found.';
+          return;
+        }
+        list.innerHTML = cases
+          .map((c) => `<li>${c.title || c.id}</li>`)
+          .join('');
       } catch (err) {
         console.error(err);
-        showAlert(err.message);
         list.innerHTML = 'Error loading cases.';
       }
     });
