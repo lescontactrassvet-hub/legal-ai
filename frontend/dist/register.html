@@ -174,24 +174,28 @@
             <input name="city" type="text" placeholder="Город или район" required>
 
             <label>Логин</label>
-            <input name="username" type="text" placeholder="Латинские буквы и цифры, от 3 до 30 символов" required>
+            <input name="username" type="text"
+                   placeholder="Латинские буквы, цифры, точка, подчёркивание"
+                   required>
             <div class="hint">
-                Логин будет использоваться для входа в систему. Разрешены латинские буквы и цифры,
-                без пробелов. Пример: <b>legalai_admin</b>, <b>user123</b>.
+                Логин от 3 до 30 символов. Разрешены латинские буквы, цифры,
+                точка и подчёркивание. Первый символ — буква.
+                Примеры: <b>Admin777</b>, <b>legalai_user</b>.
             </div>
 
             <label>Пароль</label>
             <div class="password-row">
                 <input id="password" name="password" type="password"
-                       placeholder="Минимум 8 символов, буквы и цифры" required>
+                       placeholder="Не менее 8 символов" required>
                 <label class="show-pass-label">
                     <input type="checkbox" id="toggle-password">
                     Показать
                 </label>
             </div>
             <div class="hint">
-                Рекомендуется использовать минимум 8 символов: буквы в разных регистрах и цифры.
-                Не используйте простой пароль вроде <b>123456</b>.
+                Пароль от 8 до 64 символов, должен содержать:
+                строчную букву, заглавную букву, цифру и спецсимвол
+                (например: <b>LegalAI_2024!</b>).
             </div>
 
             <div id="error-message" class="error" style="display:none;"></div>
@@ -217,13 +221,12 @@
     </div>
 
     <script>
-        // Базовый URL backend-API
+        // ==== Настройки API ====
         const API_BASE = window.LEGALAI_API_BASE || "https://api.legalai.su";
-        // Реальный эндпоинт регистрации по README backend
         const REGISTER_ENDPOINT =
-            window.LEGALAI_REGISTER_ENDPOINT ||
-            (API_BASE + "/auth/register");
+            window.LEGALAI_REGISTER_ENDPOINT || (API_BASE + "/auth/register");
 
+        // ==== Элементы формы ====
         const form = document.getElementById("register-form");
         const phone = document.getElementById("phone");
         const phoneConfirm = document.getElementById("phone_confirm");
@@ -236,27 +239,46 @@
             errorBlock.style.display = "block";
         }
 
+        function hideError() {
+            errorBlock.textContent = "";
+            errorBlock.style.display = "none";
+        }
+
+        // Показать / скрыть пароль
         togglePassword.addEventListener("change", function () {
-            if (togglePassword.checked) {
-                passwordInput.type = "text";
-            } else {
-                passwordInput.type = "password";
-            }
+            passwordInput.type = togglePassword.checked ? "text" : "password";
         });
+
+        // Проверка логина по правилам варианта В
+        function validateUsername(username) {
+            // Латинская буква в начале, затем буквы/цифры/._, длина 3-30
+            const re = /^[A-Za-z][A-Za-z0-9._]{2,29}$/;
+            return re.test(username);
+        }
+
+        // Проверка пароля по правилам варианта В
+        function validatePassword(password) {
+            if (password.length < 8 || password.length > 64) {
+                return false;
+            }
+            const hasLower = /[a-z]/.test(password);
+            const hasUpper = /[A-Z]/.test(password);
+            const hasDigit = /[0-9]/.test(password);
+            const hasSpecial = /[!@#$%^&*()_\-+=[\]{};:"'\\|,.<>/?]/.test(password);
+            return hasLower && hasUpper && hasDigit && hasSpecial;
+        }
 
         form.addEventListener("submit", async function (e) {
             e.preventDefault();
+            hideError();
 
-            errorBlock.style.display = "none";
-            errorBlock.textContent = "";
-
+            // 1) Телефон и подтверждение
             if (phone.value.trim() !== phoneConfirm.value.trim()) {
                 showError("Телефон и подтверждение телефона не совпадают.");
                 return;
             }
 
             const formData = new FormData(form);
-
             const username = (formData.get("username") || "").toString().trim();
             const email = (formData.get("email") || "").toString().trim();
             const password = (formData.get("password") || "").toString();
@@ -266,6 +288,26 @@
                 return;
             }
 
+            // 2) Проверка логина
+            if (!validateUsername(username)) {
+                showError(
+                    "Некорректный логин. Используйте латинские буквы, " +
+                    "цифры, точку и подчёркивание. Длина от 3 до 30 символов, " +
+                    "первый символ — буква."
+                );
+                return;
+            }
+
+            // 3) Проверка пароля
+            if (!validatePassword(password)) {
+                showError(
+                    "Пароль должен быть от 8 до 64 символов и содержать " +
+                    "строчную букву, заглавную букву, цифру и спецсимвол."
+                );
+                return;
+            }
+
+            // 4) Готовим payload, который реально ждёт backend
             const payload = {
                 username,
                 email,
@@ -278,11 +320,12 @@
                     headers: {
                         "Content-Type": "application/json"
                     },
-                    credentials: "include",
+                    // Важно: БЕЗ credentials, иначе CORS на api.legalai.su может заблокировать
                     body: JSON.stringify(payload)
                 });
 
                 if (!response.ok) {
+                    // Пытаемся достать detail из JSON (422 и т.п.)
                     let msg = `Не удалось создать аккаунт (код ${response.status}).`;
 
                     try {
@@ -304,11 +347,10 @@
                             }
                         }
                     } catch (_) {
+                        // если не JSON — пробуем текст
                         try {
                             const text = await response.text();
-                            if (text) {
-                                msg = text;
-                            }
+                            if (text) msg = text;
                         } catch (_) {}
                     }
 
@@ -316,11 +358,13 @@
                     return;
                 }
 
-                // Успешная регистрация — перенаправляем на страницу входа
+                // Успех -> редирект на страницу входа
                 window.location.href = "/login";
             } catch (err) {
                 console.error("Register error", err);
-                showError("Возникла ошибка при обращении к серверу: " + (err && err.message ? err.message : "Попробуйте позже."));
+                showError(
+                    "Возникла ошибка при обращении к серверу. Попробуйте позже."
+                );
             }
         });
     </script>
