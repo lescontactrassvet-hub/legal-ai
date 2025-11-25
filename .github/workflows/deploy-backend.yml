@@ -1,230 +1,54 @@
-name: Deploy backend
+from typing import Optional
 
-on:
-  # Ручной запуск из вкладки Actions
-  workflow_dispatch:
+from pydantic import BaseModel, EmailStr
 
-  # Вызов как reusable-workflow из .github/workflows/deploy.yml (uses: …)
-  workflow_call:
 
-  # Авто-запуск при изменениях в backend или самом workflow
-  push:
-    branches:
-      - main
-    paths:
-      - "backend/**"
-      - ".github/workflows/deploy-backend.yml"
+# === Модели токена (нужны для auth и тестов) ===
 
-concurrency:
-  group: deploy-backend
-  cancel-in-progress: false
 
-jobs:
-  deploy-backend:
-    runs-on: ubuntu-latest
+class Token(BaseModel):
+    access_token: str
+    token_type: str
 
-    env:
-      SSH_HOST: ${{ secrets.SSH_HOST }}
-      SSH_USER: ${{ secrets.SSH_USER }}
-      SSH_KEY: ${{ secrets.SSH_KEY }}
-      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+class TokenData(BaseModel):
+    username: Optional[str] = None
 
-      - name: Set up Python (for future tooling if needed)
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
 
-      # Подготавливаем SSH-ключ для доступа к серверу
-      - name: Prepare SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${SSH_KEY}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
+# === Модели пользователя ===
 
-      - name: Add server to known_hosts
-        run: |
-          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
-      # Бэкап проекта на сервере ДО rsync (на всякий случай)
-      - name: Backup project on server (pre-rsync)
-        run: |
-          ssh "${SSH_USER}@${SSH_HOST}" 'bash -s' << 'EOF'
-          set -e
-          PROJECT_ROOT="/srv/legal-ai"
-          BACKUP_ROOT="${PROJECT_ROOT}/backups"
-          TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
+class UserBase(BaseModel):
+    username: str
+    email: EmailStr
 
-          mkdir -p "$BACKUP_ROOT"
 
-          if [ -d "$PROJECT_ROOT" ]; then
-            echo "[BACKUP] Создаём бэкап проекта в ${BACKUP_ROOT}/legal-ai_${TIMESTAMP}.tar.gz"
-            tar -czf "${BACKUP_ROOT}/legal-ai_${TIMESTAMP}.tar.gz" \
-              --ignore-failed-read \
-              --warning=no-file-changed \
-              --exclude='./backups' \
-              --exclude='./deploy_logs' \
-              --exclude='./data' \
-              -C /srv legal-ai || true
-          else
-            echo "[BACKUP] Каталог ${PROJECT_ROOT} не найден, бэкап не требуется."
-          fi
-          EOF
+class UserCreate(UserBase):
+    """
+    Данные, которые приходят при регистрации.
+    Дополнены полями анкеты (ФИО, телефон, город, род деятельности и т.д.).
+    """
 
-      # Синхронизация кода (но НЕ данных и БД) на сервер
-      - name: Rsync project to server
-        run: |
-          rsync -az --delete \
-            --exclude ".git" \
-            --exclude ".github" \
-            --exclude "node_modules" \
-            --exclude "frontend/node_modules" \
-            --exclude "data/" \
-            --exclude "backend/legalai.db" \
-            --exclude "backend/dev.db" \
-            ./ "${SSH_USER}@${SSH_HOST}:/srv/legal-ai/"
+    password: str
 
-      # Основной деплой-скрипт на сервере
-      - name: Run remote deploy script
-        run: |
-          ssh "${SSH_USER}@${SSH_HOST}" "SENTRY_DSN='${SENTRY_DSN}' bash -s" << 'EOF'
-          set -e
+    # Дополнительные поля анкеты (все опциональные)
+    last_name: Optional[str] = None
+    first_name: Optional[str] = None
+    middle_name: Optional[str] = None
+    birth_year: Optional[int] = None
+    phone: Optional[str] = None
+    country: Optional[str] = None
+    city: Optional[str] = None
+    activity: Optional[str] = None
 
-          PROJECT_ROOT="/srv/legal-ai"
-          BACKEND="${PROJECT_ROOT}/backend"
-          DATA_ROOT="${PROJECT_ROOT}/data"
-          LOG_ROOT="${PROJECT_ROOT}/deploy_logs"
 
-          mkdir -p "$DATA_ROOT"
-          mkdir -p "$LOG_ROOT"
+class UserOut(UserBase):
+    """
+    Ответ с данными пользователя.
+    Пока гарантируется id, username, email.
+    """
 
-          TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
-          LOG_FILE="${LOG_ROOT}/deploy_${TIMESTAMP}.log"
+    id: int
 
-          # Логируем все действия деплоя в файл + на экран
-          exec > >(tee -a "$LOG_FILE") 2>&1
-
-          echo "=== START DEPLOY ${TIMESTAMP} ==="
-          echo "[PATHS] PROJECT_ROOT=${PROJECT_ROOT}"
-          echo "[PATHS] BACKEND=${BACKEND}"
-          echo "[PATHS] DATA_ROOT=${DATA_ROOT}"
-
-          # --- Одноразовый перенос старой БД в /data ---
-          OLD_DB="${BACKEND}/legalai.db"
-          NEW_DB="${DATA_ROOT}/legalai.db"
-
-          if [ -f "$OLD_DB" ] && [ ! -f "$NEW_DB" ]; then
-            echo "[DB] Обнаружена старая база ${OLD_DB}, переносим в ${NEW_DB}"
-            mv "$OLD_DB" "$NEW_DB"
-          else
-            echo "[DB] Перенос базы не требуется (старой БД нет или новая уже существует)."
-          fi
-
-          # --- Гарантируем наличие файла БД ---
-          if [ ! -f "$NEW_DB" ]; then
-            echo "[DB] Файл БД отсутствует → создаём новый пустой SQLite"
-            if command -v sqlite3 >/dev/null 2>&1; then
-              sqlite3 "$NEW_DB" "VACUUM;" || true
-            else
-              echo "[DB] ВНИМАНИЕ: sqlite3 не установлен, создаём пустой файл БД"
-              touch "$NEW_DB"
-            fi
-          fi
-
-          chmod 666 "$NEW_DB" || true
-          echo "[DB] Итоговый файл БД: $NEW_DB"
-
-          cd "$BACKEND"
-
-          # Подготовка виртуального окружения
-          if [ ! -d ".venv" ]; then
-            echo "[DEPLOY] .venv не найдено, создаём..."
-            python3 -m venv .venv
-          fi
-
-          echo "[DEPLOY] Активируем .venv..."
-          . .venv/bin/activate
-
-          # Проверяем изменения в requirements.txt (оптимизация pip install)
-          echo "[DEPLOY] Проверяем hash requirements.txt..."
-          REQ_HASH_NEW="$(sha256sum requirements.txt | awk '{print $1}')"
-          REQ_HASH_FILE=".venv/requirements.sha256"
-          REQ_HASH_OLD=""
-          if [ -f "$REQ_HASH_FILE" ]; then
-            REQ_HASH_OLD="$(cat "$REQ_HASH_FILE" || true)"
-          fi
-
-          if [ "$REQ_HASH_NEW" != "$REQ_HASH_OLD" ]; then
-            echo "[DEPLOY] Зависимости изменились, устанавливаем..."
-            pip install --upgrade pip
-            pip install -r requirements.txt
-            echo "$REQ_HASH_NEW" > "$REQ_HASH_FILE"
-          else
-            echo "[DEPLOY] Зависимости НЕ изменились, пропускаем pip install."
-          fi
-
-          # === Обновляем/создаём .env ===
-          ENV_FILE="${BACKEND}/.env"
-          echo "[ENV] Обновляю .env..."
-
-          if [ -f "$ENV_FILE" ]; then
-            ENV_BAK="${ENV_FILE}.${TIMESTAMP}.bak"
-            echo "[ENV] Бэкап .env -> ${ENV_BAK}"
-            cp "$ENV_FILE" "$ENV_BAK"
-          else
-            echo "[ENV] .env не найден, создаём новый..."
-            touch "$ENV_FILE"
-          fi
-
-          # DATABASE_URL → всегда на /srv/legal-ai/data/legalai.db
-          sed -i '/^DATABASE_URL=/d' "$ENV_FILE"
-          echo "DATABASE_URL=sqlite:////srv/legal-ai/data/legalai.db" >> "$ENV_FILE"
-
-          # Обновляем SENTRY_DSN
-          sed -i '/^SENTRY_DSN=/d' "$ENV_FILE"
-          echo "SENTRY_DSN=${SENTRY_DSN}" >> "$ENV_FILE"
-
-          echo "[ENV] Текущее значение DATABASE_URL и SENTRY_DSN в .env:"
-          grep '^DATABASE_URL=' "$ENV_FILE" || echo "[ENV] DATABASE_URL не установлен"
-          grep '^SENTRY_DSN=' "$ENV_FILE" || echo "[ENV] SENTRY_DSN не установлен"
-
-          # === Инициализируем таблицу laws (если отсутствует) ===
-          echo "[DEPLOY] Инициализируем таблицу laws (если отсутствует)..."
-          python << 'PYEOF'
-          from app.db import Base, engine
-          from app.laws.models import Law
-
-          print("[INIT_LAWS] Creating laws table if not exists...")
-          Base.metadata.create_all(bind=engine, tables=[Law.__table__])
-          print("[INIT_LAWS] Done.")
-          PYEOF
-
-          # Перезапуск сервиса
-          echo "[DEPLOY] Перезапускаем legalai.service..."
-          sudo systemctl daemon-reload || true
-          sudo systemctl restart legalai.service
-
-          echo "[DEPLOY] Ждём 5 секунд перед проверкой статуса..."
-          sleep 5
-
-          echo "[DEPLOY] Статус legalai.service:"
-          sudo systemctl status legalai.service -n 20 || true
-
-          # Проверяем /health
-          echo "[DEPLOY] Проверяем /health..."
-          set +e
-          HTTP_CODE="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/health || echo '000')"
-          set -e
-          echo "[DEPLOY] Код ответа /health: ${HTTP_CODE}"
-
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "[ERROR] /health вернул ${HTTP_CODE}. Деплой завершён с ошибкой."
-            exit 1
-          fi
-
-          echo "[DEPLOY] /health вернул 200 — деплой успешен."
-          echo "[DEPLOY] Скрипт деплоя завершён."
-          EOF
+    class Config:
+        orm_mode = True
