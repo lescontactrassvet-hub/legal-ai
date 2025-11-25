@@ -7,24 +7,36 @@ on:
 
 concurrency:
   group: deploy-legalai
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
-  # 1) Backend tests (reusable workflow)
-  backend_tests:
-    name: Backend tests
-    uses: ./.github/workflows/backend-tests.yml
+  deploy-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  # 2) Frontend CI (reusable workflow)
-  frontend_tests:
-    name: Frontend CI
-    uses: ./.github/workflows/frontend-ci.yml
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
 
-  # 3) Deploy backend (reusable workflow)
-  deploy_backend:
-    name: Deploy backend
-    needs:
-      - backend_tests
-      - frontend_tests
-    uses: ./.github/workflows/deploy-backend.yml
-    secrets: inherit
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Deploy backend via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_KEY }}
+          script: |
+            cd /srv/legal-ai/backend
+            systemctl stop legalai.service || true
+            git pull
+            source /srv/legal-ai/backend/.venv/bin/activate
+            pip install -r requirements.txt
+            alembic upgrade head || true
+            systemctl restart legalai.service
