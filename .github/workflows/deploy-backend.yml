@@ -66,7 +66,7 @@ jobs:
           else
             echo "[BACKUP] Каталог не найден, пропускаю."
           fi
-EOF
+          EOF
 
       # ---------------- RSYNC ----------------
       - name: Rsync project to server
@@ -157,12 +157,12 @@ EOF
 
           # ------------ INIT LAWS TABLE ------------
           python <<'PY'
-from app.db import Base, engine
-from app.laws.models import Law
-print("[INIT_LAWS] Creating laws table if not exists...")
-Base.metadata.create_all(bind=engine, tables=[Law.__table__])
-print("[INIT_LAWS] Done.")
-PY
+          from app.db import Base, engine
+          from app.laws.models import Law
+          print("[INIT_LAWS] Creating laws table if not exists...")
+          Base.metadata.create_all(bind=engine, tables=[Law.__table__])
+          print("[INIT_LAWS] Done.")
+          PY
 
           # ------------ RESTART SERVICE ------------
           echo "[SERVICE] Перезапускаю legalai.service..."
@@ -181,4 +181,4 @@ PY
           fi
 
           echo "=== DEPLOY FINISHED SUCCESSFULLY ==="
-EOF
+          EOF
