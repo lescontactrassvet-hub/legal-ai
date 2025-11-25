@@ -1,54 +1,62 @@
-from typing import Optional
+name: Deploy LegalAI
 
-from pydantic import BaseModel, EmailStr
+on:
+  push:
+    branches:
+      - main
 
+concurrency:
+  group: deploy-legalai
+  cancel-in-progress: true
 
-# === Модели токена (нужны для auth и тестов) ===
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
 
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
 
+      - name: Install dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-class TokenData(BaseModel):
-    username: Optional[str] = None
+      - name: Deploy backend via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -euo pipefail
 
+            cd /srv/legal-ai/backend
 
-# === Модели пользователя ===
+            echo "[DEPLOY] Останавливаем сервис..."
+            sudo systemctl stop legalai.service || true
 
+            echo "[DEPLOY] Обновляем код из Git..."
+            git pull
 
-class UserBase(BaseModel):
-    username: str
-    email: EmailStr
+            echo "[DEPLOY] Активируем виртуальное окружение..."
+            source .venv/bin/activate
 
+            echo "[DEPLOY] Обновляем зависимости..."
+            pip install -r requirements.txt
 
-class UserCreate(UserBase):
-    """
-    Данные, которые приходят при регистрации.
-    Дополнены полями анкеты (ФИО, телефон, город, род деятельности и т.д.).
-    """
+            echo "[DEPLOY] Применяем миграции (если есть)..."
+            alembic upgrade head || true
 
-    password: str
+            echo "[DEPLOY] Перезапускаем сервис..."
+            sudo systemctl restart legalai.service
 
-    # Дополнительные поля анкеты (все опциональные)
-    last_name: Optional[str] = None
-    first_name: Optional[str] = None
-    middle_name: Optional[str] = None
-    birth_year: Optional[int] = None
-    phone: Optional[str] = None
-    country: Optional[str] = None
-    city: Optional[str] = None
-    activity: Optional[str] = None
-
-
-class UserOut(UserBase):
-    """
-    Ответ с данными пользователя.
-    Пока гарантируется id, username, email.
-    """
-
-    id: int
-
-    class Config:
-        orm_mode = True
+            echo "[DEPLOY] Ждём 5 секунд и проверяем /health..."
+            sleep 5
+            curl -k -s -o /dev/null -w "%{http_code}" https://api.legalai.su/health
