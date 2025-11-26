@@ -28,11 +28,13 @@ legal-ai/
   fix_database_base_imports.sh
   docker-compose.yml
   setup_backend_ci.sh
+  Repo_LegalAI_Analysis.txt
   fix_and_check_server.sh
   legalai_report_20251022_130622.json
   fix_jwt_secret.sh
   legalai_report_20251022_130622.txt
   setup_ci_debug.sh
+  Repo_LegalAI_Structure.txt
   legalai_report_20251022_034621.txt
   fix_test_health.sh
   auth_check_report.txt
