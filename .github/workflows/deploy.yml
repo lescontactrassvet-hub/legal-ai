@@ -16,6 +16,7 @@ jobs:
   deploy-backend:
     needs: backend-tests
     uses: ./.github/workflows/deploy-backend.yml
+      timeout-minutes: 30
     secrets:
       SSH_HOST: ${{ secrets.SERVER_HOST }}
       SSH_USER: ${{ secrets.SERVER_USER }}
