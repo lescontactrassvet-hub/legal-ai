@@ -64,7 +64,7 @@ jobs:
             echo "[DEPLOY] Перезапускаем сервис..."
             systemctl restart legalai.service
             echo "[DEPLOY] Проверяем /health до 45 секунд..."    
-            ATTEMPTS=
+            ATTEMPTS=5
             DELAY=10
             STATUS_CODE=""
             for i in $(seq 1 $ATTEMPTS); do
