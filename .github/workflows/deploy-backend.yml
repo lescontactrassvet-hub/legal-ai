@@ -4,10 +4,10 @@ on:
   push:
     branches:
       - main
-
-concurrency:
-  group: deploy-legalai-backend
-  cancel-in-progress: true
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-backend.yml"
+  workflow_dispatch:
 
 jobs:
   deploy-backend:
@@ -16,6 +16,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set up Python (tooling only)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
       - name: Deploy backend via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -26,7 +31,6 @@ jobs:
           port: 22
           timeout: 30s
           command_timeout: 10m
-
           script: |
             set -euo pipefail
 
@@ -40,19 +44,28 @@ jobs:
             git pull
 
             echo "[DEPLOY] Активируем виртуальное окружение..."
-            source .venv/bin/activate
+            if [ -d ".venv" ]; then
+              source .venv/bin/activate
+            else
+              echo "[DEPLOY] Виртуальное окружение .venv не найдено" >&2
+              exit 1
+            fi
 
             echo "[DEPLOY] Обновляем зависимости..."
             pip install -r requirements.txt
 
-            echo "[DEPLOY] Применяем миграции (если настроен Alembic)..."
-            alembic upgrade head || true
+            echo "[DEPLOY] Применяем миграции (если установлен Alembic)..."
+            if command -v alembic >/dev/null 2>&1; then
+              alembic upgrade head
+            else
+              echo "[DEPLOY] Alembic не найден, пропускаем миграции."
+            fi
 
             echo "[DEPLOY] Перезапускаем сервис..."
             systemctl restart legalai.service
 
-            echo "[DEPLOY] Ждём 5 секунд и проверяем /health..."
-            sleep 5
+            echo "[DEPLOY] Ждём 10 секунд и проверяем /health..."
+            sleep 10
             STATUS_CODE=$(curl -k -s -o /dev/null -w "%{http_code}" https://api.legalai.su/health || echo "000")
             echo "[DEPLOY] Код ответа /health: ${STATUS_CODE}"
 
