@@ -3,8 +3,8 @@
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
-from app.database.base import Base
-from app.models.user import User
+from app.db.base import Base
+
 from app.models.device import Device
 from app.models.token import RefreshToken
 from app.core.config import settings
