@@ -34,6 +34,9 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
+          port: 22
+          timeout: 30s
+          command_timeout: 10m
           script: |
             set -euo pipefail
 
@@ -52,28 +55,16 @@ jobs:
             echo "[DEPLOY] Обновляем зависимости..."
             pip install -r requirements.txt
 
-            echo "[DEPLOY] Применяем миграции (если установлен Alembic)..."
-            if command -v alembic >/dev/null 2>&1; then
-              alembic upgrade head || true
-            else
-              echo "[DEPLOY] Alembic не найден, миграции пропущены."
-            fi
+            echo "[DEPLOY] Применяем миграции (если настроен Alembic)..."
+            alembic upgrade head || true
 
             echo "[DEPLOY] Перезапускаем сервис..."
             systemctl restart legalai.service
 
-            echo "[DEPLOY] Ждём 10 секунд и проверяем /health (до 2 попыток)..."
+            echo "[DEPLOY] Ждём 10 секунд и проверяем /health..."
             sleep 10
-
             STATUS_CODE=$(curl -k -s -o /dev/null -w "%{http_code}" https://api.legalai.su/health || echo "000")
-            echo "[DEPLOY] Первая проверка /health: ${STATUS_CODE}"
-
-            if [ "${STATUS_CODE}" != "200" ]; then
-              echo "[DEPLOY] Повторная проверка через 5 секунд..."
-              sleep 5
-              STATUS_CODE=$(curl -k -s -o /dev/null -w "%{http_code}" https://api.legalai.su/health || echo "000")
-              echo "[DEPLOY] Вторая проверка /health: ${STATUS_CODE}"
-            fi
+            echo "[DEPLOY] Код ответа /health: ${STATUS_CODE}"
 
             if [ "${STATUS_CODE}" != "200" ]; then
               echo "[DEPLOY] /health вернул ${STATUS_CODE}, деплой считаем неуспешным."
