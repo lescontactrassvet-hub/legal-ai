@@ -20,4 +20,4 @@ jobs:
       SSH_HOST: ${{ secrets.SERVER_HOST }}
       SSH_USER: ${{ secrets.SERVER_USER }}
       SSH_KEY: ${{ secrets.SERVER_KEY }}
-    timeout-minutes: 30
+ 
