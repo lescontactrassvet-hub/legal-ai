@@ -63,15 +63,17 @@ jobs:
 
             echo "[DEPLOY] Перезапускаем сервис..."
             systemctl restart legalai.service
-       echo "[DEPLOY] Проверяем /health до 45 секунд..."
+     echo "[DEPLOY] Проверяем /health до 45 секунд..."    
     ATTEMPTS=5
     DELAY=10
     STATUS_CODE=""
     for i in $(seq 1 $ATTEMPTS); do
-   STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/helt|| echo "000"))
+ SSTATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/health || echo "000")
         if [ "$STATUS_CODE" = "200" ]; then
-            echo "[DEPLOY] /health вернул 200 — сервис запущен."
+
+        echo "[DEPLOY] /health вернул 200 — сервис запущен."
             break
+         
         fi
         echo "[DEPLOY] Попытка $i: /health вернул $STATUS_CODE. Ждём $DELAY секунд..."
         sleep $DELAY
