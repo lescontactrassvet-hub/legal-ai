@@ -17,17 +17,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: |
-          cd backend
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
       - name: Deploy backend via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -61,8 +50,8 @@ jobs:
             echo "[DEPLOY] Перезапускаем сервис..."
             systemctl restart legalai.service
 
-            echo "[DEPLOY] Ждём 10 секунд и проверяем /health..."
-            sleep 10
+            echo "[DEPLOY] Ждём 5 секунд и проверяем /health..."
+            sleep 5
             STATUS_CODE=$(curl -k -s -o /dev/null -w "%{http_code}" https://api.legalai.su/health || echo "000")
             echo "[DEPLOY] Код ответа /health: ${STATUS_CODE}"
 
