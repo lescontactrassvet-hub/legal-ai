@@ -120,6 +120,7 @@ backend/
     main.py.bak
     db/
       session.py
+      __init__.py
       base.py
     laws/
       fetch_full_text.py
