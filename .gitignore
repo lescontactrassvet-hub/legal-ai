@@ -1,18 +1,42 @@
-# Python
+# Python caches
 __pycache__/
-*.py[cod]
-*.env
-.env
-.venv/
-*.log
+*.pyc
+*.pyo
 
-# Node.js
+# Virtual env
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs and runtime
+*.log
+uvicorn.out
+*.tmp
+
+# Databases
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Reports & diagnostics
+legacy_scripts/
+*_report_20*.txt
+*_report_20*.json
+fix_*.sh
+*_diag.sh
+*_doctor.sh
+requirements-termux*.txt
+
+# Node
 node_modules/
 dist/
 build/
 
-# System
-.DS_Store
-
-# Docker
-*.pid
+# Env files
+.env
+.env.*
