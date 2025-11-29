@@ -1,49 +1,25 @@
 legal-ai/
   doc_constructor_postman.json
-  fix_imports.sh
-  legalai_report_20251022_121830.json
-  fix_user_syntax.sh
-  fix_database_module.sh
-  fix_multipart.sh
-  run_api_debug.sh
-  fix_requirements_conflict.sh
-  fix_db_path_and_restart.sh
+  cleanup_legalai_repo.sh
   repair_and_run.sh
   server_report.txt
   legalai.db
-  legalai_report_20251022_034621.json
   lighthouse.config.json
-  legalai_doctor.sh
   auth_check.sh
   full_repo_diagnose_and_fix.sh
   patch_security_and_retry.sh
   README.md
-  one_window_register_diag.sh
-  fix_imports_db.sh
-  legalai_report_20251022_121830.txt
   auth_setup.sh
-  fix_user_rebuild.sh
-  fix_backend_structure.sh
-  uvicorn.out
-  fix_database_base_imports.sh
   docker-compose.yml
   setup_backend_ci.sh
   Repo_LegalAI_Analysis.txt
-  fix_and_check_server.sh
-  legalai_report_20251022_130622.json
-  fix_jwt_secret.sh
-  legalai_report_20251022_130622.txt
   setup_ci_debug.sh
   Repo_LegalAI_Structure.txt
-  legalai_report_20251022_034621.txt
-  fix_test_health.sh
   auth_check_report.txt
   auth_extend_phone_sms.sh
   ci_debug_python_multipart.sh
   auth_hotfix_pbkdf2.sh
-  fix_multipart_full.sh
   prepare_migration.sh
-  fix_user_model_import.sh
 scripts/
   backup.sh
   ai_integration_setup.sh
@@ -59,22 +35,14 @@ backend/
   NOTICE
   dev.db
   requirements.txt
-  legalai_report_20251022_114233.txt
-  legalai_report_20251022_031617.txt
-  legalai.db
   alembic.ini
-  main_legalai_probe.py
   requirements-termux.txt.bak_20251116_174534
   README.md
   =1.13
   main.py
-  requirements-termux.txt
   __init_.py
-  uvicorn.out
   run_legalai.sh
   auth_install_report.txt
-  legalai_report_20251022_114233.json
-  legalai_diag.sh
   config.py
   __init__.py
   requirements-termux.txt.bak_20251116_144041
@@ -119,6 +87,7 @@ backend/
     db.py.bak_20251116_215923
     main.py.bak
     db/
+      database.py
       session.py
       __init__.py
       base.py
