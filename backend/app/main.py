@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -5,8 +7,8 @@ from .config import get_settings
 from .db import Base, engine
 from .legal_doc.routes import router as legal_doc_router
 from .auth.routes import router as auth_router
-from .auth.reset.router import router as reset_router  # модуль восстановления доступа
-from routers.ai import router as ai_router  # AI-консультант ЮИИ Татьяна
+from .auth.reset.router import router as reset_router
+from routers.ai import router as ai_router
 
 # База законов (локальная БД)
 from app.laws.routes import router as laws_router
@@ -15,12 +17,16 @@ from app.updates.routes import router as updates_router
 # Загрузка логотипа
 from app.admin.logo_upload import router as logo_upload_router
 
+
 # --- Sentry (опционально) ---
 try:
     import sentry_sdk
-    from sentry_sdk.integrations.fastapi import FastAPIIntegration
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    from sentry_sdk.integrations.logging import LoggingIntegration
 except ImportError:
     sentry_sdk = None
+    FastApiIntegration = None
+    LoggingIntegration = None
 # --- конец блока Sentry ---
 
 
@@ -31,14 +37,27 @@ Base.metadata.create_all(bind=engine)
 settings = get_settings()
 
 # Инициализация Sentry ТОЛЬКО если библиотека установлена и DSN задан
-if sentry_sdk and getattr(settings, "SENTRY_DSN", None):
-    sentry_sdk.init(
-        dsn=settings.SENTRY_DSN,
-        integrations=[FastAPIIntegration()],
-        traces_sample_rate=0.0,  # только ошибки, без перфоманса
-        environment=getattr(settings, "ENVIRONMENT", "production"),
+if (
+    sentry_sdk is not None
+    and FastApiIntegration is not None
+    and LoggingIntegration is not None
+    and getattr(settings, "SENTRY_DSN", None)
+):
+    sentry_logging = LoggingIntegration(
+        level=logging.INFO,        # что писать в breadcrumbs
+        event_level=logging.ERROR  # что отправлять как события
     )
 
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        integrations=[FastApiIntegration(), sentry_logging],
+        traces_sample_rate=0.0,  # только ошибки, без перфоманса
+        environment=getattr(settings, "ENVIRONMENT", "production"),
+        release=getattr(settings, "RELEASE", "local"),
+        send_default_pii=False,
+    )
+
+# Инициализация FastAPI
 app = FastAPI(
     title="Юридический API",
     version="0.1.0",
@@ -64,13 +83,14 @@ async def debug_sentry():
     """
     Тестовый эндпоинт для проверки интеграции Sentry.
     При обращении специально вызывается ошибка.
+    Если SENTRY_DSN задан, событие улетит в Sentry.
     """
     1 / 0
 
 
-# =========================
+# ==========================
 #        Роутеры
-# =========================
+# ==========================
 
 # Авторизация
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])
@@ -90,4 +110,5 @@ app.include_router(updates_router, tags=["Laws Updates"])
 
 # Админка: загрузка логотипа
 app.include_router(logo_upload_router, tags=["Admin"])
+
 
