@@ -1,0 +1,387 @@
+import React, { useState, useRef, useEffect } from "react";
+import { DocumentEditor } from "../../components/DocumentEditor";
+
+type WorkspacePageProps = {
+  onGoToProfile: () => void;
+  onLogout: () => void;
+};
+
+type WorkspaceMode = "simple" | "pro";
+
+type ChatMessage = {
+  from: "user" | "ai";
+  text: string;
+};
+
+/** какой боковой блок активен: дела или документы */
+type SidePanel = "cases" | "docs";
+
+export function WorkspacePage({ onGoToProfile, onLogout }: WorkspacePageProps) {
+  const currentYear = new Date().getFullYear();
+
+  const [mode, setMode] = useState<WorkspaceMode>("simple");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [activeSidePanel, setActiveSidePanel] = useState<SidePanel>("cases");
+  const [documentHtml, setDocumentHtml] = useState<string>("");
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  /** Текст демо-ответа Татьяны (пока без реального API) */
+  function getTatianaDemoReply(mode: WorkspaceMode, _userText: string): string {
+    return mode === "simple"
+      ? "Спасибо, что описали ситуацию. В демо-версии я фиксирую только примеры запросов, чтобы лучше настроить будущую работу Татьяны."
+      : "Приняла запрос. В дальнейшем ИИ Татьяна будет формировать юридический анализ, подбирать нормы права и предлагать структуру документов.";
+  }
+
+  /** Заготовка под реальный запрос к backend Татьяны */
+  async function requestTatianaReply(
+    mode: WorkspaceMode,
+    userText: string
+  ): Promise<string> {
+    // TODO: заменить на реальный вызов API Татьяны (backend)
+    return getTatianaDemoReply(mode, userText);
+  }
+
+  /** Отправка сообщения в чат */
+  async function handleSend() {
+    const text = input.trim();
+    if (!text) return;
+
+    const userMsg: ChatMessage = { from: "user", text };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+
+    const aiText = await requestTatianaReply(mode, text);
+
+    const aiMsg: ChatMessage = {
+      from: "ai",
+      text: aiText,
+    };
+
+    setMessages((prev) => [...prev, aiMsg]);
+  }
+
+  /** Обработка Enter в поле ввода (textarea) */
+  function handleInputKeyDown(
+    event: React.KeyboardEvent<HTMLTextAreaElement>
+  ) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleSend();
+    }
+  }
+
+  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    // Здесь позже добавим отправку файлов на сервер и привязку к делу
+    console.log("Выбрано файлов для Татьяны:", files.length);
+  }
+
+  /** Обновление HTML-документа из редактора */
+  function handleDocumentChange(value: string) {
+    setDocumentHtml(value);
+  }
+
+  /** Автоскролл чата к последнему сообщению */
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
+  /** Вставить черновой шаблон (как будто Татьяна выдала результат) */
+  function handleInsertDraftTemplate() {
+    if (documentHtml.trim()) return;
+
+    const template = `
+      <h2>Черновой проект документа.</h2>
+      <ol>
+        <li><strong>Вводная часть:</strong> краткое описание вашей ситуации.</li>
+        <li><strong>Основные обстоятельства:</strong> ключевые факты по делу.</li>
+        <li><strong>Правовое обоснование:</strong> ссылки на нормы права (будут добавлены Татьяной).</li>
+        <li><strong>Просьба / требование:</strong> чего вы хотите добиться.</li>
+      </ol>
+      <p>Дальше вы можете редактировать текст сами или попросить ИИ Татьяну в чате скорректировать формулировки.</p>
+    `;
+    setDocumentHtml(template);
+  }
+
+  /** Пока просто заглушка сохранения — позже уйдёт в раздел "Документы" */
+  function handleSaveDraft() {
+    console.log(
+      "Сохранён черновик HTML-документа (демо):",
+      documentHtml.length,
+      "символов"
+    );
+    alert(
+      "В демо-версии черновик сохраняется только локально. В рабочей версии он появится в разделе «Документы» как отдельный проект."
+    );
+  }
+
+  /** Заглушки под будущий экспорт в Word / PDF */
+  function handleDownloadStub(format: "pdf" | "docx") {
+    alert(
+      `Экспорт в ${format.toUpperCase()} появится, когда подключим модуль генерации файлов на сервере.`
+    );
+  }
+
+  return (
+    <div className="workspace-page">
+      {/* ШАПКА */}
+      <header className="workspace-header">
+        <div className="workspace-header-inner">
+          {/* ЛОГОТИП + НАЗВАНИЕ */}
+          <div className="workspace-logo-block">
+            <img src="/logo.png" alt="Logo" className="workspace-logo" />
+            <div className="workspace-logo-text">
+              <div className="workspace-title">LEGALAI</div>
+              <div className="workspace-subtitle">
+                Юридический ИИ — Татьяна
+              </div>
+            </div>
+          </div>
+
+          {/* МЕНЮ СПРАВА */}
+          <div className="workspace-menu">
+            <button className="auth-primary-button">Чат ИИ “Татьяна”</button>
+            <button className="auth-primary-button">Документы</button>
+            <button className="auth-primary-button" onClick={onGoToProfile}>
+              Профиль
+            </button>
+            <button className="auth-primary-button" onClick={onLogout}>
+              Выйти
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* РАБОЧИЙ ЦЕНТР — чат слева, два блока справа */}
+      <main className="workspace-main">
+        {/* ЛЕВАЯ ЧАСТЬ — Чат Татьяна (2/3 ширины) */}
+        <div className="workspace-main-left">
+          <h2 className="workspace-section-title">Чат ИИ “Татьяна”</h2>
+
+          {/* ПЕРЕКЛЮЧАТЕЛЬ РЕЖИМОВ */}
+          <div className="workspace-mode-toggle">
+            <button
+              type="button"
+              className={
+                mode === "simple"
+                  ? "workspace-mode-button workspace-mode-button-active"
+                  : "workspace-mode-button"
+              }
+              onClick={() => setMode("simple")}
+            >
+              Простой режим
+            </button>
+            <button
+              type="button"
+              className={
+                mode === "pro"
+                  ? "workspace-mode-button workspace-mode-button-active"
+                  : "workspace-mode-button"
+              }
+              onClick={() => setMode("pro")}
+            >
+              Профессиональный режим
+            </button>
+          </div>
+
+          {/* описание режима + подсказка как пользоваться чатом */}
+          <p className="workspace-placeholder">
+            {mode === "simple"
+              ? "В простом режиме Татьяна объясняет всё человеческим языком, без сложных терминов."
+              : "В профессиональном режиме будут доступны расширенные шаблоны документов и ссылки на нормы права."}
+          </p>
+          <p className="workspace-chat-tip">
+            Как пользоваться чатом: 1) кратко опишите вашу ситуацию, 2) при
+            необходимости прикрепите файлы (договоры, фото, сканы), 3) задавайте
+            уточняющие вопросы, пока не получите список шагов, план действий или
+            черновик документа.
+          </p>
+
+          {/* ОБЛАСТЬ ЧАТА */}
+          <div className="workspace-chat-box">
+            {messages.length === 0 ? (
+              <div className="workspace-chat-empty">
+                Начните диалог — опишите свою ситуацию простыми словами. Сейчас
+                это демонстрационный режим без связи с сервером, но стиль и
+                логика общения будут такими же, когда подключим полноценный
+                юридический ИИ “Татьяна”.
+              </div>
+            ) : (
+              <div className="workspace-chat-messages">
+                {messages.map((msg, index) => (
+                  <div
+                    key={index}
+                    className={
+                      msg.from === "user"
+                        ? "workspace-chat-message workspace-chat-message-user"
+                        : "workspace-chat-message workspace-chat-message-ai"
+                    }
+                  >
+                    <div className="workspace-chat-author">
+                      {msg.from === "user" ? "Вы" : "Татьяна"}
+                    </div>
+                    <div className="workspace-chat-bubble">{msg.text}</div>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+
+            {/* ВВОД СООБЩЕНИЯ + КНОПКИ */}
+            <div className="workspace-chat-input-row">
+              <label
+                className="workspace-chat-file-button"
+                title="Прикрепить файлы для анализа"
+              >
+                📎
+                <input
+                  type="file"
+                  multiple
+                  className="workspace-chat-file-input"
+                  accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,image/*,audio/*"
+                  onChange={handleFileChange}
+                />
+              </label>
+
+              <textarea
+                className="workspace-chat-input"
+                rows={4}
+                style={{ resize: "none" }}
+                placeholder="Опишите вашу ситуацию или задайте вопрос"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleInputKeyDown}
+              ></textarea>
+
+              <button
+                type="button"
+                className="workspace-chat-send-button"
+                onClick={handleSend}
+              >
+                ➤
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ПРАВАЯ ЧАСТЬ — два боковых блока один под другим */}
+        <div className="workspace-main-right">
+          {/* Блок 1: Мои дела */}
+          <section
+            className={
+              "workspace-side-panel" +
+              (activeSidePanel === "cases"
+                ? " workspace-side-panel-active"
+                : " workspace-side-panel-collapsed")
+            }
+          >
+            <div
+              className="workspace-side-panel-header"
+              onClick={() => setActiveSidePanel("cases")}
+            >
+              <h2 className="workspace-section-title">Мои дела</h2>
+              <span className="workspace-side-panel-toggle">
+                {activeSidePanel === "cases" ? "Свернуть" : "Открыть"}
+              </span>
+            </div>
+            {activeSidePanel === "cases" && (
+              <p className="workspace-placeholder">
+                Здесь будет список ваших дел и проектов с фильтрами по статусу.
+                Сейчас это макет без логики.
+              </p>
+            )}
+          </section>
+
+          {/* Блок 2: Документы */}
+          <section
+            className={
+              "workspace-side-panel" +
+              (activeSidePanel === "docs"
+                ? " workspace-side-panel-active"
+                : " workspace-side-panel-collapsed")
+            }
+          >
+            <div
+              className="workspace-side-panel-header"
+              onClick={() => setActiveSidePanel("docs")}
+            >
+              <h2 className="workspace-section-title">Документы</h2>
+              <span className="workspace-side-panel-toggle">
+                {activeSidePanel === "docs" ? "Свернуть" : "Открыть"}
+              </span>
+            </div>
+            {activeSidePanel === "docs" && (
+              <p className="workspace-placeholder">
+                Здесь будет список документов по выбранному делу: черновики,
+                финальные версии и вложения. Пока это макет без данных.
+              </p>
+            )}
+          </section>
+        </div>
+      </main>
+
+      {/* РЕДАКТОР ДОКУМЕНТА */}
+      <section className="workspace-editor">
+        <div className="workspace-editor-header">
+          <h2 className="workspace-section-title workspace-editor-title">
+            Редактор документа
+          </h2>
+          <p className="workspace-editor-subtitle">
+            Здесь Татьяна будет выдавать результат своей работы в виде
+            оформленного документа. Все просьбы об изменениях вы формулируете в
+            чате сверху, а готовый текст появляется здесь — как мини-Word,
+            который можно поправить вручную.
+          </p>
+        </div>
+
+        <DocumentEditor value={documentHtml} onChange={handleDocumentChange} />
+
+        <div className="workspace-editor-actions">
+          <button
+            type="button"
+            className="workspace-editor-button"
+            onClick={handleInsertDraftTemplate}
+          >
+            Вставить черновой шаблон
+          </button>
+          <button
+            type="button"
+            className="workspace-editor-button workspace-editor-button-secondary"
+            onClick={handleSaveDraft}
+          >
+            Сохранить черновик
+          </button>
+          <button
+            type="button"
+            className="workspace-editor-button workspace-editor-button-ghost"
+            onClick={() => handleDownloadStub("docx")}
+          >
+            Скачать в Word (скоро)
+          </button>
+          <button
+            type="button"
+            className="workspace-editor-button workspace-editor-button-ghost"
+            onClick={() => handleDownloadStub("pdf")}
+          >
+            Скачать PDF (скоро)
+          </button>
+        </div>
+      </section>
+
+      {/* ФУТЕР */}
+      <footer className="workspace-footer">
+        <p className="workspace-footer-text">
+          © {currentYear} Проект LegalAI. Все права на сервис и разработанные
+          материалы принадлежат Береску Н. Защищено законодательством РФ и
+          международным правом.
+        </p>
+      </footer>
+    </div>
+  );
+}
+

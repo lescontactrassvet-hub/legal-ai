@@ -1,0 +1,986 @@
+/* ===== ЕДИНЫЙ СТИЛЬ ДЛЯ ЛОГИНА И РЕГИСТРАЦИИ ===== */
+
+/* Контейнер страницы авторизации / регистрации */
+.auth-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+/* Карточка (тёмный прямоугольник по центру) */
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 32px 28px;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 26px;
+  box-shadow: 0 0 60px rgba(140, 0, 255, 0.4);
+  backdrop-filter: blur(18px);
+}
+
+/* Заголовок (Вход в аккаунт / Регистрация) */
+.auth-title {
+  margin: 0 12px 0;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* Подзаголовок под заголовком */
+.auth-subtitle {
+  text-align: center;
+  margin: 0 24px 0;
+  font-size: 16px;
+  color: #cccccc;
+}
+
+/* Один блок поля формы */
+.auth-field {
+  margin-bottom: 26px; /* чтобы поля не "слипались" */
+}
+
+/* Строка "Пароль | Показать" над полем */
+.auth-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+/* Все инпуты (Email, Пароль, поля регистрации) */
+.auth-input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08); /* одинаковый фон у всех полей */
+  color: #ffffff;
+  font-size: 15px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+/* Чтобы автозаполнение не красило поле пароля в другой цвет */
+input.auth-input:-webkit-autofill,
+input.auth-input:-webkit-autofill:hover,
+input.auth-input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.08) inset;
+  box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.08) inset;
+  -webkit-text-fill-color: #ffffff;
+}
+
+/* Кнопка "Показать/Скрыть" справа от слова Пароль */
+.password-toggle {
+  font-size: 13px;
+  color: #9c3af5;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+/* Основная кнопка (Войти / Создать аккаунт) */
+.auth-primary-button {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(90deg, #6a00ff, #ff1ac6);
+  border-radius: 12px;
+  border: none;
+  margin-top: 12px;
+  cursor: pointer;
+}
+
+/* Маленькие ссылки (Забыли пароль?, Зарегистрироваться, Войти) */
+.auth-link-button {
+  background: none;
+  border: none;
+  color: #60a5fa;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Строка "Запомнить меня" + "Забыли пароль?" */
+.auth-row-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* Нижний текст под формой */
+.auth-footer-text {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 14px;
+  color: #cccccc;
+}
+
+/* Подсказки под полями (логин, пароль, род деятельности и т.п.) */
+.auth-hint {
+  margin-top: 2px;
+  margin-bottom: 4px;
+  font-size: 12px; /* меньше, чем основной текст */
+  line-height: 1.25;
+  color: #9c3af5;
+}
+
+/* Чекбокс "Я подтверждаю" на регистрации */
+.auth-remember {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: #d1d5db;
+}
+
+.auth-checkbox {
+  margin-top: 3px;
+}
+
+/* Блок "Забыли пароль?" справа на отдельной строке */
+.auth-forgot {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+
+/* ===== WORKSPACE (рабочий кабинет) ===== */
+
+.workspace-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ФИКСИРОВАННАЯ ШАПКА */
+.workspace-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: blur(14px);
+  background: rgba(10, 0, 40, 0.85);
+}
+
+/* Внутренний контейнер шапки */
+.workspace-header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+}
+
+/* Лого и название */
+.workspace-logo-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Контейнер для текста рядом с логотипом */
+.workspace-logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.08;
+  margin-top: 2px;
+}
+
+.workspace-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  object-fit: cover;
+  box-shadow:
+    0 0 12px rgba(255, 0, 240, 0.9),
+    0 0 20px rgba(120, 0, 255, 0.8);
+}
+
+.workspace-title {
+  font-size: 2.1rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #ff00ff, #9b3dff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow:
+    0 0 6px rgba(255, 0, 255, 0.8),
+    0 0 12px rgba(140, 0, 255, 0.7),
+    0 0 20px rgba(110, 0, 200, 0.6);
+}
+
+/* Подпись под брендом: "Юридический ИИ — Татьяна" */
+.workspace-subtitle {
+  margin-top: 1px;
+  font-size: 0.8rem;          /* размер оставили как есть */
+  letter-spacing: 0.04em;
+  color: #cfaeff;             /* почти как LegalAI, но чуть мягче */
+  text-shadow: 0 0 4px rgba(170, 120, 255, 0.45);
+  opacity: 0.95;
+}
+
+/* Меню справа в шапке */
+.workspace-menu {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+}
+
+/* Переопределяем кнопки внутри меню, чтобы были маленькими и в одну строку */
+.workspace-menu .auth-primary-button {
+  width: auto;
+  padding: 8px 18px;
+  font-size: 12px;
+  margin-top: 0;
+  white-space: nowrap;
+}
+
+/* Центр / main — чат слева (2/3), два блока справа (1/3) */
+.workspace-main {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;   /* ВАЖНО: колонки больше не растягиваются по высоте */
+  gap: 24px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 16px;
+  box-sizing: border-box;
+}
+
+/* Левая часть: Чат Татьяна */
+.workspace-main-left {
+  flex: 2;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 16px;
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Правая часть: два боковых блока один под другим */
+.workspace-main-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Общий стиль боковых панелей (Мои дела / Документы) */
+.workspace-side-panel {
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.05), transparent),
+    radial-gradient(circle at bottom right, rgba(147, 51, 234, 0.18), rgba(10, 0, 40, 0.96));
+  padding: 16px;
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 18px rgba(0, 0, 0, 0.7);
+  transition:
+    box-shadow 0.2s ease,
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease;
+}
+
+/* лёгкий эффект при наведении */
+.workspace-side-panel:hover {
+  box-shadow: 0 0 18px rgba(255, 0, 255, 0.18);
+}
+
+/* Шапка каждой боковой панели */
+.workspace-side-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+/* Надпись "Открыть/Свернуть" справа */
+.workspace-side-panel-toggle {
+  font-size: 11px;
+  color: #c4b5fd;
+  opacity: 0.9;
+}
+
+/* Активная панель — яркая неоновая подсветка по краям */
+.workspace-side-panel-active {
+  box-shadow:
+    0 0 16px rgba(255, 0, 255, 0.35),
+    0 0 26px rgba(120, 0, 255, 0.4);
+  border-color: rgba(255, 0, 255, 0.45);
+  transform: translateY(-1px);
+}
+
+/* Свёрнутая панель — чуть бледнее и спокойнее */
+.workspace-side-panel-collapsed {
+  opacity: 0.85;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.7);
+}
+
+/* Заголовки секций в рабочем кабинете */
+.workspace-section-title {
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  text-shadow: 0 0 8px rgba(255, 0, 255, 0.5);
+}
+
+/* Текст-заглушки внутри блоков */
+.workspace-placeholder,
+.workspace-chat-placeholder {
+  color: #dddddd;
+  opacity: 0.8;
+  font-size: 16px;
+  margin-top: 8px;
+}
+
+/* Краткая подсказка по использованию чата */
+.workspace-chat-tip {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #c4b5fd;
+  opacity: 0.95;
+}
+
+/* ===== ПЕРЕКЛЮЧАТЕЛЬ РЕЖИМОВ ===== */
+
+.workspace-mode-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 8px;
+}
+
+.workspace-mode-button {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 6px 14px;
+  font-size: 13px;
+  background: rgba(10, 0, 40, 0.65);
+  color: #e5e7eb;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.workspace-mode-button:hover {
+  border-color: rgba(255, 0, 255, 0.6);
+  box-shadow: 0 0 10px rgba(255, 0, 255, 0.4);
+}
+
+.workspace-mode-button-active {
+  background: linear-gradient(90deg, #6a00ff, #ff1ac6);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow:
+    0 0 12px rgba(255, 0, 255, 0.7),
+    0 0 18px rgba(120, 0, 255, 0.7);
+}
+
+/* ===== ЧАТ ТАТЬЯНА ===== */
+
+/* Коробка чата — фон + неоновая подсветка */
+/* Коробка чата — ограниченная по высоте, компактная */
+.workspace-chat-box {
+  margin-top: 10px;
+
+  /* САМОЕ ВАЖНОЕ — ограничиваем высоту */
+  max-height: 760px;          /* подгоняем под правую колонку */
+  overflow: hidden;           /* чтобы внутренности не вылезали */
+
+  display: flex;
+  flex-direction: column;
+
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.06), transparent),
+    radial-gradient(circle at bottom right, rgba(147, 51, 234, 0.20), rgba(10, 0, 40, 0.95));
+  border-radius: 18px;
+  padding: 14px 12px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow:
+    0 0 18px rgba(255, 0, 255, 0.18),
+    0 0 28px rgba(120, 0, 255, 0.25);
+  backdrop-filter: blur(10px);
+  transition: box-shadow 0.3s ease;
+}
+
+.workspace-chat-box:hover {
+  box-shadow:
+    0 0 26px rgba(255, 0, 255, 0.35),
+    0 0 38px rgba(120, 0, 255, 0.35);
+}
+
+.workspace-chat-empty {
+  color: #e5e7eb;
+  opacity: 0.9;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* область списка сообщений, видно ~22 строки */
+.workspace-chat-messages {
+  flex: 1;
+  max-height: 620px;      /* было 430px → стало ~на 10 строк больше */
+  min-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #e879f9 transparent;
+}
+
+/* WebKit скроллбар */
+.workspace-chat-messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.workspace-chat-messages::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+}
+
+.workspace-chat-messages::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #d946ef, #9333ea);
+  border-radius: 999px;
+  box-shadow: 0 0 6px rgba(255, 0, 255, 0.6);
+}
+
+/* контейнер сообщения */
+.workspace-chat-message {
+  max-width: 90%;
+  font-size: 14px;
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+}
+
+/* блок автора ("Вы" / "Татьяна") */
+.workspace-chat-author {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-bottom: 2px;
+}
+
+/* внутренний пузырёк с текстом */
+.workspace-chat-bubble {
+  padding: 8px 11px;
+  border-radius: 14px;
+  word-wrap: break-word;
+}
+
+/* сообщение пользователя (справа, менее яркое) */
+.workspace-chat-message-user {
+  margin-left: auto;
+  align-items: flex-end;
+}
+
+.workspace-chat-message-user .workspace-chat-bubble {
+  background: rgba(70, 35, 130, 0.95);
+  color: #f9fafb;
+  box-shadow: 0 0 10px rgba(120, 0, 255, 0.4);
+}
+
+/* сообщение Татьяны (слева, живое, но не ядреное) */
+.workspace-chat-message-ai {
+  margin-right: auto;
+  align-items: flex-start;
+}
+
+.workspace-chat-message-ai .workspace-chat-bubble {
+  background: linear-gradient(135deg, rgba(90, 0, 150, 0.95), rgba(210, 0, 200, 0.9));
+  color: #ffffff;
+  box-shadow:
+    0 0 10px rgba(255, 0, 255, 0.45),
+    0 0 18px rgba(120, 0, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* строка ввода сообщения */
+.workspace-chat-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* Кнопка-скрепка для файлов */
+.workspace-chat-file-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(10, 0, 40, 0.9);
+  color: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+.workspace-chat-file-input {
+  display: none;
+}
+
+/* поле ввода */
+.workspace-chat-input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(10, 0, 40, 0.85);
+  color: #ffffff;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.workspace-chat-input::placeholder {
+  color: rgba(209, 213, 219, 0.8);
+}
+
+/* кнопка отправки */
+.workspace-chat-send-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, #6a00ff, #ff1ac6);
+  color: #ffffff;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow:
+    0 0 10px rgba(255, 0, 255, 0.7),
+    0 0 16px rgba(120, 0, 255, 0.8);
+  flex-shrink: 0;
+  padding-bottom: 1px; /* чуть визуально центрируем стрелку */
+}
+
+.workspace-chat-send-button:hover {
+  filter: brightness(1.08);
+}
+
+/* Футер */
+.workspace-footer {
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 12px 16px 8px;
+  box-sizing: border-box;
+}
+
+.workspace-footer-text {
+  font-size: 11px;
+  line-height: 1.4;
+  opacity: 0.8;
+  /* чтобы текст красиво шёл по строкам и не ломал ширину */
+  text-align: left;
+  word-break: break-word;
+}
+
+/* ===== АДАПТИВ ДЛЯ МОБИЛЬНОЙ ВЕРСИИ ===== */
+
+/* ===== РЕДАКТОР ДОКУМЕНТА ПОД ЧАТОМ ===== */
+
+.workspace-editor {
+  max-width: 1200px;
+  width: 100%;
+  margin: 32px auto 28px; /* отступ сверху от блока чата */
+  padding: 20px 16px 24px;
+  box-sizing: border-box;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.04), transparent),
+    radial-gradient(circle at bottom right, rgba(56, 189, 248, 0.15), rgba(10, 0, 40, 0.96));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 0 18px rgba(0, 0, 0, 0.8),
+    0 0 26px rgba(120, 0, 255, 0.25);
+  backdrop-filter: blur(12px);
+}
+
+.workspace-editor-header {
+  margin-bottom: 12px;
+}
+
+.workspace-editor-title {
+  margin-bottom: 4px;
+}
+
+.workspace-editor-subtitle {
+  font-size: 13px;
+  color: #e5e7eb;
+  opacity: 0.9;
+  max-width: 900px;
+}
+
+/* Само поле редактирования документа */
+/* Поле редактирования — одна страница A4 с прокруткой внутри */
+.workspace-editor-textarea {
+  width: 100%;
+  max-width: 820px;            /* ширина «листа» */
+  margin: 12px auto 0;         /* центрируем страницу */
+  padding: 40px 48px;          /* поля документа */
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #f9fafb;         /* белый лист */
+  color: #111827;              /* тёмный текст */
+  font-size: 15px;
+  line-height: 1.6;
+  box-sizing: border-box;
+  box-shadow:
+    0 0 30px rgba(0, 0, 0, 0.7),
+    0 0 40px rgba(15, 23, 42, 0.6);
+  resize: none;                /* не растягиваем мышкой */
+  min-height: 720px;           /* примерно высота А4 при этой ширине */
+  max-height: 720px;           /* одна страница по высоте */
+  overflow-y: auto;            /* лишний текст уходит вверх, появляется бегунок */
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.workspace-editor-textarea::placeholder {
+  color: rgba(148, 163, 184, 0.9);
+}
+
+/* Кнопки под редактором */
+.workspace-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.workspace-editor-button {
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #ffffff;
+  background: linear-gradient(90deg, #6a00ff, #ff1ac6);
+  box-shadow:
+    0 0 10px rgba(255, 0, 255, 0.5),
+    0 0 16px rgba(120, 0, 255, 0.5);
+  white-space: nowrap;
+}
+
+.workspace-editor-button:hover {
+  filter: brightness(1.08);
+}
+
+.workspace-editor-button-secondary {
+  background: rgba(10, 0, 40, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 10px rgba(15, 23, 42, 0.9);
+}
+
+.workspace-editor-button-secondary:hover {
+  box-shadow: 0 0 14px rgba(129, 140, 248, 0.8);
+}
+
+.workspace-editor-button-ghost {
+  background: rgba(10, 0, 40, 0.8);
+  border: 1px dashed rgba(148, 163, 184, 0.7);
+  box-shadow: none;
+  color: #e5e7eb;
+}
+
+.workspace-editor-button-ghost:hover {
+  border-style: solid;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+}
+
+/* ===== Документ-редактор (TipTap) — мини Word / лист A4 ===== */
+
+/* Корневая обёртка редактора */
+.doc-editor-root {
+  max-width: 860px;
+  margin: 12px auto 0;
+}
+
+/* Верхняя панель инструментов – мини-Word */
+.doc-editor-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 14px 14px 0 0;
+  border: 1px solid rgba(15, 23, 42, 0.6);
+  background: rgba(15, 23, 42, 0.96);
+  box-shadow:
+    0 0 14px rgba(15, 23, 42, 0.9),
+    0 0 24px rgba(120, 0, 255, 0.7);
+}
+
+/* Кнопки панели */
+.doc-editor-toolbar button {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #e5e7eb;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.doc-editor-toolbar button:hover {
+  border-color: rgba(148, 163, 184, 0.9);
+}
+
+.doc-editor-toolbar button.active {
+  background: linear-gradient(135deg, #6a00ff, #ff1ac6);
+  border-color: transparent;
+  color: #ffffff;
+  box-shadow:
+    0 0 8px rgba(255, 0, 255, 0.7),
+    0 0 14px rgba(120, 0, 255, 0.7);
+}
+
+/* Вертикальный разделитель внутри панели */
+.doc-editor-toolbar-sep {
+  width: 1px;
+  height: 22px;
+  background: rgba(148, 163, 184, 0.5);
+  margin: 0 2px;
+}
+
+/* Обёртка и сам "лист" A4 */
+.doc-editor-page-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 0 6px 4px;
+  background: transparent;
+}
+
+.doc-editor-page {
+  width: 100%;
+  max-width: 820px;
+  min-height: 720px;
+  max-height: 720px;           /* примерно высота A4 на десктопе */
+  overflow-y: auto;            /* лишний текст прокручивается внутри листа */
+  border-radius: 0 0 18px 18px;
+  border: 1px solid rgba(15, 23, 42, 0.6);
+  background: #f9fafb;
+  box-shadow:
+    0 0 30px rgba(0, 0, 0, 0.7),
+    0 0 40px rgba(15, 23, 42, 0.6);
+}
+
+/* Внутренний текст редактора – как в юр-документах */
+.doc-editor-page .ProseMirror {
+  outline: none;
+  padding: 40px 48px;          /* поля документа */
+  font-family: "Times New Roman", Georgia, "Nimbus Roman", serif;
+  font-size: 15px;             /* примерно 12 pt */
+  line-height: 1.6;
+  color: #111827;
+  text-align: justify;         /* выравнивание по ширине */
+}
+
+/* Абзацы: межстрочный интервал и красная строка */
+.doc-editor-page .ProseMirror p {
+  margin: 0 0 8px 0;
+  text-indent: 24px;           /* красная строка */
+}
+
+/* Первый абзац без красной строки */
+.doc-editor-page .ProseMirror p:first-child {
+  text-indent: 0;
+}
+
+/* Заголовки */
+.doc-editor-page .ProseMirror h1,
+.doc-editor-page .ProseMirror h2,
+.doc-editor-page .ProseMirror h3 {
+  font-family: "Times New Roman", Georgia, "Nimbus Roman", serif;
+  font-weight: 700;
+  text-indent: 0;
+  margin: 0 0 10px 0;
+  text-align: center;
+}
+
+.doc-editor-page .ProseMirror h1 {
+  font-size: 20px;
+  text-transform: uppercase;
+}
+
+.doc-editor-page .ProseMirror h2 {
+  font-size: 18px;
+}
+
+.doc-editor-page .ProseMirror h3 {
+  font-size: 16px;
+}
+
+/* Списки – без красной строки, с небольшим отступом */
+.doc-editor-page .ProseMirror ul,
+.doc-editor-page .ProseMirror ol {
+  margin: 0 0 8px 32px;
+  padding-left: 16px;
+}
+
+.doc-editor-page .ProseMirror li {
+  margin-bottom: 4px;
+  text-indent: 0;
+}
+
+/* Таблицы внутри документа */
+.doc-editor-page .ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 12px 0;
+}
+
+.doc-editor-page .ProseMirror th,
+.doc-editor-page .ProseMirror td {
+  border: 1px solid #d1d5db;
+  padding: 6px 8px;
+  font-size: 14px;
+}
+
+.doc-editor-page .ProseMirror th {
+  background: #e5e7eb;
+  font-weight: 700;
+  text-align: center;
+}
+
+.doc-editor-page .ProseMirror tbody tr:nth-child(even) td {
+  background: #f3f4f6;
+}
+
+/* Placeholder от TipTap – когда документ пустой */
+.doc-editor-page .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: rgba(148, 163, 184, 0.9);
+  pointer-events: none;
+  height: 0;
+}
+
+/* ===== Мобильная подстройка редактора (до 640px) ===== */
+@media (max-width: 640px) {
+  /* старый textarea-редактор (пусть живёт, вдруг ещё где-то используется) */
+  .workspace-editor {
+    margin: 20px auto 16px;
+    padding: 16px 12px 20px;
+  }
+
+  .workspace-editor-textarea {
+    max-width: 100%;
+    min-height: 420px;
+    max-height: 420px;
+    padding: 24px 18px;
+  }
+
+  /* Мобильная версия документа-редактора (TipTap) */
+  .doc-editor-root {
+    max-width: 100%;
+  }
+
+  .doc-editor-toolbar {
+    justify-content: center;
+  }
+
+  .doc-editor-page {
+    min-height: 420px;
+    max-height: 420px;
+  }
+
+  .doc-editor-page .ProseMirror {
+    padding: 24px 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .workspace-header-inner {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    row-gap: 8px;
+  }
+
+  .workspace-logo-block {
+    margin-bottom: 4px;
+  }
+
+  .workspace-menu {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .workspace-menu .auth-primary-button {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+
+  /* На мобильном чат и боковые блоки идут вертикально */
+  .workspace-main {
+    flex-direction: column;
+    padding: 20px 12px 24px;
+    gap: 16px;
+  }
+
+  .workspace-main-left {
+    flex: 0 0 auto;
+  }
+
+  .workspace-main-right {
+    flex: 0 0 auto;
+    margin-top: 8px;
+  }
+}
+
+
+/* === AUTO PATCH: фиксированная высота чата и многострочный ввод === */
+
+/* Коробка чата Татьяна — фиксированная высота, не растягивает страницу */
+.workspace-chat-box {
+  height: 520px;            /* десктопная высота */
+}
+
+/* Сообщения занимают всё свободное место и скроллятся внутри */
+.workspace-chat-messages {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Поле ввода — реально многострочное textarea с высотой примерно в две строки */
+.workspace-chat-input {
+  min-height: 2.8em;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  line-height: 1.3;
+}
+
+/* На мобильных — чат ниже, чтобы не съедал экран */
+@media (max-width: 640px) {
+  .workspace-chat-box {
+    height: 420px;
+  }
+}
+
