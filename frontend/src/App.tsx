@@ -1,71 +1,140 @@
 import { useState } from "react";
-import "./App.css";
 
-import { LoginPage } from "./pages/login";
-import { RegisterPage } from "./pages/register";
-import { ForgotPasswordPage } from "./pages/forgot";
-import { ResetPasswordPage } from "./pages/reset";
+import { LandingPage } from "./pages/landing";
 import { WorkspacePage } from "./pages/workspace";
 import { ProfilePage } from "./pages/profile";
+import { DocumentsPage } from "./pages/documents";
+import { LoginPage } from "./pages/login";
+import { RegisterPage } from "./pages/register";
+import ResetPage from "./pages/reset";
+import ForgotPage from "./pages/forgot";
 
-type Page =
+type AppPage =
+  | "landing"
   | "login"
   | "register"
-  | "forgot"
-  | "reset"
   | "workspace"
-  | "profile";
+  | "documents"
+  | "profile"
+  | "reset"
+  | "forgot";
 
-function App() {
-  const [page, setPage] = useState<Page>("login");
+export function App() {
+  const [page, setPage] = useState<AppPage>("landing");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  return (
-    <>
-      {/* --- ЛОГИН --- */}
-      {page === "login" && (
+  // ——— Авторизация ———
+
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true);
+    setPage("workspace");
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setPage("login");
+  };
+
+  // ——— Навигация из лендинга ———
+
+  const goToLogin = () => setPage("login");
+
+  // ——— Навигация из шапки Workspace ———
+
+  const handleGoToProfile = () => {
+    if (!isAuthenticated) {
+      setPage("login");
+      return;
+    }
+    setPage("profile");
+  };
+
+  const handleGoToDocuments = () => {
+    if (!isAuthenticated) {
+      setPage("login");
+      return;
+    }
+    setPage("documents");
+  };
+
+  // ——— Навигация из профиля ———
+
+  const handleProfileBack = () => {
+    if (!isAuthenticated) {
+      setPage("login");
+      return;
+    }
+    setPage("workspace");
+  };
+
+  const handleGoToChangePassword = () => {
+    setPage("reset");
+  };
+
+  // ——— Навигация логин / регистрация / восстановление ———
+
+  const goToRegister = () => setPage("register");
+  const goToForgot = () => setPage("forgot");
+
+  // ——— Рендер страниц ———
+
+  switch (page) {
+    case "landing":
+      return (
+        <LandingPage
+          onTryFree={goToLogin}
+          onLoginClick={goToLogin}
+        />
+      );
+
+    case "login":
+      return (
         <LoginPage
-          onGoRegister={() => setPage("register")}
-          onGoToForgot={() => setPage("forgot")}
-          onSuccessLogin={() => setPage("workspace")}
+          onLoginSuccess={handleLoginSuccess}
+          onGoToRegister={goToRegister}
+          onGoToForgot={goToForgot}
         />
-      )}
+      );
 
-      {/* --- РЕГИСТРАЦИЯ --- */}
-      {page === "register" && (
-        <RegisterPage onGoToLogin={() => setPage("login")} />
-      )}
-
-      {/* --- ЗАБЫЛ ПАРОЛЬ --- */}
-      {page === "forgot" && (
-        <ForgotPasswordPage
-          onGoToLogin={() => setPage("login")}
-          onGoToReset={() => setPage("reset")}
+    case "register":
+      return (
+        <RegisterPage
+          onRegisterSuccess={handleLoginSuccess}
+          onGoToLogin={goToLogin}
         />
-      )}
+      );
 
-      {/* --- НОВЫЙ ПАРОЛЬ --- */}
-      {page === "reset" && (
-        <ResetPasswordPage onGoToLogin={() => setPage("login")} />
-      )}
+    case "forgot":
+      return <ForgotPage onBackToLogin={goToLogin} />;
 
-      {/* --- РАБОЧИЙ КАБИНЕТ --- */}
-      {page === "workspace" && (
-        <WorkspacePage
-          onGoToProfile={() => setPage("profile")}
-          onLogout={() => setPage("login")}
-        />
-      )}
+    case "reset":
+      return <ResetPage onBackToLogin={goToLogin} />;
 
-      {/* --- ПРОФИЛЬ --- */}
-      {page === "profile" && (
+    case "profile":
+      return (
         <ProfilePage
-          onGoBack={() => setPage("workspace")}
-          onGoToChangePassword={() => setPage("reset")}
+          onGoBack={handleProfileBack}
+          onGoToChangePassword={handleGoToChangePassword}
         />
-      )}
-    </>
-  );
-}
+      );
 
-export default App;
+    case "documents":
+      return (
+        <DocumentsPage
+          // при необходимости можно добавить onGoBack, пока оставим как самостоятельную страницу
+        />
+      );
+
+    case "workspace":
+    default:
+      return (
+        <WorkspacePage
+          onGoToProfile={handleGoToProfile}
+          onLogout={handleLogout}
+          // если в WorkspacePage позже появится проп onGoToDocuments,
+          // можно будет пробросить handleGoToDocuments
+        />
+      );
+  }
+}
 
