@@ -80,12 +80,12 @@ export function App() {
 
   switch (page) {
     case "landing":
-      return (
-        <LandingPage
-          onTryFree={goToLogin}
-          onLoginClick={goToLogin}
-        />
-      );
+  return (
+    <LandingPage
+      onGoToLogin={goToLogin}
+      onGoToRegister={goToRegister}
+    />
+  );
 
     case "login":
       return (

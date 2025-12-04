@@ -1,11 +1,11 @@
 import React from "react";
 
-type LandingPageProps = {
+export type LandingPageProps = {
   onGoToLogin: () => void;
   onGoToRegister: () => void;
 };
 
-export default function LandingPage({ onGoToLogin, onGoToRegister }: LandingPageProps) {
+export function LandingPage({ onGoToLogin, onGoToRegister }: LandingPageProps) {
   const currentYear = new Date().getFullYear();
 
   return (
@@ -35,8 +35,9 @@ export default function LandingPage({ onGoToLogin, onGoToRegister }: LandingPage
         <div className="landing-hero-text">
           <h2 className="landing-hero-title">Юридический ИИ-ассистент «Татьяна»</h2>
           <p className="landing-hero-desc">
-            Помогает вам подготовить <strong>проекты юридических документов</strong> 
-            и разобраться в ситуации простым человеческим языком.
+            Помогает вам подготовить{" "}
+            <strong>проекты юридических документов</strong> и разобраться в
+            ситуации простым человеческим языком.
           </p>
 
           <ul className="landing-hero-list">
@@ -50,7 +51,9 @@ export default function LandingPage({ onGoToLogin, onGoToRegister }: LandingPage
             <button className="landing-btn-primary" onClick={onGoToLogin}>
               Попробовать бесплатно
             </button>
-            <a href="#how" className="landing-btn-link">Узнать подробнее</a>
+            <a href="#how" className="landing-btn-link">
+              Узнать подробнее
+            </a>
           </div>
         </div>
 
@@ -96,7 +99,10 @@ export default function LandingPage({ onGoToLogin, onGoToRegister }: LandingPage
         <div className="landing-grid-3">
           <div className="landing-card">
             <h3>Проекты документов</h3>
-            <p>Иски, заявления, жалобы, договоры — структурированные проекты для дальнейшей доработки.</p>
+            <p>
+              Иски, заявления, жалобы, договоры — структурированные проекты для
+              дальнейшей доработки.
+            </p>
           </div>
 
           <div className="landing-card">
@@ -137,9 +143,10 @@ export default function LandingPage({ onGoToLogin, onGoToRegister }: LandingPage
       <section className="landing-section-important">
         <h2 className="landing-section-title">Важно знать</h2>
         <p className="landing-important-text">
-          LEGALAI и ИИ-ассистент «Татьяна» не заменяют адвоката или юриста.  
-          Сервис помогает создать <strong>проект документа</strong> и лучше понимать вашу ситуацию.  
-          Перед отправкой документов рекомендуется внимательно перепроверить текст.
+          LEGALAI и ИИ-ассистент «Татьяна» не заменяют адвоката или юриста. Сервис
+          помогает создать <strong>проект документа</strong> и лучше понимать вашу
+          ситуацию. Перед отправкой документов рекомендуется внимательно
+          перепроверить текст и при необходимости обратиться к специалисту.
         </p>
       </section>
 
@@ -164,4 +171,6 @@ export default function LandingPage({ onGoToLogin, onGoToRegister }: LandingPage
     </div>
   );
 }
+
+export default LandingPage;
 
