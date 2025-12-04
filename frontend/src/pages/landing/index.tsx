@@ -1,309 +1,164 @@
-import { useEffect } from "react";
+import React from "react";
 
 type LandingPageProps = {
-  onTryFree: () => void;
-  onLoginClick: () => void;
+  onGoToLogin: () => void;
+  onGoToRegister: () => void;
 };
 
-export function LandingPage({ onTryFree, onLoginClick }: LandingPageProps) {
-  // SEO: заголовок и мета-теги для поисковиков
-  useEffect(() => {
-    const title = "LEGALAI — юридический ИИ-ассистент Татьяна | Проекты документов и подсказки";
-    const description =
-      "LEGALAI — виртуальный юридический ИИ-ассистент Татьяна. Помогает разобраться в вашей ситуации, предлагает план действий и готовит проекты юридических документов в удобном редакторе.";
-    const keywords =
-      "LEGALAI, юридический ИИ, ИИ юрист, Татьяна, юридический помощник, проект документа, юридический документ, жалоба, обращение, заявление, консультация, права, закон";
-
-    document.title = title;
-
-    // meta description
-    let metaDescription = document.querySelector(
-      'meta[name="description"]'
-    ) as HTMLMetaElement | null;
-    if (!metaDescription) {
-      metaDescription = document.createElement("meta");
-      metaDescription.name = "description";
-      document.head.appendChild(metaDescription);
-    }
-    metaDescription.content = description;
-
-    // meta keywords
-    let metaKeywords = document.querySelector(
-      'meta[name="keywords"]'
-    ) as HTMLMetaElement | null;
-    if (!metaKeywords) {
-      metaKeywords = document.createElement("meta");
-      metaKeywords.name = "keywords";
-      document.head.appendChild(metaKeywords);
-    }
-    metaKeywords.content = keywords;
-  }, []);
+export default function LandingPage({ onGoToLogin, onGoToRegister }: LandingPageProps) {
+  const currentYear = new Date().getFullYear();
 
   return (
-    <div className="landing-page">
-      {/* Шапка */}
+    <div className="landing-root">
+      {/* HEADER */}
       <header className="landing-header">
         <div className="landing-header-left">
-          <div className="landing-logo">
-            <img src="/logo.png" alt="LEGALAI" className="landing-logo-image" />
-            <div className="landing-logo-text">
-              <div className="landing-logo-title">LEGALAI</div>
-              <div className="landing-logo-subtitle">Юридический ИИ — Татьяна</div>
-            </div>
+          <img src="/logo.png" alt="logo" className="landing-logo" />
+          <div className="landing-title-block">
+            <h1 className="landing-title">LEGALAI</h1>
+            <p className="landing-subtitle">Юридический ИИ — Татьяна</p>
           </div>
         </div>
+
         <div className="landing-header-right">
-          <button
-            type="button"
-            className="landing-header-link"
-            onClick={onLoginClick}
-          >
+          <button className="landing-btn-secondary" onClick={onGoToLogin}>
             Войти
+          </button>
+          <button className="landing-btn-primary" onClick={onGoToRegister}>
+            Регистрация
           </button>
         </div>
       </header>
 
-      {/* Hero-блок */}
-      <main className="landing-main">
-        <section className="landing-hero">
-          <div className="landing-hero-text">
-            <h1 className="landing-hero-title">
-              Юридический ИИ-ассистент, который объясняет закон простым языком
-            </h1>
-            <p className="landing-hero-subtitle">
-              Татьяна помогает разобраться в вашей ситуации, предлагает возможные
-              шаги и готовит проекты юридических документов — от обращений и
-              заявлений до служебных записок.
-            </p>
-            <div className="landing-hero-actions">
-              <button
-                type="button"
-                className="landing-hero-button"
-                onClick={onTryFree}
-              >
-                Попробовать бесплатно
-              </button>
-              <p className="landing-hero-note">
-                Демо-режим: знакомство с возможностями системы. Не заменяет
-                консультацию адвоката или представителя.
-              </p>
-            </div>
-          </div>
+      {/* HERO */}
+      <section className="landing-hero">
+        <div className="landing-hero-text">
+          <h2 className="landing-hero-title">Юридический ИИ-ассистент «Татьяна»</h2>
+          <p className="landing-hero-desc">
+            Помогает вам подготовить <strong>проекты юридических документов</strong> 
+            и разобраться в ситуации простым человеческим языком.
+          </p>
 
-          <div className="landing-hero-preview">
-            <div className="landing-preview-card">
-              <div className="landing-preview-header">
-                <span className="landing-preview-title">Чат ИИ “Татьяна”</span>
-                <span className="landing-preview-status">онлайн</span>
-              </div>
-              <div className="landing-preview-chat">
-                <div className="landing-preview-message landing-preview-message-user">
-                  Мне нужна помощь с ситуацией на работе, не понимаю, нарушили
-                  ли мои права.
-                </div>
-                <div className="landing-preview-message landing-preview-message-ai">
-                  Опишите, пожалуйста, что именно произошло: какие действия
-                  работодателя вас беспокоят, были ли письменные документы или
-                  устные распоряжения.
-                </div>
-                <div className="landing-preview-message landing-preview-message-ai">
-                  Я помогу выделить ключевые моменты, объясню, на какие нормы
-                  права опираться, и подготовлю проект документа, если он
-                  понадобится.
-                </div>
-              </div>
-              <div className="landing-preview-document">
-                <div className="landing-preview-document-header">
-                  <span>Проект документа</span>
-                </div>
-                <div className="landing-preview-document-body">
-                  <p>
-                    1. Вводная часть: кто вы, какой у вас статус и к кому
-                    обращаетесь.
-                  </p>
-                  <p>
-                    2. Описание ситуации: факты, даты, участники и ключевые
-                    обстоятельства.
-                  </p>
-                  <p>
-                    3. Правовое обоснование: ссылки на нормы и ваши права.
-                  </p>
-                  <p>
-                    4. Просьба: чего вы хотите добиться в результате обращения.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+          <ul className="landing-hero-list">
+            <li>Проекты исков, заявлений, договоров</li>
+            <li>Пошаговые объяснения без сложных терминов</li>
+            <li>Связка чата и редактора документов</li>
+            <li>Сохранение ваших проектов в личном кабинете</li>
+          </ul>
 
-        {/* Блок возможностей */}
-        <section className="landing-section">
-          <h2 className="landing-section-title">Что умеет Татьяна</h2>
-          <div className="landing-features">
-            <div className="landing-feature-card">
-              <h3>Понятные ответы на сложные вопросы</h3>
-              <p>
-                Опишите ситуацию своими словами — Татьяна задаст уточняющие
-                вопросы и объяснит, что происходит с юридической точки зрения,
-                без перегрузки терминами.
-              </p>
-            </div>
-            <div className="landing-feature-card">
-              <h3>Проекты юридических документов</h3>
-              <p>
-                Система помогает приготовить структурированный проект документа:
-                обращения, заявления, жалобы или служебной записки, который вы
-                сможете доработать в встроенном редакторе.
-              </p>
-            </div>
-            <div className="landing-feature-card">
-              <h3>Подготовка к диалогу и переговорам</h3>
-              <p>
-                Татьяна помогает сформулировать позицию, список вопросов и
-                собрать факты перед обращением к юристу, в организацию или
-                госорган.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Как это работает */}
-        <section className="landing-section">
-          <h2 className="landing-section-title">Как это работает</h2>
-          <div className="landing-steps">
-            <div className="landing-step-card">
-              <div className="landing-step-number">1</div>
-              <h3>Расскажите о своей ситуации</h3>
-              <p>
-                Опишите, что произошло, в свободной форме. При необходимости вы
-                сможете приложить документы для анализа.
-              </p>
-            </div>
-            <div className="landing-step-card">
-              <div className="landing-step-number">2</div>
-              <h3>Татьяна задаёт вопросы и анализирует</h3>
-              <p>
-                ИИ помогает не упустить важные детали, выделяет ключевые моменты
-                и объясняет, какие права могут быть затронуты.
-              </p>
-            </div>
-            <div className="landing-step-card">
-              <div className="landing-step-number">3</div>
-              <h3>Получаете план действий и проект документа</h3>
-              <p>
-                Система формирует понятный план возможных шагов и проект
-                документа, который можно редактировать и использовать как основу.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Для кого */}
-        <section className="landing-section">
-          <h2 className="landing-section-title">Кому это может быть полезно</h2>
-          <div className="landing-audience">
-            <div className="landing-audience-card">
-              <h3>Частным лицам</h3>
-              <p>
-                Бытовые ситуации, покупки и возврат товаров, услуги, аренда,
-                трудовые вопросы и другие житейские истории, где важно понять,
-                какие у вас есть возможности и права.
-              </p>
-            </div>
-            <div className="landing-audience-card">
-              <h3>ИП и малому бизнесу</h3>
-              <p>
-                Взаимодействие с клиентами и подрядчиками, базовые договорные
-                вопросы, претензии и ответы, подготовка проектов документов для
-                деловой переписки.
-              </p>
-            </div>
-            <div className="landing-audience-card">
-              <h3>Специалистам и командам</h3>
-              <p>
-                Юристам, HR и руководителям, которым важно быстро структурировать
-                информацию и получить первичный проект документа для дальнейшей
-                доработки.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Рекламный блок / оффер + место для внешней рекламы */}
-        <section className="landing-section landing-promo-section">
-          <div className="landing-promo-main">
-            <h2 className="landing-section-title">Попробуйте LEGALAI бесплатно</h2>
-            <p className="landing-promo-text">
-              Оцените, как ИИ-ассистент Татьяна помогает разбираться в сложных
-              ситуациях, готовить проекты документов и экономить ваше время.
-            </p>
-            <ul className="landing-promo-list">
-              <li>Демо-режим без привязки карты.</li>
-              <li>Можно протестировать работу на своих примерах.</li>
-              <li>Конфиденциальное общение — только вы и виртуальный ассистент.</li>
-            </ul>
-            <button
-              type="button"
-              className="landing-hero-button"
-              onClick={onTryFree}
-            >
+          <div className="landing-hero-buttons">
+            <button className="landing-btn-primary" onClick={onGoToLogin}>
               Попробовать бесплатно
             </button>
+            <a href="#how" className="landing-btn-link">Узнать подробнее</a>
+          </div>
+        </div>
+
+        <div className="landing-hero-image">
+          <div className="landing-hero-mockup">
+            <div className="landing-hero-mockup-chat">Окно чата Татьяны</div>
+            <div className="landing-hero-mockup-doc">Фрагмент документа</div>
+          </div>
+        </div>
+      </section>
+
+      {/* FOR WHO */}
+      <section className="landing-section">
+        <h2 className="landing-section-title">Для кого создан LEGALAI</h2>
+
+        <div className="landing-grid">
+          <div className="landing-card">
+            <h3>Физические лица</h3>
+            <p>Бытовые ситуации, споры, заявления, обращения, консультации.</p>
           </div>
 
-          {/* Рекламный блок для внешнего кода (из панели администратора) */}
-          <aside className="landing-ads">
-            <div
-              className="landing-ad-slot"
-              data-ad-slot="landing-sidebar-1"
-            >
-              {/* Рекламный блок.
-                  Код баннера или виджета будет подставляться из панели администратора.
-                  Здесь оставляем только контейнер. */}
-              Рекламный блок (будет настроен администратором)
-            </div>
-          </aside>
-        </section>
-
-        {/* Безопасность и ограничения */}
-        <section className="landing-section">
-          <h2 className="landing-section-title">Важно знать</h2>
-          <div className="landing-important">
-            <p>
-              Татьяна помогает ориентироваться в информации, формировать проекты
-              документов и план действий, но не заменяет адвоката или официального
-              представителя в суде или органах власти.
-            </p>
-            <p>
-              Не указывайте лишние персональные данные, если это не требуется для
-              описания ситуации. При необходимости получения профессиональной
-              юридической помощи обращайтесь к практикующему специалисту.
-            </p>
+          <div className="landing-card">
+            <h3>Индивидуальные предприниматели</h3>
+            <p>Договоры, претензии, работа с контрагентами.</p>
           </div>
-        </section>
-      </main>
 
-      {/* Футер */}
+          <div className="landing-card">
+            <h3>Малый бизнес</h3>
+            <p>Документы, переписка, юридическая подготовка.</p>
+          </div>
+
+          <div className="landing-card">
+            <h3>Юристы и помощники</h3>
+            <p>Быстрые проекты документов и структурированный анализ.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* WHAT TATIANA DOES */}
+      <section className="landing-section">
+        <h2 className="landing-section-title">Что умеет ИИ-юрист «Татьяна»</h2>
+
+        <div className="landing-grid-3">
+          <div className="landing-card">
+            <h3>Проекты документов</h3>
+            <p>Иски, заявления, жалобы, договоры — структурированные проекты для дальнейшей доработки.</p>
+          </div>
+
+          <div className="landing-card">
+            <h3>Объяснение закона</h3>
+            <p>Понятные объяснения норм права без лишней терминологии.</p>
+          </div>
+
+          <div className="landing-card">
+            <h3>Подсказки по структуре</h3>
+            <p>Татьяна подсказывает, что важно указать и в какой части документа.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section id="how" className="landing-section">
+        <h2 className="landing-section-title">Как это работает</h2>
+
+        <div className="landing-steps">
+          <div className="landing-step">
+            <span className="landing-step-num">1</span>
+            <p>Опишите свою ситуацию в чате.</p>
+          </div>
+
+          <div className="landing-step">
+            <span className="landing-step-num">2</span>
+            <p>Получите разъяснения и структуру документа.</p>
+          </div>
+
+          <div className="landing-step">
+            <span className="landing-step-num">3</span>
+            <p>Сформируйте проект документа в редакторе и сохраните его.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* IMPORTANT */}
+      <section className="landing-section-important">
+        <h2 className="landing-section-title">Важно знать</h2>
+        <p className="landing-important-text">
+          LEGALAI и ИИ-ассистент «Татьяна» не заменяют адвоката или юриста.  
+          Сервис помогает создать <strong>проект документа</strong> и лучше понимать вашу ситуацию.  
+          Перед отправкой документов рекомендуется внимательно перепроверить текст.
+        </p>
+      </section>
+
+      {/* CTA */}
+      <section className="landing-section-cta">
+        <h2>Попробуйте LEGALAI бесплатно</h2>
+        <p>Создайте личный кабинет и подготовьте свой первый проект документа.</p>
+        <button className="landing-btn-primary" onClick={onGoToLogin}>
+          Начать сейчас
+        </button>
+      </section>
+
+      {/* FOOTER */}
       <footer className="landing-footer">
-        <div className="landing-footer-main">
-          <div className="landing-footer-brand">
-            <span className="landing-footer-logo">LEGALAI</span>
-            <span className="landing-footer-text">
-              Юридический ИИ — Татьяна
-            </span>
-          </div>
-          <div className="landing-footer-links">
-            <button type="button" className="landing-footer-link">
-              Политика конфиденциальности
-            </button>
-            <button type="button" className="landing-footer-link">
-              Пользовательское соглашение
-            </button>
-            <button type="button" className="landing-footer-link">
-              Контакты
-            </button>
-          </div>
+        <p>© {currentYear} LEGALAI</p>
+        <div className="landing-footer-links">
+          <a href="#">Политика конфиденциальности</a>
+          <a href="#">Пользовательское соглашение</a>
+          <a href="#">Контакты</a>
         </div>
       </footer>
     </div>
