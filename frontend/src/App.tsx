@@ -65,11 +65,10 @@ export default function App() {
     case "landing":
       return (
         <LandingPage
-          onTryFree={goToLogin}
-          onLoginClick={goToLogin}
+          onGoToLogin={goToLogin}
+          onGoToRegister={goToRegister}
         />
       );
-
     case "login":
       return (
         <LoginPage
