@@ -1,98 +1,135 @@
-import React, { useState } from "react";
+import React, { useState, FormEvent } from "react";
 
 type LoginPageProps = {
-  onGoRegister: () => void;
+  onLoginSuccess: () => void;
+  onGoToRegister: () => void;
   onGoToForgot: () => void;
-  onSuccessLogin: () => void;
 };
 
-export function LoginPage({ onGoRegister, onGoToForgot, onSuccessLogin }: LoginPageProps) {
-  const [passwordVisible, setPasswordVisible] = useState(false);
+const LoginPage: React.FC<LoginPageProps> = ({
+  onLoginSuccess,
+  onGoToRegister,
+  onGoToForgot,
+}) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Позже здесь появится реальный запрос к backend /auth/login
-    onSuccessLogin(); // <<< ДОБАВИЛ ВЫЗОВ
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault();
+
+    // Простая демо-проверка: оба поля должны быть не пустыми.
+    if (!email.trim() || !password.trim()) {
+      setError("Пожалуйста, заполните e-mail и пароль.");
+      return;
+    }
+
+    setError(null);
+
+    // В реальной версии здесь будет запрос к backend.
+    // Сейчас сразу считаем вход успешным и переводим в Workspace.
+    onLoginSuccess();
   };
 
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h1 className="auth-title">Вход в аккаунт</h1>
-        <p className="auth-subtitle">Добро пожаловать в LegalAI</p>
+        <div className="auth-logo-block">
+          <img src="/logo.png" alt="LEGALAI" className="auth-logo" />
+          <div className="auth-logo-text">
+            <div className="auth-logo-title">LEGALAI</div>
+            <div className="auth-logo-subtitle">
+              Юридический ИИ — «Татьяна»
+            </div>
+          </div>
+        </div>
+
+        <h1 className="auth-title">Вход в личный кабинет</h1>
+        <p className="auth-subtitle">
+          Введите e-mail и пароль, чтобы продолжить работу с делами и
+          документами.
+        </p>
+
+        {error && <div className="auth-error">{error}</div>}
 
         <form className="auth-form" onSubmit={handleSubmit}>
-
-          {/* Email */}
           <div className="auth-field">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="login-email" className="auth-label">
+              E-mail
+            </label>
             <input
-              id="email"
+              id="login-email"
               type="email"
               className="auth-input"
-              placeholder="Введите email"
-              required
+              placeholder="name@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
-          {/* Пароль + Показать */}
           <div className="auth-field">
-            <div className="auth-label-row">
-              <label htmlFor="password">Пароль</label>
+            <label htmlFor="login-password" className="auth-label">
+              Пароль
+            </label>
+            <div className="auth-password-wrapper">
+              <input
+                id="login-password"
+                type={showPassword ? "text" : "password"}
+                className="auth-input auth-input-password"
+                placeholder="Ваш пароль"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
               <button
                 type="button"
                 className="password-toggle"
-                onClick={() => setPasswordVisible((v) => !v)}
+                onClick={() => setShowPassword((prev) => !prev)}
               >
-                {passwordVisible ? "Скрыть" : "Показать"}
+                {showPassword ? "Скрыть" : "Показать"}
               </button>
             </div>
-
-            <input
-              id="password"
-              type={passwordVisible ? "text" : "password"}
-              className="auth-input"
-              placeholder="Введите пароль"
-              required
-            />
           </div>
 
-          {/* Запомнить меня */}
           <div className="auth-row-between">
             <label className="auth-remember">
-              <input type="checkbox" className="auth-checkbox" />
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
               <span>Запомнить меня</span>
             </label>
-          </div>
 
-          {/* Забыли пароль */}
-          <div className="auth-forgot">
-            <button type="button" className="auth-link-button" onClick={onGoToForgot}>
+            <button
+              type="button"
+              className="auth-forgot"
+              onClick={onGoToForgot}
+            >
               Забыли пароль?
             </button>
           </div>
 
-          {/* Кнопка Войти */}
           <button type="submit" className="auth-primary-button">
             Войти
           </button>
         </form>
 
-        {/* Низ: ссылка на регистрацию */}
-        <p className="auth-footer-text">
+        <div className="auth-footer-text">
           Нет аккаунта?{" "}
           <button
             type="button"
             className="auth-link-button"
-            onClick={onGoRegister}
+            onClick={onGoToRegister}
           >
             Зарегистрироваться
           </button>
-        </p>
+        </div>
       </div>
     </div>
   );
-}
+};
 
 export default LoginPage;
 
