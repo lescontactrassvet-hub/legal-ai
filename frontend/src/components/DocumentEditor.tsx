@@ -133,3 +133,5 @@ export function DocumentEditor({ value, onChange }: DocumentEditorProps) {
   );
 }
 
+export default DocumentEditor;
+
