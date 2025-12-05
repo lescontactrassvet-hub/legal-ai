@@ -23,5 +23,31 @@
 
   <!-- Theme Color -->
   <meta name="theme-color" content="#111827" />
+  
+<!-- Debug: показываем JS-ошибку на странице вместо белого экрана -->
+  <script>
+    window.addEventListener("error", function (event) {
+      document.body.innerHTML =
+        '<pre style="background:#050812;color:#ff6b81;padding:16px;white-space:pre-wrap;font-family:monospace;font-size:14px;">'
+        + 'JS ERROR:\n'
+        + event.message + '\n'
+        + (event.filename || '') + ':' + (event.lineno || 0) + ':' + (event.colno || 0)
+        + '</pre>';
+    });
+
+    window.addEventListener("unhandledrejection", function (event) {
+      var msg = "";
+      if (event.reason && event.reason.stack) {
+        msg = event.reason.stack;
+      } else {
+        msg = String(event.reason);
+      }
+      document.body.innerHTML =
+        '<pre style="background:#050812;color:#ff6b81;padding:16px;white-space:pre-wrap;font-family:monospace;font-size:14px;">'
+        + 'UNHANDLED PROMISE:\n'
+        + msg
+        + '</pre>';
+    });
+  </script>
 </head>
 
