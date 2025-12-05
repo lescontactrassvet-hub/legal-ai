@@ -25,29 +25,18 @@
   <meta name="theme-color" content="#111827" />
   
 <!-- Debug: показываем JS-ошибку на странице вместо белого экрана -->
-  <script>
-    window.addEventListener("error", function (event) {
-      document.body.innerHTML =
-        '<pre style="background:#050812;color:#ff6b81;padding:16px;white-space:pre-wrap;font-family:monospace;font-size:14px;">'
-        + 'JS ERROR:\n'
-        + event.message + '\n'
-        + (event.filename || '') + ':' + (event.lineno || 0) + ':' + (event.colno || 0)
-        + '</pre>';
-    });
-
-    window.addEventListener("unhandledrejection", function (event) {
-      var msg = "";
-      if (event.reason && event.reason.stack) {
-        msg = event.reason.stack;
-      } else {
-        msg = String(event.reason);
-      }
-      document.body.innerHTML =
-        '<pre style="background:#050812;color:#ff6b81;padding:16px;white-space:pre-wrap;font-family:monospace;font-size:14px;">'
-        + 'UNHANDLED PROMISE:\n'
-        + msg
-        + '</pre>';
-    });
   </script>
 </head>
+
+<body style="background:#050812; color:#ffffff; margin:0; padding:0;">
+  <div id="root" style="padding:20px; font-size:18px; font-family:Arial, sans-serif;">
+    LEGALAI загружается...<br><br>
+    Если вы видите этот текст дольше 5 секунд — React не запустился.<br>
+    Это означает, что основной JS-бандл не загрузился или не запустился.<br>
+  </div>
+
+  <!-- Реальный React-бандл -->
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>
 
