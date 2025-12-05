@@ -171,9 +171,11 @@ backend/
     test_smoke.py
 frontend/
   tsconfig.node.json
+  dist.tar.gz
   index.html
   package-lock.json
   README.md
+  legal-ai_backup_20251204_213556.tar.gz
   eslint.config.js
   package.json
   vite.config.ts
