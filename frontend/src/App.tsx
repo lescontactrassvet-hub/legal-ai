@@ -1,24 +1,29 @@
-import React from "react";
+import React, { useState } from "react";
 
-export default function App() {
+function PageStub({ name }: { name: string }) {
   return (
     <div
       style={{
         backgroundColor: "#050812",
         minHeight: "100vh",
         color: "#ffffff",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontFamily: "Arial, sans-serif",
-        fontSize: "22px",
+        padding: "20px",
+        fontSize: "26px",
         textAlign: "center",
-        padding: "16px",
       }}
     >
-      LEGALAI TEST SCREEN<br />
-      React загружен успешно!
+      Страница: {name}
     </div>
   );
+}
+
+export default function App() {
+  const [page, setPage] = useState<"landing" | "login" | "workspace">("landing");
+
+  if (page === "landing") return <PageStub name="Landing" />;
+  if (page === "login") return <PageStub name="Login" />;
+  if (page === "workspace") return <PageStub name="Workspace" />;
+
+  return null;
 }
 
