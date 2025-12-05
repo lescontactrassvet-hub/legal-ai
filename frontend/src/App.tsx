@@ -16,11 +16,8 @@ export default function App() {
         padding: "16px",
       }}
     >
-      LEGALAI TEST:
-      <br />
-      Фронтенд загружен и React работает.
-      <br />
-      Если вы видите этот экран — проблема была в старом App.tsx / страницах.
+      LEGALAI TEST SCREEN<br />
+      React загружен успешно!
     </div>
   );
 }

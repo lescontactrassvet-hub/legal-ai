@@ -1,42 +1,40 @@
-<head>
-  <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LEGALAI — Юридический ИИ-ассистент «Татьяна»</title>
 
-  <!-- SEO -->
-  <title>LEGALAI — Юридический ИИ-ассистент «Татьяна»</title>
-  <meta name="description" content="Юридический ИИ-ассистент Татьяна помогает подготовить проекты юридических документов, объясняет законы простым языком и создаёт структурированные черновики исков, заявлений и договоров.">
-  <meta name="keywords" content="юридический ии, ИИ юрист, татьяна, legalai, подготовка документов, иски, заявления, договоры, генерация документов, онлайн юридическая помощь">
+    <!-- Debug: Показываем любые JS-ошибки -->
+    <script>
+      window.addEventListener("error", function (event) {
+        document.body.innerHTML =
+          '<pre style="background:#050812;color:#ff6b81;padding:16px;white-space:pre-wrap;">'
+          + 'JS ERROR:\n' + event.message + '\n'
+          + (event.filename || '') + ':' + (event.lineno || 0) + ':' + (event.colno || 0)
+          + '</pre>';
+      });
 
-  <!-- Open Graph -->
-  <meta property="og:title" content="LEGALAI — Юридический ИИ-ассистент «Татьяна»" />
-  <meta property="og:description" content="Подготовка проектов юридических документов, объяснение закона простым языком, связка чата и редактора. Попробуйте LEGALAI бесплатно." />
-  <meta property="og:type" content="website" />
-  <meta property="og:image" content="/logo.png" />
-  <meta property="og:url" content="https://app.legalai.su" />
+      window.addEventListener("unhandledrejection", function (event) {
+        var msg = event.reason && event.reason.stack
+          ? event.reason.stack
+          : String(event.reason);
 
-  <!-- Twitter -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="LEGALAI — Юридический ИИ-ассистент «Татьяна»" />
-  <meta name="twitter:description" content="Подготовка проектов документов и консультационная помощь на базе ИИ." />
-  <meta name="twitter:image" content="/logo.png" />
+        document.body.innerHTML =
+          '<pre style="background:#050812;color:#ff6b81;padding:16px;white-space:pre-wrap;">'
+          + 'UNHANDLED PROMISE:\n' + msg + '</pre>';
+      });
+    </script>
+  </head>
 
-  <!-- Theme Color -->
-  <meta name="theme-color" content="#111827" />
-  
-<!-- Debug: показываем JS-ошибку на странице вместо белого экрана -->
-  </script>
-</head>
+  <body style="background:#050812;color:#ffffff;margin:0;padding:0;">
+    <div id="root" style="padding:20px;font-size:20px;font-family:Arial;">
+      LEGALAI загружается...<br><br>
+      Если вы видите этот текст — React не запустился.
+    </div>
 
-<body style="background:#050812; color:#ffffff; margin:0; padding:0;">
-  <div id="root" style="padding:20px; font-size:18px; font-family:Arial, sans-serif;">
-    LEGALAI загружается...<br><br>
-    Если вы видите этот текст дольше 5 секунд — React не запустился.<br>
-    Это означает, что основной JS-бандл не загрузился или не запустился.<br>
-  </div>
-
-  <!-- Реальный React-бандл -->
-  <script type="module" src="/src/main.tsx"></script>
-</body>
+    <!-- React Entry -->
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
 
