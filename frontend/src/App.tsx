@@ -1,4 +1,5 @@
 import { useState } from "react";
+import "./App.css";
 
 import LandingPage from "./pages/landing";
 import WorkspacePage from "./pages/workspace";
