@@ -984,16 +984,9 @@ input.auth-input:-webkit-autofill:focus {
   }
 }
 
-html, body {
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-}
-
 /* ======================== */
-/*       LANDING PAGE       */
+/* LANDING PAGE             */
 /* ======================== */
-
 .landing-root {
   display: flex;
   flex-direction: column;
@@ -1002,31 +995,33 @@ html, body {
   color: #ffffff;
   min-height: 100vh;
   font-family: "Inter", sans-serif;
-  width: 100%;
-  overflow-x: hidden;
+  padding: 0;                /* убрали боковой отступ, центрируем по экрану */
+  box-sizing: border-box;    /* паддинги не расширяют ширину */
+  overflow-x: hidden;        /* страховка от горизонтального скролла */
 }
 
 /* HEADER */
 
 .landing-header {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1160px;
   margin: 0 auto;
   padding: 20px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 14px;
+  gap: 18px;
+  box-sizing: border-box;
 }
 
 .landing-header-left {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
 }
 
 .landing-logo {
-  height: 48px;
+  height: 72px; /* логотип покрупнее, но без выхода за экран */
 }
 
 .landing-title-block {
@@ -1036,30 +1031,29 @@ html, body {
 }
 
 .landing-title {
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 700;
   margin: 0;
 }
 
 .landing-subtitle {
   margin: 0;
-  font-size: 14px;
-  opacity: 0.8;
+  font-size: 15px;
+  opacity: 0.85;
 }
 
 .landing-header-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 /* BUTTONS */
 
 .landing-btn-primary,
 .landing-btn-secondary {
-  padding: 10px 18px;
+  padding: 10px 20px;
   border-radius: 8px;
-  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   transition: 0.25s;
@@ -1099,12 +1093,13 @@ html, body {
 
 .landing-hero {
   width: 100%;
-  max-width: 1280px;
-  margin: 40px auto;
+  max-width: 1160px;
+  margin: 32px auto;
   display: flex;
   flex-wrap: wrap;
   gap: 40px;
-  padding: 0 24px 24px;
+  padding: 0 8px 32px;
+  box-sizing: border-box;
 }
 
 .landing-hero-text {
@@ -1114,24 +1109,26 @@ html, body {
 .landing-hero-title {
   font-size: 32px;
   font-weight: 700;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .landing-hero-desc {
   font-size: 18px;
   line-height: 1.6;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
+
+/* список преимуществ */
 
 .landing-hero-list {
   list-style: disc;
   padding-left: 20px;
-  margin: 0 0 18px;
+  margin: 0 0 20px;
   font-size: 15px;
 }
 
 .landing-hero-list li + li {
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .landing-hero-buttons {
@@ -1141,7 +1138,7 @@ html, body {
   align-items: center;
 }
 
-/* Картинка справа */
+/* Картинка справа (макет чата и документа) */
 
 .landing-hero-image {
   flex: 1 1 280px;
@@ -1159,8 +1156,7 @@ html, body {
   border: 1px solid rgba(135, 67, 255, 0.7);
 }
 
-.landing-hero-mockup-chat,
-.landing-hero-mockup-doc {
+.landing-hero-mockup-chat {
   background: rgba(5, 8, 18, 0.9);
   border-radius: 14px;
   padding: 10px 12px;
@@ -1169,13 +1165,22 @@ html, body {
   margin-bottom: 10px;
 }
 
+.landing-hero-mockup-doc {
+  background: rgba(5, 8, 18, 0.9);
+  border-radius: 14px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 /* ОБЩИЕ НИЖНИЕ СЕКЦИИ */
 
 .landing-section {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1160px;
   margin: 0 auto 32px;
-  padding: 0 24px;
+  padding: 0 8px;
+  box-sizing: border-box;
 }
 
 .landing-section-title {
@@ -1199,13 +1204,13 @@ html, body {
   border-radius: 16px;
   padding: 14px 16px;
   border: 1px solid #374151;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.5;
 }
 
 .landing-card h3 {
-  font-size: 16px;
-  margin-bottom: 8px;
+  font-size: 18px;
+  margin-bottom: 6px;
 }
 
 /* Шаги */
@@ -1239,28 +1244,30 @@ html, body {
 
 .landing-section-important {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1160px;
   margin: 0 auto 32px;
   padding: 16px 24px;
   border-radius: 18px;
   background: radial-gradient(circle at top left, #1f2937, #050812 60%);
   border: 1px solid rgba(255, 204, 128, 0.4);
+  box-sizing: border-box;
 }
 
 .landing-important-text {
   font-size: 14px;
   line-height: 1.6;
-  color: #fef3c7;
+  color: #ffe3c7;
 }
 
 /* CTA */
 
 .landing-section-cta {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1160px;
   margin: 0 auto 28px;
   padding: 0 24px 24px;
   text-align: center;
+  box-sizing: border-box;
 }
 
 .landing-section-cta h2 {
@@ -1278,7 +1285,7 @@ html, body {
 
 .landing-footer {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1160px;
   margin: 0 auto;
   padding: 16px 24px 24px;
   border-top: 1px solid #1f2937;
@@ -1287,6 +1294,7 @@ html, body {
   gap: 8px;
   font-size: 12px;
   color: #9ca3af;
+  box-sizing: border-box;
 }
 
 .landing-footer-links {
@@ -1307,57 +1315,74 @@ html, body {
 
 /* АДАПТИВ */
 
+/* планшеты и выше */
 @media (min-width: 768px) {
   .landing-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
   .landing-grid-3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
   .landing-steps {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
   .landing-footer {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    gap: 6px;
-  }
-  /* Десктоп: чуть уменьшаем текст в карточках, увеличиваем заголовки секций */
-  .landing-card {
-    font-size: 14px;
-  }
-  .landing-card h3 {
-    font-size: 15px;
-  }
-  .landing-section-title {
-    font-size: 21px;
   }
 }
 
-/* мобильные — всё в одну колонку и компактнее */
+/* мобильные */
 @media (max-width: 767px) {
   .landing-header {
     flex-direction: column;
     align-items: flex-start;
   }
+
   .landing-header-right {
     align-self: stretch;
     justify-content: flex-start;
   }
+
   .landing-hero {
     margin-top: 24px;
     gap: 24px;
   }
+
   .landing-hero-title {
     font-size: 28px;
   }
-  .landing-section,
-  .landing-section-important,
-  .landing-section-cta,
-  .landing-footer {
-    padding: 0 16px 24px;
-    margin: 0 auto 24px;
+
+  .landing-hero {
+    padding-bottom: 24px;
+  }
+
+  .landing-card {
+    font-size: 15px;
+  }
+}
+
+/* крупные экраны — выравниваем размеры текста */
+@media (min-width: 1024px) {
+  /* карточки из блока на скрине — делаем чуть спокойнее */
+  .landing-card h3 {
+    font-size: 18px;
+  }
+
+  .landing-card p {
+    font-size: 16px;
+  }
+
+  /* остальной текст лендинга чуть крупнее и ровнее */
+  .landing-hero-desc,
+  .landing-section-title,
+  .landing-important-text,
+  .landing-section-cta p {
+    font-size: 18px;
   }
 }
 
