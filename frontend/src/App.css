@@ -991,33 +991,38 @@ input.auth-input:-webkit-autofill:focus {
 .landing-root {
   display: flex;
   flex-direction: column;
+  align-items: stretch;
   background: #0d1117;
   color: #ffffff;
   min-height: 100vh;
   font-family: "Inter", sans-serif;
+  padding: 0 16px;              /* чтобы контент не упирался в края */
+  box-sizing: border-box;       /* паддинги не расширяют ширину */
+  overflow-x: hidden;           /* страховка от горизонтального скролла */
 }
 
 /* HEADER */
 
 .landing-header {
   width: 100%;
-  max-width: 1120px; /* было 1280px — ближе к центру */
+  max-width: 1160px;
   margin: 0 auto;
-  padding: 16px 24px; /* было 20px */
+  padding: 20px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 14px;
+  gap: 18px;
+  box-sizing: border-box;
 }
 
 .landing-header-left {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
 }
 
 .landing-logo {
-  height: 60px; /* было 48px — примерно +25% */
+  height: 72px; /* логотип покрупнее, но без выхода за экран */
 }
 
 .landing-title-block {
@@ -1027,32 +1032,29 @@ input.auth-input:-webkit-autofill:focus {
 }
 
 .landing-title {
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 700;
   margin: 0;
 }
 
 .landing-subtitle {
   margin: 0;
-  font-size: 14px;
-  opacity: 0.8;
+  font-size: 15px;
+  opacity: 0.85;
 }
 
 .landing-header-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 /* BUTTONS */
 
 .landing-btn-primary,
 .landing-btn-secondary {
-  padding: 10px 18px;
+  padding: 10px 20px;
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   transition: 0.25s;
@@ -1092,12 +1094,13 @@ input.auth-input:-webkit-autofill:focus {
 
 .landing-hero {
   width: 100%;
-  max-width: 1120px;
-  margin: 32px auto 40px;
+  max-width: 1160px;
+  margin: 32px auto;
   display: flex;
   flex-wrap: wrap;
   gap: 40px;
-  padding: 0 24px 24px;
+  padding: 0 8px 32px;
+  box-sizing: border-box;
 }
 
 .landing-hero-text {
@@ -1105,28 +1108,28 @@ input.auth-input:-webkit-autofill:focus {
 }
 
 .landing-hero-title {
-  font-size: 30px; /* было 36px */
+  font-size: 32px;
   font-weight: 700;
-  margin-bottom: 14px;
-}
-
-.landing-hero-desc {
-  font-size: 16px; /* было 18px */
-  line-height: 1.6;
   margin-bottom: 16px;
 }
 
-/* Список преимуществ */
+.landing-hero-desc {
+  font-size: 18px;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+/* список преимуществ */
 
 .landing-hero-list {
   list-style: disc;
   padding-left: 20px;
-  margin: 0 0 18px;
+  margin: 0 0 20px;
   font-size: 15px;
 }
 
 .landing-hero-list li + li {
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .landing-hero-buttons {
@@ -1136,7 +1139,7 @@ input.auth-input:-webkit-autofill:focus {
   align-items: center;
 }
 
-/* Картинка справа */
+/* Картинка справа (макет чата и документа) */
 
 .landing-hero-image {
   flex: 1 1 280px;
@@ -1175,14 +1178,15 @@ input.auth-input:-webkit-autofill:focus {
 
 .landing-section {
   width: 100%;
-  max-width: 1120px;
+  max-width: 1160px;
   margin: 0 auto 32px;
-  padding: 0 24px;
+  padding: 0 8px;
+  box-sizing: border-box;
 }
 
 .landing-section-title {
   font-size: 20px;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 16px;
 }
 
@@ -1206,7 +1210,7 @@ input.auth-input:-webkit-autofill:focus {
 }
 
 .landing-card h3 {
-  font-size: 15px;
+  font-size: 18px;
   margin-bottom: 6px;
 }
 
@@ -1241,28 +1245,30 @@ input.auth-input:-webkit-autofill:focus {
 
 .landing-section-important {
   width: 100%;
-  max-width: 1120px;
+  max-width: 1160px;
   margin: 0 auto 32px;
   padding: 16px 24px;
   border-radius: 18px;
   background: radial-gradient(circle at top left, #1f2937, #050812 60%);
   border: 1px solid rgba(255, 204, 128, 0.4);
+  box-sizing: border-box;
 }
 
 .landing-important-text {
   font-size: 14px;
   line-height: 1.6;
-  color: #fef3c7;
+  color: #ffe3c7;
 }
 
 /* CTA */
 
 .landing-section-cta {
   width: 100%;
-  max-width: 1120px;
+  max-width: 1160px;
   margin: 0 auto 28px;
   padding: 0 24px 24px;
   text-align: center;
+  box-sizing: border-box;
 }
 
 .landing-section-cta h2 {
@@ -1280,7 +1286,7 @@ input.auth-input:-webkit-autofill:focus {
 
 .landing-footer {
   width: 100%;
-  max-width: 1120px;
+  max-width: 1160px;
   margin: 0 auto;
   padding: 16px 24px 24px;
   border-top: 1px solid #1f2937;
@@ -1289,6 +1295,7 @@ input.auth-input:-webkit-autofill:focus {
   gap: 8px;
   font-size: 12px;
   color: #9ca3af;
+  box-sizing: border-box;
 }
 
 .landing-footer-links {
@@ -1309,6 +1316,7 @@ input.auth-input:-webkit-autofill:focus {
 
 /* АДАПТИВ */
 
+/* планшеты и выше */
 @media (min-width: 768px) {
   .landing-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1329,16 +1337,11 @@ input.auth-input:-webkit-autofill:focus {
   }
 }
 
+/* мобильные */
 @media (max-width: 767px) {
-  /* чтобы ничего не вылезало за экран */
-  .landing-root {
-    overflow-x: hidden;
-  }
-
   .landing-header {
     flex-direction: column;
     align-items: flex-start;
-    padding: 16px 16px;
   }
 
   .landing-header-right {
@@ -1348,26 +1351,39 @@ input.auth-input:-webkit-autofill:focus {
 
   .landing-hero {
     margin-top: 24px;
-    gap: 20px;
-    padding: 0 16px 24px;
+    gap: 24px;
   }
 
   .landing-hero-title {
-    font-size: 24px; /* чуть меньше на мобилке */
+    font-size: 28px;
   }
 
-  .landing-hero-desc {
-    font-size: 15px;
-  }
-
-  .landing-section,
-  .landing-section-cta,
-  .landing-section-important {
-    padding: 0 16px 24px;
+  .landing-hero {
+    padding-bottom: 24px;
   }
 
   .landing-card {
-    font-size: 14px;
+    font-size: 15px;
+  }
+}
+
+/* крупные экраны — выравниваем размеры текста */
+@media (min-width: 1024px) {
+  /* карточки из блока на скрине — делаем чуть спокойнее */
+  .landing-card h3 {
+    font-size: 18px;
+  }
+
+  .landing-card p {
+    font-size: 16px;
+  }
+
+  /* остальной текст лендинга чуть крупнее и ровнее */
+  .landing-hero-desc,
+  .landing-section-title,
+  .landing-important-text,
+  .landing-section-cta p {
+    font-size: 18px;
   }
 }
 
