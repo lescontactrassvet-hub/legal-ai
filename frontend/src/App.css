@@ -1001,9 +1001,9 @@ input.auth-input:-webkit-autofill:focus {
 
 .landing-header {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1120px; /* было 1280px — ближе к центру */
   margin: 0 auto;
-  padding: 20px 24px;
+  padding: 16px 24px; /* было 20px */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1017,7 +1017,7 @@ input.auth-input:-webkit-autofill:focus {
 }
 
 .landing-logo {
-  height: 48px;
+  height: 60px; /* было 48px — примерно +25% */
 }
 
 .landing-title-block {
@@ -1050,6 +1050,8 @@ input.auth-input:-webkit-autofill:focus {
 .landing-btn-secondary {
   padding: 10px 18px;
   border-radius: 8px;
+  display: flex;
+  align-items: center;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -1090,8 +1092,8 @@ input.auth-input:-webkit-autofill:focus {
 
 .landing-hero {
   width: 100%;
-  max-width: 1280px;
-  margin: 40px auto;
+  max-width: 1120px;
+  margin: 32px auto 40px;
   display: flex;
   flex-wrap: wrap;
   gap: 40px;
@@ -1103,13 +1105,13 @@ input.auth-input:-webkit-autofill:focus {
 }
 
 .landing-hero-title {
-  font-size: 36px;
+  font-size: 30px; /* было 36px */
   font-weight: 700;
   margin-bottom: 14px;
 }
 
 .landing-hero-desc {
-  font-size: 18px;
+  font-size: 16px; /* было 18px */
   line-height: 1.6;
   margin-bottom: 16px;
 }
@@ -1152,8 +1154,7 @@ input.auth-input:-webkit-autofill:focus {
   border: 1px solid rgba(135, 67, 255, 0.7);
 }
 
-.landing-hero-mockup-chat,
-.landing-hero-mockup-doc {
+.landing-hero-mockup-chat {
   background: rgba(5, 8, 18, 0.9);
   border-radius: 14px;
   padding: 10px 12px;
@@ -1162,11 +1163,19 @@ input.auth-input:-webkit-autofill:focus {
   margin-bottom: 10px;
 }
 
+.landing-hero-mockup-doc {
+  background: rgba(5, 8, 18, 0.9);
+  border-radius: 14px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 /* ОБЩИЕ НИЖНИЕ СЕКЦИИ */
 
 .landing-section {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1120px;
   margin: 0 auto 32px;
   padding: 0 24px;
 }
@@ -1232,7 +1241,7 @@ input.auth-input:-webkit-autofill:focus {
 
 .landing-section-important {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1120px;
   margin: 0 auto 32px;
   padding: 16px 24px;
   border-radius: 18px;
@@ -1250,7 +1259,7 @@ input.auth-input:-webkit-autofill:focus {
 
 .landing-section-cta {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1120px;
   margin: 0 auto 28px;
   padding: 0 24px 24px;
   text-align: center;
@@ -1271,7 +1280,7 @@ input.auth-input:-webkit-autofill:focus {
 
 .landing-footer {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 16px 24px 24px;
   border-top: 1px solid #1f2937;
@@ -1321,9 +1330,15 @@ input.auth-input:-webkit-autofill:focus {
 }
 
 @media (max-width: 767px) {
+  /* чтобы ничего не вылезало за экран */
+  .landing-root {
+    overflow-x: hidden;
+  }
+
   .landing-header {
     flex-direction: column;
     align-items: flex-start;
+    padding: 16px 16px;
   }
 
   .landing-header-right {
@@ -1333,11 +1348,26 @@ input.auth-input:-webkit-autofill:focus {
 
   .landing-hero {
     margin-top: 24px;
-    gap: 24px;
+    gap: 20px;
+    padding: 0 16px 24px;
   }
 
   .landing-hero-title {
-    font-size: 28px;
+    font-size: 24px; /* чуть меньше на мобилке */
+  }
+
+  .landing-hero-desc {
+    font-size: 15px;
+  }
+
+  .landing-section,
+  .landing-section-cta,
+  .landing-section-important {
+    padding: 0 16px 24px;
+  }
+
+  .landing-card {
+    font-size: 14px;
   }
 }
 
