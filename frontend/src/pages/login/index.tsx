@@ -1,4 +1,4 @@
-import React, { useState, FormEvent } from "react";
+import React, { useState } from "react";
 
 type LoginPageProps = {
   onLoginSuccess: () => void;
@@ -6,94 +6,94 @@ type LoginPageProps = {
   onGoToForgot: () => void;
 };
 
-const LoginPage: React.FC<LoginPageProps> = ({
+export default function LoginPage({
   onLoginSuccess,
   onGoToRegister,
   onGoToForgot,
-}) => {
+}: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    // Простая демо-проверка: оба поля должны быть не пустыми.
-    if (!email.trim() || !password.trim()) {
-      setError("Пожалуйста, заполните e-mail и пароль.");
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedEmail || !trimmedPassword) {
+      // В демо-версии просто alert, позже заменим на нормальные ошибки
+      alert("Пожалуйста, введите логин и пароль.");
       return;
     }
 
-    setError(null);
+    setIsSubmitting(true);
 
-    // В реальной версии здесь будет запрос к backend.
-    // Сейчас сразу считаем вход успешным и переводим в Workspace.
-    onLoginSuccess();
+    // Пока логика демо: считаем, что логин всегда успешный
+    // Здесь позже появится реальный запрос к backend
+    setTimeout(() => {
+      setIsSubmitting(false);
+      onLoginSuccess();
+    }, 500);
+  };
+
+  const handleTogglePassword = () => {
+    setShowPassword((prev) => !prev);
   };
 
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <div className="auth-logo-block">
-          <img src="/logo.png" alt="LEGALAI" className="auth-logo" />
-          <div className="auth-logo-text">
-            <div className="auth-logo-title">LEGALAI</div>
-            <div className="auth-logo-subtitle">
-              Юридический ИИ — «Татьяна»
-            </div>
-          </div>
-        </div>
+        <h1 className="auth-title">Вход в LEGALAI</h1>
+        <p className="auth-subtitle">Юридический ИИ-ассистент «Татьяна»</p>
 
-        <h1 className="auth-title">Вход в личный кабинет</h1>
-        <p className="auth-subtitle">
-          Введите e-mail и пароль, чтобы продолжить работу с делами и
-          документами.
-        </p>
-
-        {error && <div className="auth-error">{error}</div>}
-
-        <form className="auth-form" onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="auth-form">
+          {/* E-mail / Логин */}
           <div className="auth-field">
-            <label htmlFor="login-email" className="auth-label">
+            <label className="auth-label" htmlFor="login-email">
               E-mail
             </label>
             <input
               id="login-email"
               type="email"
               className="auth-input"
-              placeholder="name@example.com"
+              placeholder="example@domain.ru"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
             />
           </div>
 
+          {/* Пароль + кнопка «Показать» */}
           <div className="auth-field">
-            <label htmlFor="login-password" className="auth-label">
+            <label className="auth-label" htmlFor="login-password">
               Пароль
             </label>
             <div className="auth-password-wrapper">
               <input
                 id="login-password"
                 type={showPassword ? "text" : "password"}
-                className="auth-input auth-input-password"
-                placeholder="Ваш пароль"
+                className="auth-input"
+                placeholder="Введите пароль"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
               />
               <button
                 type="button"
                 className="password-toggle"
-                onClick={() => setShowPassword((prev) => !prev)}
+                onClick={handleTogglePassword}
               >
                 {showPassword ? "Скрыть" : "Показать"}
               </button>
             </div>
           </div>
 
+          {/* Запомнить меня / Забыли пароль? */}
           <div className="auth-row-between">
-            <label className="auth-remember">
+            <label className="auth-checkbox">
               <input
                 type="checkbox"
                 checked={rememberMe}
@@ -111,12 +111,18 @@ const LoginPage: React.FC<LoginPageProps> = ({
             </button>
           </div>
 
-          <button type="submit" className="auth-primary-button">
-            Войти
+          {/* Кнопка Войти */}
+          <button
+            type="submit"
+            className="auth-primary-button"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Входим..." : "Войти"}
           </button>
         </form>
 
-        <div className="auth-footer-text">
+        {/* Низ карточки — регистрация */}
+        <p className="auth-footer-text">
           Нет аккаунта?{" "}
           <button
             type="button"
@@ -125,11 +131,29 @@ const LoginPage: React.FC<LoginPageProps> = ({
           >
             Зарегистрироваться
           </button>
+        </p>
+
+        {/* Рекламный блок для сторонних источников */}
+        <div
+          className="auth-footer-text"
+          style={{ marginTop: "16px", fontSize: "12px", opacity: 0.85 }}
+        >
+          <div style={{ marginBottom: "4px" }}>
+            Рекламный блок сторонних сервисов:
+          </div>
+          <ul style={{ listStyle: "disc", paddingLeft: "18px", margin: 0 }}>
+            <li>
+              Здесь будет размещаться информация о партнёрских сервисах
+              LEGALAI.
+            </li>
+            <li>
+              Позже сюда можно добавить ссылки на сторонние источники и их
+              логотипы.
+            </li>
+          </ul>
         </div>
       </div>
     </div>
   );
-};
-
-export default LoginPage;
+}
 
