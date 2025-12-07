@@ -3,7 +3,6 @@ import React, {
   useEffect,
   useRef,
   ChangeEvent,
-  KeyboardEvent,
 } from "react";
 import DocumentEditor from "../../components/DocumentEditor";
 
@@ -47,7 +46,7 @@ function getTatianaDemoReply(mode: WorkspaceMode, userText: string): string {
   return [
     "Переключаемся в профессиональный режим.",
     "",
-    "В полной версии здесь будет структурированный юридический анализ с ссылками на нормы права, судебную практику и готовыми фрагментами документов.",
+    "В полной версии здесь будет структурированный юридический анализ с ссылками на нормы права, судебной практики и готовыми фрагментами документов.",
     "",
     "Обычно ответ будет включать:",
     "— вводную часть (кто, когда и при каких обстоятельствах);",
@@ -76,8 +75,8 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const [mode, setMode] = useState<WorkspaceMode>("simple");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState<string>("");
-  const [activeSidePanel, setActiveSidePanel] = useState<SidePanel>("cases");
   const [documentHtml, setDocumentHtml] = useState<string>("");
+  const [activeSidePanel, setActiveSidePanel] = useState<SidePanel>("cases");
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -104,13 +103,6 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
     setInput(event.target.value);
   };
 
-  const handleInputKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      void handleSend();
-    }
-  };
-
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -130,7 +122,7 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
 
     const template = [
       "<h2>Черновой проект документа</h2>",
-      "<p>Ниже — базовая структура юридического документа. Отредактируйте её с учётом вашей ситуации или попросите «Татьяну» доработать текст.</p>",
+      "<p>Ниже — базовая структура юридического документа. Отредактируйте её с учетом вашей ситуации или попросите «Татьяну» доработать текст.</p>",
       "<ol>",
       "<li><strong>Вводная часть.</strong> Кто, когда, где, на основании чего действует.</li>",
       "<li><strong>Обстоятельства.</strong> Краткое и последовательное описание фактов.</li>",
@@ -139,7 +131,6 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
       "</ol>",
       "<p>После редактирования вы сможете сохранить этот черновик как отдельный документ и вернуться к нему в разделе «Документы».</p>",
     ].join("");
-
     setDocumentHtml(template);
   };
 
@@ -167,28 +158,85 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
     }
   };
 
+  const handleNewChat = () => {
+    setMessages([]);
+    setInput("");
+  };
+
+  const handleShowGuide = () => {
+    alert(
+      [
+        "Как пользоваться рабочей страницей LEGALAI:",
+        "",
+        "1. Вверху страницы выберите режим: простой или профессиональный.",
+        "2. В большом поле чата опишите вашу ситуацию и, при необходимости, прикрепите файлы.",
+        "3. «Татьяна» в демо-режиме покажет пример того, как будет выглядеть разбор.",
+        "4. Ниже в редакторе документа вы можете доработать черновик, сохранить его или подготовить к экспорту.",
+        "",
+        "Важно: сейчас это демонстрационная версия без реальных юридических консультаций и сохранения данных на сервере.",
+      ].join("\n")
+    );
+  };
+
   return (
-    <div className="workspace-root">
+    <div
+      className="workspace-root"
+      style={{
+        minHeight: "100vh",
+        background:
+          "radial-gradient(circle at top left, rgba(96, 165, 250, 0.4), transparent 55%), radial-gradient(circle at bottom right, rgba(129, 140, 248, 0.5), transparent 60%), linear-gradient(to bottom, #020617, #02091f)",
+        paddingBottom: "24px",
+      }}
+    >
       <header className="workspace-header">
         <div className="workspace-header-inner">
           <div className="workspace-logo-block">
-            <img
-              src="/logo.png"
-              alt="LEGALAI"
-              className="workspace-logo"
-            />
+            <img src="/logo.png" alt="LEGALAI" className="workspace-logo" />
             <div className="workspace-logo-text">
-              <div className="workspace-logo-title">LEGALAI</div>
-              <div className="workspace-logo-subtitle">
+              <div
+                className="workspace-logo-title"
+                style={{
+                  fontSize: "20px",
+                  letterSpacing: "0.14em",
+                  color: "#a855ff",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  lineHeight: 1.1,
+                }}
+              >
+                LEGALAI
+              </div>
+              <div
+                className="workspace-logo-subtitle"
+                style={{
+                  fontSize: "10px",
+                  opacity: 0.9,
+                }}
+              >
                 Юридический ИИ — «Татьяна»
               </div>
             </div>
           </div>
 
-          <nav className="workspace-nav">
+          <nav
+            className="workspace-nav"
+            style={{
+              marginLeft: "auto", // уводим блок кнопок вправо от логотипа
+              display: "flex",
+              gap: "8px",
+            }}
+          >
             <button
               type="button"
               className="workspace-nav-button workspace-nav-button-primary"
+              style={{
+                borderRadius: 999,
+                padding: "6px 16px",
+                background: "linear-gradient(90deg, #ec4899, #a855f7)",
+                color: "#ffffff",
+                border: "none",
+                fontSize: "11px",
+              }}
             >
               Чат ИИ «Татьяна»
             </button>
@@ -196,6 +244,14 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
               type="button"
               className="workspace-nav-button"
               onClick={handleGoToDocumentsClick}
+              style={{
+                borderRadius: 999,
+                padding: "6px 16px",
+                background: "linear-gradient(90deg, #1f2937, #111827)",
+                color: "#e5e7eb",
+                border: "none",
+                fontSize: "11px",
+              }}
             >
               Документы
             </button>
@@ -203,6 +259,14 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
               type="button"
               className="workspace-nav-button"
               onClick={onGoToProfile}
+              style={{
+                borderRadius: 999,
+                padding: "6px 16px",
+                background: "linear-gradient(90deg, #1f2937, #111827)",
+                color: "#e5e7eb",
+                border: "none",
+                fontSize: "11px",
+              }}
             >
               Профиль
             </button>
@@ -210,6 +274,14 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
               type="button"
               className="workspace-nav-button workspace-nav-button-danger"
               onClick={onLogout}
+              style={{
+                borderRadius: 999,
+                padding: "6px 16px",
+                background: "linear-gradient(90deg, #b91c1c, #7f1d1d)",
+                color: "#fee2e2",
+                border: "none",
+                fontSize: "11px",
+              }}
             >
               Выйти
             </button>
@@ -220,14 +292,32 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
       <main className="workspace-main">
         <section className="workspace-main-left">
           <div className="workspace-chat-header">
-            <h1 className="workspace-chat-title">Чат ИИ «Татьяна»</h1>
-            <p className="workspace-chat-subtitle">
+            <h1
+              className="workspace-chat-title"
+              style={{ fontSize: "17px" }}
+            >
+              Чат ИИ «Татьяна»
+            </h1>
+            <p
+              className="workspace-chat-subtitle"
+              style={{ fontSize: "11px" }}
+            >
               Опишите вашу ситуацию — «Татьяна» поможет понять, как действовать,
               и подготовит основу для юридического документа.
             </p>
           </div>
 
-          <div className="workspace-mode-toggle">
+          {/* ВСЕ ЧЕТЫРЕ КНОПКИ В ОДНОЙ ЛИНИИ */}
+          <div
+            className="workspace-mode-toggle"
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "8px",
+              marginTop: "8px",
+              marginBottom: "8px",
+            }}
+          >
             <button
               type="button"
               className={
@@ -235,6 +325,7 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
                 (mode === "simple" ? " workspace-mode-button-active" : "")
               }
               onClick={() => setMode("simple")}
+              style={{ fontSize: "10px" }}
             >
               Простой режим
             </button>
@@ -245,28 +336,59 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
                 (mode === "pro" ? " workspace-mode-button-active" : "")
               }
               onClick={() => setMode("pro")}
+              style={{ fontSize: "10px" }}
             >
               Профессиональный режим
             </button>
+            <button
+              type="button"
+              className="workspace-mode-button"
+              onClick={handleNewChat}
+              style={{ fontSize: "10px" }}
+            >
+              Новый чат
+            </button>
+            <button
+              type="button"
+              className="workspace-mode-button"
+              onClick={handleShowGuide}
+              style={{ fontSize: "10px" }}
+            >
+              Инструкция
+            </button>
           </div>
 
-          <p className="workspace-placeholder">
+          <p
+            className="workspace-placeholder"
+            style={{ fontSize: "10px" }}
+          >
             В простом режиме «Татьяна» объясняет всё человеческим языком, без
-            сложных терминов. В профессиональном — отвечает структурированно,
-            с правовым анализом.
+            сложных терминов. В профессиональном — отвечает структурированно, с
+            правовым анализом.
           </p>
 
-          <p className="workspace-chat-tip">
+          <p
+            className="workspace-chat-tip"
+            style={{ fontSize: "10px" }}
+          >
             Чем подробнее вы опишете ситуацию (с датами, суммами и ссылками на
             документы), тем точнее «Татьяна» сможет подготовить план действий и
             структуру документов.
           </p>
 
-          <div className="workspace-chat-box">
+          <div
+            className="workspace-chat-box"
+            style={{
+              background:
+                "radial-gradient(circle at top left, rgba(129, 140, 248, 0.35), rgba(24, 16, 64, 0.98))",
+              boxShadow:
+                "0 0 25px rgba(147, 197, 253, 0.45), 0 0 0 1px rgba(168, 85, 247, 0.45)",
+            }}
+          >
             <div className="workspace-chat-messages">
               {messages.length === 0 ? (
                 <div className="workspace-chat-empty">
-                  <p>
+                  <p style={{ fontSize: "11px" }}>
                     Пока здесь нет сообщений. Напишите кратко, в чём ваша
                     ситуация, и «Татьяна» покажет, как будет выглядеть
                     юридический разбор в демо-режиме.
@@ -277,14 +399,19 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
                   <div
                     key={index}
                     className={
-                      "workspace-chat-message workspace-chat-message-" +
-                      msg.from
+                      "workspace-chat-message workspace-chat-message-" + msg.from
                     }
                   >
-                    <div className="workspace-chat-message-author">
+                    <div
+                      className="workspace-chat-message-author"
+                      style={{ fontSize: "9px" }}
+                    >
                       {msg.from === "user" ? "Вы" : "Татьяна"}
                     </div>
-                    <div className="workspace-chat-message-text">
+                    <div
+                      className="workspace-chat-message-text"
+                      style={{ fontSize: "11px" }}
+                    >
                       {msg.text.split("\n").map((line, i) => (
                         <p key={i}>{line}</p>
                       ))}
@@ -295,58 +422,100 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="workspace-chat-input-row">
-              <label className="workspace-chat-attach">
-                📎
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleFileChange}
-                  style={{ display: "none" }}
-                />
-              </label>
+            <div
+              className="workspace-chat-input-row"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+                marginTop: "12px",
+              }}
+            >
               <textarea
                 className="workspace-chat-input"
                 placeholder="Опишите проблему: кто, с кем, что произошло, какие документы есть и чего вы хотите добиться..."
                 rows={4}
                 value={input}
                 onChange={handleInputChange}
-                onKeyDown={handleInputKeyDown}
+                style={{
+                  width: "100%",
+                  fontSize: "10px",
+                  borderRadius: "16px",
+                  fontWeight: 400,
+                  lineHeight: 1.4,
+                }}
               />
-              <button
-                type="button"
-                className="workspace-chat-send-button"
-                onClick={handleSend}
+
+              <div
+                className="workspace-chat-input-actions"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between", // разъезжаемся по краям
+                  width: "100%",
+                  gap: "12px",
+                }}
               >
-                ➤
-              </button>
+                <label
+                  className="workspace-chat-attach"
+                  style={{ fontSize: "10px" }}
+                >
+                  📎 Прикрепить файл
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handleFileChange}
+                    style={{ display: "none" }}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="workspace-chat-send-button"
+                  onClick={handleSend}
+                >
+                  ➤
+                </button>
+              </div>
             </div>
           </div>
         </section>
 
+        {/* ПРАВЫЕ БЛОКИ — АККОРДЕОН */}
         <aside className="workspace-main-right">
-          <div className="workspace-sidepanel">
+          <div
+            className="workspace-sidepanel"
+            style={{
+              background:
+                "radial-gradient(circle at top left, rgba(129, 140, 248, 0.35), rgba(24, 16, 64, 0.98))",
+              boxShadow:
+                "0 0 20px rgba(147, 197, 253, 0.45), 0 0 0 1px rgba(168, 85, 247, 0.45)",
+            }}
+          >
             <div className="workspace-sidepanel-header">
-              <div className="workspace-sidepanel-title">Мои дела</div>
               <button
                 type="button"
-                className="workspace-sidepanel-toggle"
-                onClick={() =>
-                  setActiveSidePanel((prev) =>
-                    prev === "cases" ? "docs" : "cases"
-                  )
-                }
+                onClick={() => setActiveSidePanel("cases")}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#e5e7eb",
+                  textAlign: "left",
+                  width: "100%",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
               >
-                {activeSidePanel === "cases" ? "К документам" : "К делам"}
+                Мои дела
               </button>
             </div>
             {activeSidePanel === "cases" && (
               <div className="workspace-sidepanel-body">
-                <p>
+                <p style={{ fontSize: "10px" }}>
                   Здесь появится список ваших дел с кратким статусом: «на
                   подготовке», «отправлено», «ожидание ответа», «завершено».
                 </p>
-                <p>
+                <p style={{ fontSize: "10px" }}>
                   В полной версии вы сможете быстро переходить к делу, открывать
                   чат и связанные документы в один клик.
                 </p>
@@ -354,26 +523,43 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
             )}
           </div>
 
-          <div className="workspace-sidepanel">
+          <div
+            className="workspace-sidepanel"
+            style={{
+              marginTop: "16px",
+              background:
+                "radial-gradient(circle at top left, rgba(129, 140, 248, 0.35), rgba(24, 16, 64, 0.98))",
+              boxShadow:
+                "0 0 20px rgba(147, 197, 253, 0.45), 0 0 0 1px rgba(168, 85, 247, 0.45)",
+            }}
+          >
             <div className="workspace-sidepanel-header">
-              <div className="workspace-sidepanel-title">Документы</div>
               <button
                 type="button"
-                className="workspace-sidepanel-toggle"
-                onClick={handleGoToDocumentsClick}
+                onClick={() => setActiveSidePanel("docs")}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#e5e7eb",
+                  textAlign: "left",
+                  width: "100%",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
               >
-                Открыть
+                Документы
               </button>
             </div>
             {activeSidePanel === "docs" && (
               <div className="workspace-sidepanel-body">
-                <p>
+                <p style={{ fontSize: "10px" }}>
                   Здесь будет список документов: черновики, финальные версии,
                   приложения и связанные файлы.
                 </p>
-                <p>
-                  Черновики, созданные в редакторе ниже, позже будут сохраняться
-                  сюда автоматически.
+                <p style={{ fontSize: "10px" }}>
+                  Черновики, созданные в редакторе ниже, позже будут
+                  сохраняться сюда автоматически.
                 </p>
               </div>
             )}
@@ -381,10 +567,26 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
         </aside>
       </main>
 
-      <section className="workspace-editor">
+      <section
+        className="workspace-editor"
+        style={{
+          background:
+            "radial-gradient(circle at top left, rgba(129, 140, 248, 0.3), rgba(15, 23, 42, 0.98))",
+          boxShadow:
+            "0 0 25px rgba(147, 197, 253, 0.4), 0 0 0 1px rgba(168, 85, 247, 0.4)",
+        }}
+      >
         <div className="workspace-editor-header">
-          <h2 className="workspace-editor-title">Редактор документа</h2>
-          <p className="workspace-editor-subtitle">
+          <h2
+            className="workspace-editor-title"
+            style={{ fontSize: "17px" }}
+          >
+            Редактор документа
+          </h2>
+          <p
+            className="workspace-editor-subtitle"
+            style={{ fontSize: "11px" }}
+          >
             Здесь формируется результат работы «Татьяны» — черновик договора,
             претензии, заявления или иного юридического документа. Вы можете
             править текст вручную или через подсказки в чате.
@@ -400,6 +602,7 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
             type="button"
             className="workspace-editor-button"
             onClick={handleInsertDraftTemplate}
+            style={{ fontSize: "10px" }}
           >
             Вставить черновой шаблон
           </button>
@@ -407,6 +610,7 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
             type="button"
             className="workspace-editor-button workspace-editor-button-primary"
             onClick={handleSaveDraft}
+            style={{ fontSize: "10px" }}
           >
             Сохранить черновик
           </button>
@@ -414,6 +618,7 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
             type="button"
             className="workspace-editor-button"
             onClick={() => handleDownloadStub("docx")}
+            style={{ fontSize: "10px" }}
           >
             Скачать в Word (скоро)
           </button>
@@ -421,11 +626,42 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
             type="button"
             className="workspace-editor-button"
             onClick={() => handleDownloadStub("pdf")}
+            style={{ fontSize: "10px" }}
           >
             Скачать PDF (скоро)
           </button>
         </div>
       </section>
+
+      <footer
+        className="workspace-footer"
+        style={{
+          marginTop: "16px",
+          padding: "16px 24px 0",
+          fontSize: "10px",
+          opacity: 0.85,
+        }}
+      >
+        <div className="workspace-footer-links">
+          <a href="#" className="workspace-footer-link">
+            Пользовательское соглашение
+          </a>
+          {" · "}
+          <a href="#" className="workspace-footer-link">
+            Политика конфиденциальности
+          </a>
+          {" · "}
+          <a href="#" className="workspace-footer-link">
+            Контакты
+          </a>
+        </div>
+        <p style={{ marginTop: "8px" }}>
+          © {new Date().getFullYear()} LEGALAI. Все права защищены. Материалы,
+          создаваемые с помощью сервиса, не являются официальной юридической
+          консультацией. За окончательные решения и действия несёт
+          ответственность пользователь.
+        </p>
+      </footer>
     </div>
   );
 };
