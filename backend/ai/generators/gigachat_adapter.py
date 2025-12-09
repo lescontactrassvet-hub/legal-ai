@@ -1,15 +1,19 @@
-
-import base64
+import base64  # пока оставим, хотя сейчас не используем
 import os
 import time
 import uuid
 from typing import Dict, List, Optional, Union
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 import httpx
 
 
 class GigaChatConfigError(Exception):
     """Ошибка конфигурации GigaChat (нет client_id / client_secret)."""
+    pass
 
 
 class GigaChatAdapter:
@@ -32,7 +36,9 @@ class GigaChatAdapter:
         verify: Union[bool, str] = False,
         model: str = "GigaChat",
     ) -> None:
+        # client_id сейчас почти не используется, но оставляем для совместимости
         self.client_id = client_id
+        # ВАЖНО: здесь храним **готовый Authorization key** из кабинета
         self.client_secret = client_secret
         self.scope = scope
         self.auth_url = auth_url
@@ -43,9 +49,9 @@ class GigaChatAdapter:
         self._access_token: Optional[str] = None
         self._expires_at: float = 0.0
 
-    # ---------------------------------------------------------------
-    #   ИНИЦИАЛИЗАЦИЯ ИЗ ОКРУЖЕНИЯ
-    # ---------------------------------------------------------------
+    # -------------------------------------------------------------------------
+    # ИНИЦИАЛИЗАЦИЯ ИЗ ОКРУЖЕНИЯ
+    # -------------------------------------------------------------------------
 
     @classmethod
     def from_env(cls) -> "GigaChatAdapter":
@@ -54,13 +60,15 @@ class GigaChatAdapter:
 
         if not client_id or not client_secret:
             raise GigaChatConfigError(
-                "GigaChat не настроен: отсутствуют GIGACHAT_CLIENT_ID / GIGACHAT_CLIENT_SECRET"
+                "GigaChat не настроен: отсутствуют GIGACHAT_CLIENT_ID / "
+                "GIGACHAT_CLIENT_SECRET"
             )
 
         scope = os.getenv("GIGACHAT_SCOPE", "GIGACHAT_API_PERS")
 
         auth_url = os.getenv(
-            "GIGACHAT_AUTH_URL", "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
+            "GIGACHAT_AUTH_URL",
+            "https://ngw.devices.sberbank.ru:9443/api/v2/oauth",
         )
         chat_url = os.getenv(
             "GIGACHAT_API_URL",
@@ -79,22 +87,25 @@ class GigaChatAdapter:
             verify=verify,
         )
 
-    # ---------------------------------------------------------------
-    #   ПОЛУЧЕНИЕ ТОКЕНА
-    # ---------------------------------------------------------------
+    # -------------------------------------------------------------------------
+    # ПОЛУЧЕНИЕ ТОКЕНА
+    # -------------------------------------------------------------------------
 
     def _get_access_token(self) -> str:
         now = time.time()
+        # если токен ещё живой — используем его
         if self._access_token and now < self._expires_at - 30:
             return self._access_token
 
-        auth_key = base64.b64encode(
-            f"{self.client_id}:{self.client_secret}".encode("utf-8")
-        ).decode("utf-8")
+        # ВАЖНО:
+        # GIGACHAT_CLIENT_SECRET = Authorization key из кабинета
+        # Он уже в нужном base64-формате, НИЧЕГО не кодируем повторно.
+        auth_key = self.client_secret
 
         headers = {
             "Authorization": f"Basic {auth_key}",
             "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "application/json",
             "RqUID": str(uuid.uuid4()),
         }
 
@@ -120,9 +131,9 @@ class GigaChatAdapter:
 
         return access_token
 
-    # ---------------------------------------------------------------
-    #   ВЫЗОВ CHAT / COMPLETIONS
-    # ---------------------------------------------------------------
+    # -------------------------------------------------------------------------
+    # ВЫЗОВ CHAT / COMPLETIONS
+    # -------------------------------------------------------------------------
 
     def chat(
         self,
@@ -155,10 +166,9 @@ class GigaChatAdapter:
         data = response.json()
 
         try:
-            return (
-                data["choices"][0]["message"]["content"]
-                .strip()
-            )
-        except Exception as exc:
-            raise RuntimeError(f"GigaChat: неожиданный формат ответа: {exc}") from exc
+            return data["choices"][0]["message"]["content"].strip()
+        except Exception as exc:  # noqa: BLE001
+            raise RuntimeError(
+                f"GigaChat: неожиданный формат ответа: {exc}"
+            ) from exc
 
