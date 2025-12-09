@@ -1,6 +1,7 @@
 legal-ai/
   doc_constructor_postman.json
   cleanup_legalai_repo.sh
+  requirements.txt
   repair_and_run.sh
   server_report.txt
   legalai.db
