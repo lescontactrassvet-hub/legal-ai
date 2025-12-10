@@ -21,9 +21,8 @@ def get_or_create_legal_act(
 ) -> int:
     """
     Создаёт или возвращает ID закона в таблице legal_acts.
-    Уникальность — по title (позже сделаем canonical_key).
+    Уникальность пока по title (позже сделаем canonical_key по номеру/дате).
     """
-
     title = (title or "").strip()
     if not title:
         raise ValueError("Title must not be empty")
@@ -73,21 +72,21 @@ def save_document_chunk(
     text: str,
 ) -> int:
     """
-    Сохраняет текст документа в documents.content_html.
-    Это основной текст закона.
+    Сохраняет текст закона в отдельную таблицу law_documents.
+    НЕ трогаем таблицу documents, чтобы не зависеть от user_id и прочего.
     """
 
-    db.execute(
+    # Пытаемся вставить, избегая дублей по external_id
+    cur = db.execute(
         """
-        INSERT INTO documents (
+        INSERT OR IGNORE INTO law_documents (
             act_id,
             source_id,
             external_id,
             chunk_index,
-            is_active,
             content_html
         )
-        VALUES (?, ?, ?, ?, 1, ?)
+        VALUES (?, ?, ?, ?, ?)
         """,
         (
             act_id,
@@ -99,5 +98,14 @@ def save_document_chunk(
     )
     db.commit()
 
+    # Если вставка проигнорирована (дубликат) — достаём существующий id
+    if cur.rowcount == 0:
+        row = db.execute(
+            "SELECT id FROM law_documents WHERE external_id = ? LIMIT 1",
+            (external_id,),
+        ).fetchone()
+        return _get_row_id(row)
+
     new_id_row = db.execute("SELECT last_insert_rowid()").fetchone()
     return _get_row_id(new_id_row)
+
