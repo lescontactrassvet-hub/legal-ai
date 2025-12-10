@@ -5,11 +5,10 @@ from typing import Optional
 
 def _get_row_id(row) -> int:
     """
-    Вспомогательная функция: достать id и из sqlite3.Row, и из обычного tuple.
+    Возвращает id из sqlite Row или tuple.
     """
     if row is None:
         raise RuntimeError("Row is None, cannot extract id")
-    # Если row = sqlite3.Row, можно брать по индексу 0
     return row[0]
 
 
@@ -21,13 +20,13 @@ def get_or_create_legal_act(
     jurisdiction: str = "RF",
 ) -> int:
     """
-    Находит или создаёт запись в legal_acts.
-    Сейчас упрощённо считаем акт уникальным по title.
-    При необходимости позже добавим canonical_key по номеру/дате.
+    Создаёт или возвращает ID закона в таблице legal_acts.
+    Уникальность — по title (позже сделаем canonical_key).
     """
+
     title = (title or "").strip()
     if not title:
-        raise ValueError("Title must not be empty for legal act")
+        raise ValueError("Title must not be empty")
 
     row = db.execute(
         "SELECT id FROM legal_acts WHERE title = ? LIMIT 1",
@@ -38,25 +37,19 @@ def get_or_create_legal_act(
         return _get_row_id(row)
 
     now = datetime.utcnow().isoformat()
-    canonical_key = title  # временно используем title как canonical_key
+    canonical_key = title  # временно используем title как ключ
 
     db.execute(
         """
         INSERT INTO legal_acts (
-            canonical_key,
-            kind,
-            number,
-            date_adopted,
-            jurisdiction,
-            title,
-            created_at,
-            updated_at
+            canonical_key, kind, number, date_adopted,
+            jurisdiction, title, created_at, updated_at
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             canonical_key,
-            None,       # kind
+            None,          # kind
             number,
             date,
             jurisdiction,
@@ -80,9 +73,10 @@ def save_document_chunk(
     text: str,
 ) -> int:
     """
-    Сохраняет один chunk документа в таблицу documents.
-    Пока без дедупликации; при необходимости можно добавить проверку по external_id.
+    Сохраняет текст документа в documents.content_html.
+    Это основной текст закона.
     """
+
     db.execute(
         """
         INSERT INTO documents (
@@ -91,7 +85,7 @@ def save_document_chunk(
             external_id,
             chunk_index,
             is_active,
-            content
+            content_html
         )
         VALUES (?, ?, ?, ?, 1, ?)
         """,
@@ -107,4 +101,3 @@ def save_document_chunk(
 
     new_id_row = db.execute("SELECT last_insert_rowid()").fetchone()
     return _get_row_id(new_id_row)
-
