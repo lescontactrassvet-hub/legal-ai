@@ -1,17 +1,17 @@
-"""
-ETL pipeline to update the laws database.
+from app.db import get_db
+from app.parsers.pravo_gov_rss import process_rss_source
 
-This script downloads data from multiple sources, normalizes,
-validates edition dates, and indexes the documents for retrieval.
 
-It is intended to be scheduled via cron in production.
-"""
+def update_all_sources():
+    db = get_db()
+    sources = db.execute(
+        "SELECT * FROM law_sources WHERE is_active = 1"
+    ).fetchall()
 
-import asyncio
+    for src in sources:
+        process_rss_source(db, src)
 
-class LawUpdater:
-    """Placeholder for laws update process."""
 
-    async def run(self) -> None:
-        """Execute the update process."""
-        raise NotImplementedError("Law update logic not implemented yet")
+if __name__ == "__main__":
+    update_all_sources()
+
