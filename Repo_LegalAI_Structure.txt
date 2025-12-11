@@ -37,6 +37,7 @@ backend/
   dev.db
   requirements.txt
   alembic.ini
+  init_db.py
   requirements-termux.txt.bak_20251116_174534
   README.md
   =1.13
@@ -72,12 +73,18 @@ backend/
     ai.py
     user.py
     __init__.py
+  sql/
+    2025_legalai_law_update_log.sql
+    2025_legalai_law_documents.sql
+    2025_legalai_law_sources_seed.sql
+    2025_legalai_laws_schema.sql
   tasks/
     update_laws.py
     distill_local_llm.py
     train_rubert.py
   app/
     main.py.bak_20251116_182734
+    dependencies.py
     database.py
     main.py
     main.py.bak_20251116_214733
@@ -117,7 +124,10 @@ backend/
       token.py
     routers/
       auth.py
+      admin_laws.py
       __init__.py
+    services/
+      laws_common.py
     migrations/
       env.py
       script.py.mako
@@ -150,11 +160,14 @@ backend/
     schemas/
       auth.py
       user.py
+      admin_laws.py
       device.py
       __init__.py
     core/
       security.py
       config.py
+    parsers/
+      pravo_gov_rss.py
     updates/
       __init__.py
       routes.py
