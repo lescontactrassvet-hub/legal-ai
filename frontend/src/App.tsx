@@ -11,6 +11,8 @@ import RegisterPage from "./pages/register";
 import ResetPage from "./pages/reset";
 import ForgotPage from "./pages/forgot";
 
+import AdminPage from "./pages/admin";
+
 type AppPage =
   | "landing"
   | "login"
@@ -19,7 +21,8 @@ type AppPage =
   | "documents"
   | "profile"
   | "reset"
-  | "forgot";
+  | "forgot"
+  | "admin";
 
 export default function App() {
   const [page, setPage] = useState<AppPage>("landing");
@@ -66,10 +69,12 @@ export default function App() {
     case "landing":
       return (
         <LandingPage
-          onGoToLogin={goToLogin}
+          onGoLogin={goToLogin}
           onGoToRegister={goToRegister}
+          onGoAdmin={() => setPage("admin")}
         />
       );
+
     case "login":
       return (
         <LoginPage
@@ -104,9 +109,12 @@ export default function App() {
     case "documents":
       return (
         <DocumentsPage
-          // позже добавим onGoBack
+        // позже добавим onGoBack
         />
       );
+
+    case "admin":
+      return <AdminPage />;
 
     case "workspace":
     default:
@@ -119,4 +127,3 @@ export default function App() {
       );
   }
 }
-
