@@ -40,3 +40,17 @@ build/
 # Env files
 .env
 .env.*
+# Ignore SQLite databases
+*.db
+*.db-journal
+
+# Ignore Termux service scripts
+termux_stage*.sh
+
+# Ignore test/debug scripts
+backend/gigatest.py
+backend/giga_chat_test2.py
+backend/test_env.py
+
+# Python cache
+__pycache__/
