@@ -48,9 +48,9 @@ def list_sources() -> List[Dict[str, Any]]:
             FROM law_sources s
             LEFT JOIN law_update_log l
               ON l.id = (
-                 SELECT id FROM law_update_log
-                 WHERE source_id = s.id
-                 ORDER BY id DESC LIMIT 1
+                SELECT id FROM law_update_log
+                WHERE source_id = s.id
+                ORDER BY id DESC LIMIT 1
               )
             ORDER BY s.id ASC
             """
@@ -81,7 +81,7 @@ def list_update_log(limit: int = 50, offset: int = 0) -> Dict[str, Any]:
         )
         items = [dict(r) for r in cur.fetchall()]
         cur.execute("SELECT COUNT(*) FROM law_update_log")
-        total = cur.fetchone()[0]
+        total = int(cur.fetchone()[0])
         conn.close()
         return {
             "items": items,
@@ -92,3 +92,102 @@ def list_update_log(limit: int = 50, offset: int = 0) -> Dict[str, Any]:
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.get("/stats")
+def get_law_stats() -> Dict[str, Any]:
+    """
+    Общая статистика по базе законов:
+    - сколько актов (legal_acts)
+    - сколько документов (law_documents)
+    - идёт ли сейчас обновление (есть ли status='running' без finished_at)
+    """
+    try:
+        conn = _db()
+        cur = conn.cursor()
+
+        cur.execute("SELECT COUNT(*) FROM laws")
+        acts_total = int(cur.fetchone()[0])
+
+        cur.execute("SELECT COUNT(*) FROM documents")
+        documents_total = int(cur.fetchone()[0])
+
+        cur.execute(
+            """
+            SELECT COUNT(*)
+            FROM law_update_log
+            WHERE status = 'running' AND (finished_at IS NULL OR finished_at = '')
+            """
+        )
+        running_count = int(cur.fetchone()[0])
+
+        conn.close()
+        return {
+            "acts_total": acts_total,
+            "documents_total": documents_total,
+            "is_running": running_count > 0,
+            "running_count": running_count,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/run-update")
+def run_update() -> Dict[str, Any]:
+    """
+    Запуск обновления всех активных источников в фоне.
+    Возвращает сразу. Защита от двойного запуска через проверку running.
+    """
+    try:
+        import os
+        import sys
+        import subprocess
+
+        # 1) Проверка: уже идёт обновление?
+        conn = _db()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT COUNT(*)
+            FROM law_update_log
+            WHERE status = 'running' AND (finished_at IS NULL OR finished_at = '')
+            """
+        )
+        running_count = int(cur.fetchone()[0])
+        if running_count > 0:
+            conn.close()
+            raise HTTPException(status_code=409, detail="Update already running")
+
+        # 2) "Было" — общие числа до запуска
+        cur.execute("SELECT COUNT(*) FROM legal_acts")
+        before_acts_total = int(cur.fetchone()[0])
+
+        cur.execute("SELECT COUNT(*) FROM law_documents")
+        before_documents_total = int(cur.fetchone()[0])
+
+        conn.close()
+
+        # 3) Запуск фонового процесса update_laws (весь апдейт)
+        backend_root = Path(__file__).resolve().parents[1]  # .../backend
+        env = os.environ.copy()
+        env["LEGALAI_DB_PATH"] = str(DB_PATH)
+
+        subprocess.Popen(
+            [sys.executable, "-m", "tasks.update_laws"],
+            cwd=str(backend_root),
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+        return {
+            "ok": True,
+            "message": "Update started",
+            "before": {
+                "acts_total": before_acts_total,
+                "documents_total": before_documents_total,
+            },
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
