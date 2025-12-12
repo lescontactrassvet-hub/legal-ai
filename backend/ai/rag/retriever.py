@@ -1,46 +1,51 @@
 from typing import List, Tuple
+import sqlite3
+import os
 
-from sqlalchemy.orm import Session
 
-from app.db import SessionLocal
-from app.laws.models import Law
+DB_PATH = os.getenv(
+    "LEGALAI_DB_PATH",
+    "/srv/legal-ai/data/legalai.db",
+)
 
 
 class DocumentRetriever:
     """
-    RAG-ретривер для Татьяны.
-    Возвращает список (id, content).
+    SQLite-based RAG retriever for Tatiana.
+
+    Returns list of (document_id, text_fragment)
+    from law_documents.content_html.
     """
 
     def __init__(self):
-        pass
-
-    def _build_content(self, law: Law) -> str:
-        parts = [law.title or ""]
-        if law.number:
-            parts.append(f"Номер: {law.number}")
-        if law.summary:
-            parts.append("")
-            parts.append(law.summary)
-        return "\n".join(parts)
+        self.db_path = DB_PATH
 
     def retrieve(self, query: str, top_k: int = 8) -> List[Tuple[int, str]]:
         if not query or not query.strip():
             return []
 
-        pattern = f"%{query.strip()}%"
+        q = f"%{query.strip()}%"
 
-        db: Session = SessionLocal()
+        sql = """
+        SELECT
+            id,
+            content_html
+        FROM law_documents
+        WHERE content_html IS NOT NULL
+          AND content_html LIKE ?
+        LIMIT ?
+        """
+
+        results: List[Tuple[int, str]] = []
+
+        conn = sqlite3.connect(self.db_path)
         try:
-            q = (
-                db.query(Law)
-                .filter(
-                    (Law.title.ilike(pattern)) | (Law.summary.ilike(pattern))
-                )
-                .order_by(Law.date_effective.desc().nullslast())
-                .limit(top_k)
-            )
-            laws = q.all()
-            return [(law.id, self._build_content(law)) for law in laws]
+            cur = conn.cursor()
+            cur.execute(sql, (q, top_k))
+            for doc_id, html in cur.fetchall():
+                # пока без очистки HTML — отдадим как есть
+                results.append((doc_id, html))
         finally:
-            db.close()
+            conn.close()
+
+        return results
