@@ -91,6 +91,9 @@ function MenuItem({ label, active, onClick }: MenuItemProps) {
   );
 }
 
+// Базовый префикс API, чтобы ходить на /api/… в проде и без префикса локально
+const API_BASE = import.meta.env.VITE_API_BASE || "";
+
 const AdminPage: React.FC = () => {
   const [section, setSection] = useState<AdminSection>("dashboard");
 
@@ -266,7 +269,8 @@ function DashboardSection() {
   return (
     <SectionLayout
       title="Dashboard"
-      description="Краткий обзор состояния системы: количество законов, источников, статус обновлений, состояние ИИ и базы данных."
+      description="Краткий обзор состояния системы: количество законов, источников, 
+статус обновлений, состояние ИИ и базы данных."
     />
   );
 }
@@ -282,9 +286,7 @@ function LawSourcesSection() {
     setLoading(true);
     setError(null);
     try {
-      const resp = await fetch(
-        (import.meta.env.VITE_API_BASE || "") + "/admin/laws/sources"
-      );
+      const resp = await fetch(`${API_BASE}/admin/laws/sources`);
       if (!resp.ok) {
         throw new Error("HTTP " + resp.status);
       }
@@ -414,7 +416,8 @@ function LawUpdateLogSection() {
   return (
     <SectionLayout
       title="Логи обновлений законов"
-      description="История обновлений правовой базы: даты запусков, источники, статус (успех/ошибка), статистика обработки документов."
+      description="История обновлений правовой базы: даты запусков, источники, 
+статус (успех/ошибка), статистика обработки документов."
     />
   );
 }
@@ -423,7 +426,8 @@ function LawActsSection() {
   return (
     <SectionLayout
       title="Акты и документы"
-      description="Просмотр и поиск загруженных нормативных актов, их версий и связанных документов."
+      description="Просмотр и поиск загруженных нормативных актов, их версий и 
+связанных документов."
     />
   );
 }
@@ -432,7 +436,8 @@ function AiSection() {
   return (
     <SectionLayout
       title="ИИ и ответы (Татьяна)"
-      description="Статус подключения ИИ, профиль Татьяны и тестовый стенд для проверки ответов на вопросы."
+      description="Статус подключения ИИ, профиль Татьяны и тестовый стенд для 
+проверки ответов на вопросы."
     />
   );
 }
@@ -459,7 +464,8 @@ function BillingSection() {
   return (
     <SectionLayout
       title="Касса и платежи"
-      description="Интеграция с платёжной системой, просмотр и диагностика платёжных операций."
+      description="Интеграция с платёжной системой, просмотр и диагностика 
+платёжных операций."
     />
   );
 }
@@ -468,7 +474,8 @@ function MarketingSection() {
   return (
     <SectionLayout
       title="Маркетинг, акции и реклама"
-      description="Управление промо-акциями, промокодами и рекламными блоками на страницах сервиса."
+      description="Управление промо-акциями, промокодами и рекламными блоками на 
+страницах сервиса."
     />
   );
 }
@@ -477,7 +484,8 @@ function SupportSection() {
   return (
     <SectionLayout
       title="Поддержка и диалоги"
-      description="Обработка запросов пользователей, тикеты и просмотр диалогов с ботом."
+      description="Обработка запросов пользователей, тикеты и просмотр диалогов с 
+ботом."
     />
   );
 }
@@ -486,9 +494,11 @@ function SystemSection() {
   return (
     <SectionLayout
       title="Настройки системы"
-      description="Технические настройки проекта, информация о версии, базе данных и сервисах."
+      description="Технические настройки проекта, информация о версии, базе данных 
+и сервисах."
     />
   );
 }
 
 export default AdminPage;
+
