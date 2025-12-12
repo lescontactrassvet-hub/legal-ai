@@ -72,6 +72,7 @@ backend/
   routers/
     ai.py
     user.py
+    admin_laws.py
     __init__.py
   sql/
     2025_legalai_law_update_log.sql
