@@ -9,7 +9,7 @@ from .legal_doc.routes import router as legal_doc_router
 from .auth.routes import router as auth_router
 from .auth.reset.router import router as reset_router
 from routers.ai import router as ai_router
-from app.routers.admin_laws import router as admin_laws_router
+from routers.admin_laws import router as admin_laws_router
 
 # База законов (локальная БД)
 from app.laws.routes import router as laws_router
