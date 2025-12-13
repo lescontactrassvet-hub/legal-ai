@@ -1,805 +1,852 @@
-import React, { useState, useEffect, useRef, ChangeEvent } from "react";
+ import React, { useState, useEffect, useRef, ChangeEvent } from "react";
 import DocumentEditor from "../../components/DocumentEditor";
+import { useCasesDocuments } from "../../hooks/useCasesDocuments";
 
 type WorkspacePageProps = {
-  onGoToProfile: () => void;
-  onLogout: () => void;
-  onGoToDocuments?: () => void;
+ onGoToProfile: () => void;
+ onLogout: () => void;
+ onGoToDocuments?: () => void;
 };
 
 type WorkspaceMode = "simple" | "pro";
 
 type ChatMessage = {
-  from: "user" | "ai";
-  text: string;
+ from: "user" | "ai";
+ text: string;
 };
 
 type SidePanel = "cases" | "docs";
 
 type TatianaAskResponse = {
-  answer?: string;
-  citations?: unknown;
-  error?: string;
-  message?: string;
+ answer?: string;
+ citations?: unknown;
+ error?: string;
+ message?: string;
 };
 
 // Демо-режим включается ТОЛЬКО явным флагом.
 // По умолчанию: боевой режим (backend).
 const DEMO_MODE =
-  ((import.meta as any)?.env?.VITE_DEMO_MODE?.toString?.() || "").toLowerCase() ===
-  "true";
+ ((import.meta as any)?.env?.VITE_DEMO_MODE?.toString?.() || "").toLowerCase() ===
+ "true";
 
 function getTatianaDemoReply(mode: WorkspaceMode, userText: string): string {
-  const trimmed = userText.trim();
+ const trimmed = userText.trim();
 
-  if (!trimmed) {
-    return (
-      "Я не увидела текста вопроса. Пожалуйста, опишите ситуацию или задайте \n" +
-      "вопрос — и я подскажу, как действовать с юридической точки зрения."
-    );
-  }
+ if (!trimmed) {
+  return (
+   "Я не увидела текста вопроса. Пожалуйста, опишите ситуацию или задайте \n" +
+   "вопрос — и я подскажу, как действовать с юридической точки зрения."
+  );
+ }
 
+ const lower = trimmed.toLowerCase();
+
+ // простая демонстрация "умности"
+ if (lower.includes("договор") || lower.includes("расторг")) {
   if (mode === "simple") {
-    return [
-      "Спасибо, что описали ситуацию.",
-      "",
-      "Сейчас включён демонстрационный режим (VITE_DEMO_MODE=true).",
-      "Я не обращаюсь к базе законов, но показываю пример структуры ответа:",
-      "",
-      "1) Уточню ключевые факты: даты, стороны, документы и ваши цели.",
-      "2) Объясню простыми словами, какие у вас есть права и риски.",
-      "3) Предложу конкретный план действий: что собрать, куда обращаться, какие",
-      "   шаги делать по порядку.",
-      "",
-      "В рабочей версии «Татьяна» использует актуальное законодательство и данные",
-      "с сервера для точного ответа.",
-    ].join("\n");
+   return [
+    "В демонстрационном режиме я могу дать общий ориентир.",
+    "",
+    "Если речь о расторжении договора в одностороннем порядке, чаще всего нужно:",
+    "1) проверить, предусмотрено ли это самим договором;",
+    "2) уточнить основания (существенное нарушение, срок, отказ по закону);",
+    "3) направить уведомление второй стороне (обычно заказным письмом/электронно).",
+    "",
+    "В боевом режиме я бы уточнила тип договора и условия, затем сослалась на нормы (например, ст. 450 ГК РФ и др.) и предложила текст уведомления.",
+   ].join("\n");
   }
 
-  // pro-режим
   return [
-    "Переключаемся в профессиональный режим.",
-    "",
-    "Сейчас включён демонстрационный режим (VITE_DEMO_MODE=true).",
-    "В полной версии здесь будет структурированный юридический анализ со ссылками",
-    "на нормы права, судебную практику и фрагменты документов.",
-    "",
-    "Обычно ответ включает:",
-    "— вводную часть (кто, когда и при каких обстоятельствах);",
-    "— правовую квалификацию ситуации с указанием статей законов;",
-    "— оценку рисков и вероятных исходов;",
-    "— рекомендации по дальнейшим действиям и перечень необходимых документов.",
-    "",
-    "В будущем «Татьяна» сформирует черновик документа и предложит отредактировать",
-    "его в редакторе ниже.",
+   "Переключаемся в профессиональный режим.",
+   "",
+   "Сейчас включён демонстрационный режим (VITE_DEMO_MODE=true).",
+   "В полной версии здесь будет структурированный юридический анализ со ссылками",
+   "на нормы права, судебную практику и фрагменты документов.",
+   "",
+   "Обычно ответ включает:",
+   "— вводную часть (кто, когда и при каких обстоятельствах);",
+   "— правовую квалификацию ситуации с указанием статей;",
+   "— перечень доказательств/документов;",
+   "— пошаговый план действий;",
+   "— черновики документов (уведомление/претензия/иск).",
   ].join("\n");
+ }
+
+ // универсальный демо-ответ
+ if (mode === "simple") {
+  return [
+   "Сейчас включён демонорежим (VITE_DEMO_MODE=true).",
+   "",
+   "Опишите:",
+   "— кто участники (физ/юр лица),",
+   "— что произошло (когда, где, какие документы есть),",
+   "— чего вы хотите добиться.",
+   "",
+   "И я дам ориентир по правовой позиции и действиям.",
+  ].join("\n");
+ }
+
+ return [
+  "Демонорежим: профессиональный ответ.",
+  "",
+  "В полной версии я бы:",
+  "1) уточнила факты и цели;",
+  "2) выделила юридически значимые обстоятельства;",
+  "3) подобрала применимые нормы;",
+  "4) предложила структуру документа/заявления;",
+  "5) подготовила черновик текста.",
+ ].join("\n");
 }
 
-function formatCitations(citations: unknown): string {
-  if (!citations) return "";
+async function requestTatianaReply(mode: WorkspaceMode, userText: string): Promise<string> {
+ if (DEMO_MODE) {
+  return getTatianaDemoReply(mode, userText);
+ }
+
+ const API_BASE =
+  (import.meta as any)?.env?.VITE_API_BASE?.toString?.() || "/api";
+
+ try {
+  const res = await fetch(`${API_BASE}/ai/ask`, {
+   method: "POST",
+   headers: { "Content-Type": "application/json" },
+   body: JSON.stringify({
+    message: userText,
+    mode,
+   }),
+  });
+
+  const raw = await res.text();
+  let data: TatianaAskResponse | null = null;
+
   try {
-    if (Array.isArray(citations)) {
-      const items = citations
-        .map((c, idx) => {
-          if (typeof c === "string") return `${idx + 1}. ${c}`;
-          if (c && typeof c === "object") {
-            const asAny = c as Record<string, unknown>;
-            const title = typeof asAny.title === "string" ? asAny.title : "";
-            const ref = typeof asAny.ref === "string" ? asAny.ref : "";
-            const url = typeof asAny.url === "string" ? asAny.url : "";
-            const parts = [title, ref, url].filter(Boolean);
-            return `${idx + 1}. ${parts.join(" — ") || JSON.stringify(c)}`;
-          }
-          return `${idx + 1}. ${String(c)}`;
-        })
-        .filter(Boolean);
-
-      if (items.length === 0) return "";
-      return ["", "Источники:", ...items].join("\n");
-    }
-
-    if (typeof citations === "string") {
-      return ["", "Источники:", citations].join("\n");
-    }
-
-    if (citations && typeof citations === "object") {
-      return ["", "Источники:", JSON.stringify(citations, null, 2)].join("\n");
-    }
-
-    return ["", "Источники:", String(citations)].join("\n");
+   data = raw ? (JSON.parse(raw) as TatianaAskResponse) : null;
   } catch {
-    return "";
-  }
-}
-
-async function requestTatianaReply(
-  mode: WorkspaceMode,
-  userText: string
-): Promise<string> {
-  const base =
-    (import.meta as any)?.env?.VITE_API_BASE?.toString?.() || "/api";
-
-  const url = `${base.replace(/\/$/, "")}/ai/ask`;
-
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: userText,
-        intent: mode, // используем режим как "намерение" (simple/pro)
-      }),
-    });
-
-    // Если backend отдаёт HTML/ошибку — поймаем и покажем нормально
-    const rawText = await res.text();
-    let data: TatianaAskResponse | null = null;
-
-    try {
-      data = JSON.parse(rawText) as TatianaAskResponse;
-    } catch {
-      // не JSON (например, HTML)
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${rawText.slice(0, 200)}`);
-      }
-      // если ok, но не JSON — возвращаем как текст
-      return rawText;
-    }
-
-    if (!res.ok) {
-      const msg =
-        (data && (data.error || data.message)) || `HTTP ${res.status}`;
-      throw new Error(msg);
-    }
-
-    const answer =
-      (data && typeof data.answer === "string" && data.answer.trim()) ||
-      (data && typeof data.message === "string" && data.message.trim()) ||
-      "";
-
-    const cites = data?.citations ? formatCitations(data.citations) : "";
-
-    if (!answer) {
-      // странный ответ, но не падаем
-      return `Ответ получен, но поле "answer" пустое.${cites}`;
-    }
-
-    return `${answer}${cites}`;
-  } catch (e) {
-    // В БОЕВОМ режиме НЕ подменяем ответ демо-ответом — показываем честную ошибку.
-    if (DEMO_MODE) {
-      return getTatianaDemoReply(mode, userText);
-    }
-
-    const msg =
-      e instanceof Error
-        ? e.message
-        : "Неизвестная ошибка при обращении к серверу ИИ.";
-
+   // если вдруг вернули HTML/текст — покажем кусок
+   if (!res.ok) {
     return [
-      "Ошибка при обращении к серверу ИИ.",
-      "",
-      "Что можно сделать:",
-      "1) Проверьте, что сервис доступен и интернет-соединение работает.",
-      "2) Попробуйте повторить запрос через несколько секунд.",
-      "3) Если проблема повторяется — проверьте настройки VITE_API_BASE и прокси /api.",
-      "",
-      `Техническая информация: ${msg}`,
+     "Сервер вернул неожиданный ответ (не JSON).",
+     "Проверьте настройки VITE_API_BASE и прокси /api.",
+     "",
+     `HTTP ${res.status}: ${raw.slice(0, 200)}`,
     ].join("\n");
+   }
+   return raw;
   }
+
+  if (!res.ok) {
+   const msg = (data && (data.error || data.message)) || `HTTP ${res.status}`;
+   return [
+    "Не удалось получить ответ от сервера.",
+    "Проверьте доступность backend и настройки VITE_API_BASE.",
+    "",
+    `Техническая информация: ${String(msg)}`,
+   ].join("\n");
+  }
+
+  if (!data) {
+   return "Сервер вернул пустой ответ. Попробуйте ещё раз.";
+  }
+
+  if (data.answer) return data.answer;
+
+  return "Ответ не получен. Попробуйте переформулировать запрос.";
+ } catch (e: any) {
+  const msg = e?.message ? String(e.message) : String(e);
+  return [
+   "Ошибка соединения с backend.",
+   "Проверьте, что сервер запущен и VITE_API_BASE настроен правильно.",
+   "Для продакшена обычно: VITE_API_BASE=/api",
+   "",
+   `Техническая информация: ${msg}`,
+  ].join("\n");
+ }
 }
 
 const WorkspacePage: React.FC<WorkspacePageProps> = ({
-  onGoToProfile,
-  onLogout,
-  onGoToDocuments,
+ onGoToProfile,
+ onLogout,
+ onGoToDocuments,
 }) => {
-  const [mode, setMode] = useState<WorkspaceMode>("simple");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState<string>("");
-  const [documentHtml, setDocumentHtml] = useState<string>("");
-  const [activeSidePanel, setActiveSidePanel] = useState<SidePanel>("cases");
+ const [mode, setMode] = useState<WorkspaceMode>("simple");
+ const [messages, setMessages] = useState<ChatMessage[]>([]);
+ const [input, setInput] = useState<string>("");
+ const [documentHtml, setDocumentHtml] = useState<string>("");
+ const [activeSidePanel, setActiveSidePanel] = useState<SidePanel>("cases");
 
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+ const API_BASE =
+  (import.meta as any)?.env?.VITE_API_BASE?.toString?.() || "/api";
 
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
+ const {
+  cases,
+  documents,
+  versions,
+  loadingCases,
+  loadingDocuments,
+  loadingVersions,
+  error: casesError,
+  activeCaseId,
+  activeDocumentId,
+  selectCase,
+  selectDocument,
+  saveVersion,
+ } = useCasesDocuments(API_BASE);
 
-  const handleSend = async () => {
-    const text = input.trim();
-    if (!text) return;
+ const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-    const userMessage: ChatMessage = { from: "user", text };
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
+ useEffect(() => {
+  if (!activeDocumentId) return;
 
-    const replyText = await requestTatianaReply(mode, text);
-    const aiMessage: ChatMessage = { from: "ai", text: replyText };
-    setMessages((prev) => [...prev, aiMessage]);
-  };
+  // Берём последнюю версию (если есть) и подставляем в редактор.
+  if (versions && versions.length > 0) {
+   const last = versions[versions.length - 1] as any;
+   const content =
+    (last?.content ?? last?.text ?? "")?.toString?.() || "";
+   setDocumentHtml(content);
+  } else {
+   // Если версий нет — оставляем текущий текст, но можно начать с пустого.
+   // setDocumentHtml("");
+  }
+ }, [activeDocumentId, versions]);
 
-  const handleInputChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(event.target.value);
-  };
+ useEffect(() => {
+  if (messagesEndRef.current) {
+   messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+  }
+ }, [messages]);
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
+ const handleSend = async () => {
+  const text = input.trim();
+  if (!text) return;
 
-    console.log("Выбрано файлов для Татьяны:", files.length);
+  const userMessage: ChatMessage = { from: "user", text };
+  setMessages((prev) => [...prev, userMessage]);
+  setInput("");
 
-    if (DEMO_MODE) {
-      alert(
-        "В демо-режиме файлы не отправляются на сервер.\n" +
-          "В рабочем режиме (после подключения) «Татьяна» сможет анализировать вложения."
-      );
-      return;
-    }
+  const replyText = await requestTatianaReply(mode, text);
+  const aiMessage: ChatMessage = { from: "ai", text: replyText };
+  setMessages((prev) => [...prev, aiMessage]);
+ };
 
-    alert(
-      "Прикрепление файлов пока не подключено на сервере.\n" +
-        "Следующий шаг проекта: загрузка вложений и анализ документов «Татьяной»."
-    );
-  };
+ const handleInputChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+  setInput(event.target.value);
+ };
 
-  const handleDocumentChange = (html: string) => {
-    setDocumentHtml(html);
-  };
+ const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
 
-  const handleInsertDraftTemplate = () => {
-    if (documentHtml.trim()) return;
+  console.log("Выбрано файлов для Татьяны:", files.length);
 
-    const template = [
-      "<h2>Черновой проект документа</h2>",
-      "<p>Ниже — базовая структура юридического документа. Отредактируйте её с учетом вашей ситуации или попросите «Татьяну» доработать текст.</p>",
-      "<ol>",
-      "<li><strong>Вводная часть.</strong> Кто, когда, где, на основании чего действует.</li>",
-      "<li><strong>Обстоятельства.</strong> Краткое и последовательное описание фактов.</li>",
-      "<li><strong>Правовое обоснование.</strong> Указание норм права, ссылок на договоры, практику.</li>",
-      "<li><strong>Просьба / Требование.</strong> Чёткая формулировка того, чего вы хотите добиться.</li>",
-      "</ol>",
-      "<p>После редактирования вы сможете сохранить этот черновик как отдельный документ и вернуться к нему в разделе «Документы».</p>",
-    ].join("");
-    setDocumentHtml(template);
-  };
+  if (DEMO_MODE) {
+   alert(
+    "Демо-режим: файлы сохраняются только локально и не отправляются в backend.\n" +
+     `Выбрано файлов: ${files.length}`
+   );
+   return;
+  }
 
-  const handleSaveDraft = () => {
-    console.log("Сохранение черновика документа. Длина HTML:", documentHtml.length);
+  alert(
+   "Загрузка файлов на сервер пока не подключена.\n" +
+    "Следующий этап: связка Workspace ↔ Документы ↔ Мои дела + загрузка вложений."
+  );
+ };
 
-    if (DEMO_MODE) {
-      alert(
-        "В демо-режиме черновик сохраняется только в текущей сессии.\n" +
-          "В полноценной версии он появится в разделе «Документы» как отдельный проект."
-      );
-      return;
-    }
+ const handleDocumentHtmlChange = (value: string) => {
+  setDocumentHtml(value);
+ };
 
-    alert(
-      "Сохранение черновика на сервер пока не подключено.\n" +
-        "Следующий этап: связка Workspace ↔ Документы ↔ Мои дела."
-    );
-  };
+ const handleInsertDraftTemplate = () => {
+  const template = [
+   "<h2>Черновик документа</h2>",
+   "<p><b>1) Вводные данные</b></p>",
+   "<ul>",
+   "<li>ФИО / Название организации:</li>",
+   "<li>Контакты:</li>",
+   "<li>Адрес:</li>",
+   "</ul>",
+   "<p><b>2) Описание ситуации</b></p>",
+   "<p>Кратко опишите обстоятельства, даты, участников, договоры/акты.</p>",
+   "<p><b>3) Правовая позиция</b></p>",
+   "<p>Здесь будет обоснование со ссылками на нормы права.</p>",
+   "<p><b>4) Требования</b></p>",
+   "<p>Что вы просите: расторгнуть, взыскать, признать, обязать и т.д.</p>",
+   "<p><b>5) Приложения</b></p>",
+   "<p>Перечень документов, которые нужно приложить.</p>",
+   "<hr/>",
+   "<p style='font-size: 12px; color: #6b7280;'>",
+   "⚠️ Это черновик-шаблон. В полной версии Татьяна сможет автоматически заполнить ",
+   "его по данным дела/документа и вернуть готовый проект.",
+   "</p>",
+   "<p style='font-size: 12px; color: #6b7280;'>",
+   "Также можно будет сохранить документ и вернуться к нему в разделе «Документы».",
+   "</p>",
+  ].join("");
+  setDocumentHtml(template);
+ };
 
-  const handleDownloadStub = (format: "pdf" | "docx") => {
-    const label = format === "pdf" ? "PDF" : "Word (DOCX)";
-    alert(
-      `Экспорт в ${label} будет доступен после подключения модуля генерации файлов на backend.\n` +
-        "Пока вы можете скопировать текст и вставить его в привычный редактор."
-    );
-  };
+ const handleSaveDraft = async () => {
+  console.log("Сохранение черновика документа. Длина HTML:", documentHtml.length);
 
-  const handleGoToDocumentsClick = () => {
-    if (onGoToDocuments) {
-      onGoToDocuments();
-    } else {
-      alert(
-        "Раздел «Документы» будет доступен через отдельную страницу.\n" +
-          "Сейчас эта кнопка работает как заглушка."
-      );
-    }
-  };
+  if (DEMO_MODE) {
+   alert(
+    "В демо-режиме черновик сохраняется только в текущей сессии.\n" +
+     "В полноценной версии он появится в разделе «Документы» как отдельный проект."
+   );
+   return;
+  }
 
-  const handleNewChat = () => {
-    setMessages([]);
-    setInput("");
-  };
+  if (!activeDocumentId) {
+   alert(
+    "Документ не выбран.\n" +
+     "Сначала выберите дело и документ в боковой панели, затем сохраните версию."
+   );
+   return;
+  }
 
-  const handleShowGuide = () => {
-    const lines: string[] = [
-      "Как пользоваться рабочей страницей LEGALAI:",
-      "",
-      "1. Вверху страницы выберите режим: простой или профессиональный.",
-      "2. В большом поле чата опишите вашу ситуацию и, при необходимости, прикрепите файлы.",
-      "3. «Татьяна» ответит и поможет подготовить основу для документа.",
-      "4. Ниже в редакторе документа вы можете доработать черновик, сохранить его или подготовить к экспорту.",
-      "",
-    ];
+  try {
+   await saveVersion(activeDocumentId, documentHtml, "user");
+   alert("Версия документа сохранена ✅");
+  } catch (e: any) {
+   alert(
+    "Не удалось сохранить версию документа на сервер.\n" +
+     "Проверьте доступность backend и настройки VITE_API_BASE.\n\n" +
+     `Техническая информация: ${e?.message ? String(e.message) : String(e)}`
+   );
+  }
+ };
 
-    if (DEMO_MODE) {
-      lines.push(
-        "Важно: сейчас включён демонстрационный режим (VITE_DEMO_MODE=true).",
-        "Ответы могут быть примером и не обращаться к серверу."
-      );
-    } else {
-      lines.push(
-        "Важно: сейчас используется боевой режим (ответы приходят с сервера).",
-        "Если вы видите ошибку — проверьте доступность API и настройки VITE_API_BASE."
-      );
-    }
+ const handleDownloadStub = (format: "pdf" | "docx") => {
+  const label = format === "pdf" ? "PDF" : "Word (DOCX)";
+  alert(
+   `Экспорт в ${label} будет доступен после подключения модуля генерации файлов на backend.\n` +
+    "Пока вы можете скопировать текст и вставить его в привычный редактор."
+  );
+ };
 
-    alert(lines.join("\n"));
-  };
+ return (
+  <div
+   className="workspace-root"
+   style={{
+    minHeight: "100vh",
+    background:
+     "radial-gradient(circle at top left, rgba(96, 165, 250, 0.4), transparent \n55%), radial-gradient(circle at bottom right, rgba(129, 140, 248, 0.5), \ntransparent 60%), linear-gradient(to bottom, #020617, #02091f)",
+    paddingBottom: "24px",
+   }}
+  >
+   <header className="workspace-header">
+    <div className="workspace-header-inner">
+     <div className="workspace-logo">
+      <div className="workspace-logo-badge">LA</div>
+      <div>
+       <div className="workspace-logo-title">LEGALAI</div>
+       <div className="workspace-logo-subtitle">
+        Рабочая зона · ИИ “Татьяна”
+       </div>
+      </div>
+     </div>
 
-  return (
-    <div
-      className="workspace-root"
-      style={{
-        minHeight: "100vh",
-        background:
-          "radial-gradient(circle at top left, rgba(96, 165, 250, 0.4), transparent \n55%), radial-gradient(circle at bottom right, rgba(129, 140, 248, 0.5), \ntransparent 60%), linear-gradient(to bottom, #020617, #02091f)",
-        paddingBottom: "24px",
-      }}
-    >
-      <header className="workspace-header">
-        <div className="workspace-header-inner">
-          <div className="workspace-logo-block">
-            <img src="/logo.png" alt="LEGALAI" className="workspace-logo" />
-            <div className="workspace-logo-text">
-              <div
-                className="workspace-logo-title"
-                style={{
-                  fontSize: "20px",
-                  letterSpacing: "0.14em",
-                  color: "#a855ff",
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  lineHeight: 1.1,
-                }}
-              >
-                LEGALAI
-              </div>
-              <div
-                className="workspace-logo-subtitle"
-                style={{
-                  fontSize: "10px",
-                  opacity: 0.9,
-                }}
-              >
-                Юридический ИИ — «Татьяна»
-              </div>
-            </div>
-          </div>
-
-          <nav
-            className="workspace-nav"
-            style={{
-              marginLeft: "auto",
-              display: "flex",
-              gap: "8px",
-            }}
-          >
-            <button
-              type="button"
-              className="workspace-nav-button workspace-nav-button-primary"
-              style={{
-                borderRadius: 999,
-                padding: "6px 16px",
-                background: "linear-gradient(90deg, #ec4899, #a855f7)",
-                color: "#ffffff",
-                border: "none",
-                fontSize: "11px",
-              }}
-            >
-              Чат ИИ «Татьяна»
-            </button>
-            <button
-              type="button"
-              className="workspace-nav-button"
-              onClick={handleGoToDocumentsClick}
-              style={{
-                borderRadius: 999,
-                padding: "6px 16px",
-                background: "linear-gradient(90deg, #1f2937, #111827)",
-                color: "#e5e7eb",
-                border: "none",
-                fontSize: "11px",
-              }}
-            >
-              Документы
-            </button>
-            <button
-              type="button"
-              className="workspace-nav-button"
-              onClick={onGoToProfile}
-              style={{
-                borderRadius: 999,
-                padding: "6px 16px",
-                background: "linear-gradient(90deg, #1f2937, #111827)",
-                color: "#e5e7eb",
-                border: "none",
-                fontSize: "11px",
-              }}
-            >
-              Профиль
-            </button>
-            <button
-              type="button"
-              className="workspace-nav-button workspace-nav-button-danger"
-              onClick={onLogout}
-              style={{
-                borderRadius: 999,
-                padding: "6px 16px",
-                background: "linear-gradient(90deg, #b91c1c, #7f1d1d)",
-                color: "#fee2e2",
-                border: "none",
-                fontSize: "11px",
-              }}
-            >
-              Выйти
-            </button>
-          </nav>
-        </div>
-      </header>
-
-      <main className="workspace-main">
-        <section className="workspace-main-left">
-          <div className="workspace-chat-header">
-            <h1 className="workspace-chat-title" style={{ fontSize: "17px" }}>
-              Чат ИИ «Татьяна»
-            </h1>
-            <p className="workspace-chat-subtitle" style={{ fontSize: "11px" }}>
-              Опишите вашу ситуацию — «Татьяна» поможет понять, как действовать,
-              и подготовит основу для юридического документа.
-            </p>
-          </div>
-
-          <div
-            className="workspace-mode-toggle"
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "8px",
-              marginTop: "8px",
-              marginBottom: "8px",
-            }}
-          >
-            <button
-              type="button"
-              className={
-                "workspace-mode-button" +
-                (mode === "simple" ? " workspace-mode-button-active" : "")
-              }
-              onClick={() => setMode("simple")}
-              style={{ fontSize: "10px" }}
-            >
-              Простой режим
-            </button>
-            <button
-              type="button"
-              className={
-                "workspace-mode-button" +
-                (mode === "pro" ? " workspace-mode-button-active" : "")
-              }
-              onClick={() => setMode("pro")}
-              style={{ fontSize: "10px" }}
-            >
-              Профессиональный режим
-            </button>
-            <button
-              type="button"
-              className="workspace-mode-button"
-              onClick={handleNewChat}
-              style={{ fontSize: "10px" }}
-            >
-              Новый чат
-            </button>
-            <button
-              type="button"
-              className="workspace-mode-button"
-              onClick={handleShowGuide}
-              style={{ fontSize: "10px" }}
-            >
-              Инструкция
-            </button>
-          </div>
-
-          <p className="workspace-placeholder" style={{ fontSize: "10px" }}>
-            В простом режиме «Татьяна» объясняет всё человеческим языком, без
-            сложных терминов. В профессиональном — отвечает структурированно, с
-            правовым анализом.
-          </p>
-
-          <p className="workspace-chat-tip" style={{ fontSize: "10px" }}>
-            Чем подробнее вы опишете ситуацию (с датами, суммами и ссылками на
-            документы), тем точнее «Татьяна» сможет подготовить план действий и
-            структуру документов.
-          </p>
-
-          <div
-            className="workspace-chat-box"
-            style={{
-              background:
-                "radial-gradient(circle at top left, rgba(129, 140, 248, 0.35), rgba(24, 16, \n64, 0.98))",
-              boxShadow:
-                "0 0 25px rgba(147, 197, 253, 0.45), 0 0 0 1px rgba(168, 85, 247, 0.45)",
-            }}
-          >
-            <div className="workspace-chat-messages">
-              {messages.length === 0 ? (
-                <div className="workspace-chat-empty">
-                  <p style={{ fontSize: "11px" }}>
-                    Пока здесь нет сообщений. Опишите кратко вашу ситуацию — и
-                    «Татьяна» поможет с юридическим разбором и планом действий.
-                  </p>
-                  {DEMO_MODE && (
-                    <p style={{ fontSize: "10px", opacity: 0.85, marginTop: 8 }}>
-                      Сейчас включён демо-режим (VITE_DEMO_MODE=true).
-                    </p>
-                  )}
-                </div>
-              ) : (
-                messages.map((msg, index) => (
-                  <div
-                    key={index}
-                    className={
-                      "workspace-chat-message workspace-chat-message-" + msg.from
-                    }
-                  >
-                    <div
-                      className="workspace-chat-message-author"
-                      style={{ fontSize: "9px" }}
-                    >
-                      {msg.from === "user" ? "Вы" : "Татьяна"}
-                    </div>
-                    <div
-                      className="workspace-chat-message-text"
-                      style={{ fontSize: "11px" }}
-                    >
-                      {msg.text.split("\n").map((line, i) => (
-                        <p key={i}>{line}</p>
-                      ))}
-                    </div>
-                  </div>
-                ))
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-
-            <div
-              className="workspace-chat-input-row"
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "8px",
-                marginTop: "12px",
-              }}
-            >
-              <textarea
-                className="workspace-chat-input"
-                placeholder="Опишите проблему: кто, с кем, что произошло, какие документы \nесть и чего вы хотите добиться..."
-                rows={4}
-                value={input}
-                onChange={handleInputChange}
-                style={{
-                  width: "100%",
-                  fontSize: "10px",
-                  borderRadius: "16px",
-                  fontWeight: 400,
-                  lineHeight: 1.4,
-                }}
-              />
-
-              <div
-                className="workspace-chat-input-actions"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  width: "100%",
-                  gap: "12px",
-                }}
-              >
-                <label className="workspace-chat-attach" style={{ fontSize: "10px" }}>
-                  📎 Прикрепить файл
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFileChange}
-                    style={{ display: "none" }}
-                  />
-                </label>
-                <button
-                  type="button"
-                  className="workspace-chat-send-button"
-                  onClick={handleSend}
-                >
-                  ➤
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <aside className="workspace-main-right">
-          <div
-            className="workspace-sidepanel"
-            style={{
-              background:
-                "radial-gradient(circle at top left, rgba(129, 140, 248, 0.35), rgba(24, 16, \n64, 0.98))",
-              boxShadow:
-                "0 0 20px rgba(147, 197, 253, 0.45), 0 0 0 1px rgba(168, 85, 247, 0.45)",
-            }}
-          >
-            <div className="workspace-sidepanel-header">
-              <button
-                type="button"
-                onClick={() => setActiveSidePanel("cases")}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#e5e7eb",
-                  textAlign: "left",
-                  width: "100%",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                Мои дела
-              </button>
-            </div>
-            {activeSidePanel === "cases" && (
-              <div className="workspace-sidepanel-body">
-                <p style={{ fontSize: "10px" }}>
-                  Здесь появится список ваших дел с кратким статусом: «на
-                  подготовке», «отправлено», «ожидание ответа», «завершено».
-                </p>
-                <p style={{ fontSize: "10px" }}>
-                  В полной версии вы сможете быстро переходить к делу, открывать
-                  чат и связанные документы в один клик.
-                </p>
-              </div>
-            )}
-          </div>
-
-          <div
-            className="workspace-sidepanel"
-            style={{
-              marginTop: "16px",
-              background:
-                "radial-gradient(circle at top left, rgba(129, 140, 248, 0.35), rgba(24, 16, \n64, 0.98))",
-              boxShadow:
-                "0 0 20px rgba(147, 197, 253, 0.45), 0 0 0 1px rgba(168, 85, 247, 0.45)",
-            }}
-          >
-            <div className="workspace-sidepanel-header">
-              <button
-                type="button"
-                onClick={() => setActiveSidePanel("docs")}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#e5e7eb",
-                  textAlign: "left",
-                  width: "100%",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                Документы
-              </button>
-            </div>
-            {activeSidePanel === "docs" && (
-              <div className="workspace-sidepanel-body">
-                <p style={{ fontSize: "10px" }}>
-                  Здесь будет список документов: черновики, финальные версии,
-                  приложения и связанные файлы.
-                </p>
-                <p style={{ fontSize: "10px" }}>
-                  Черновики, созданные в редакторе ниже, позже будут сохраняться
-                  сюда автоматически.
-                </p>
-              </div>
-            )}
-          </div>
-        </aside>
-      </main>
-
-      <section
-        className="workspace-editor"
-        style={{
-          background:
-            "radial-gradient(circle at top left, rgba(129, 140, 248, 0.3), rgba(15, 23, \n42, 0.98))",
-          boxShadow:
-            "0 0 25px rgba(147, 197, 253, 0.4), 0 0 0 1px rgba(168, 85, 247, 0.4)",
-        }}
+     <div className="workspace-header-actions">
+      <button
+       type="button"
+       className="workspace-header-button"
+       onClick={() => setMode("simple")}
+       style={{
+        background: mode === "simple" ? "rgba(255,255,255,0.12)" : "transparent",
+       }}
       >
-        <div className="workspace-editor-header">
-          <h2 className="workspace-editor-title" style={{ fontSize: "17px" }}>
-            Редактор документа
-          </h2>
-          <p className="workspace-editor-subtitle" style={{ fontSize: "11px" }}>
-            Здесь формируется результат работы «Татьяны» — черновик договора,
-            претензии, заявления или иного юридического документа. Вы можете
-            править текст вручную или через подсказки в чате.
-          </p>
+       Simple
+      </button>
+      <button
+       type="button"
+       className="workspace-header-button"
+       onClick={() => setMode("pro")}
+       style={{
+        background: mode === "pro" ? "rgba(255,255,255,0.12)" : "transparent",
+       }}
+      >
+       Pro
+      </button>
+
+      <button
+       type="button"
+       className="workspace-header-button"
+       onClick={onGoToProfile}
+      >
+       Профиль
+      </button>
+      {onGoToDocuments && (
+       <button
+        type="button"
+        className="workspace-header-button"
+        onClick={onGoToDocuments}
+       >
+        Документы
+       </button>
+      )}
+      <button
+       type="button"
+       className="workspace-header-button workspace-header-button-danger"
+       onClick={onLogout}
+      >
+       Выйти
+      </button>
+     </div>
+    </div>
+   </header>
+
+   <main className="workspace-main">
+    <div className="workspace-grid">
+     <aside className="workspace-sidebar">
+      <div className="workspace-sidebar-card">
+       <h2 style={{ marginTop: 0 }}>Контекст работы</h2>
+       <p style={{ fontSize: "11px" }}>
+        Вы можете держать под рукой дело, документы и общий чат.
+       </p>
+       <p style={{ fontSize: "10px" }}>
+        В демо-режиме (VITE_DEMO_MODE=true) ответы и сохранения не уходят
+        на backend. В боевом режиме — работают реальный чат и интеграции.
+       </p>
+
+       <div
+        className="workspace-sidebar-info"
+        style={{
+         display: "flex",
+         flexDirection: "column",
+         gap: "8px",
+         marginTop: "10px",
+        }}
+       >
+        <div className="workspace-pill">
+         <b>Режим:</b> {mode === "simple" ? "Simple" : "Pro"}
+        </div>
+        <div className="workspace-pill">
+         <b>Демо:</b> {DEMO_MODE ? "Включен" : "Выключен"}
+        </div>
+        <div className="workspace-pill">
+         <b>API:</b> {API_BASE}
+        </div>
+        <div className="workspace-pill">
+         <b>Активное дело:</b> {activeCaseId ? `#${activeCaseId}` : "не выбрано"}
+        </div>
+        <div className="workspace-pill">
+         <b>Активный документ:</b>{" "}
+         {activeDocumentId ? `#${activeDocumentId}` : "не выбран"}
+        </div>
+       </div>
+      </div>
+
+      <div className="workspace-sidebar-card" style={{ marginTop: "16px" }}>
+       <h3 style={{ marginTop: 0 }}>Файлы и приложения</h3>
+       <p style={{ fontSize: "10px" }}>
+        Здесь будет загрузка документов, сканов и вложений для анализа.
+       </p>
+
+       <div
+        className="workspace-chat-attach-wrapper"
+        style={{
+         display: "flex",
+         alignItems: "center",
+         justifyContent: "space-between",
+         width: "100%",
+         gap: "12px",
+        }}
+       >
+        <label className="workspace-chat-attach" style={{ fontSize: "10px" }}>
+         📎 Прикрепить файл
+         <input
+          type="file"
+          multiple
+          onChange={handleFileChange}
+          style={{ display: "none" }}
+         />
+        </label>
+
+        <button
+         type="button"
+         className="workspace-header-button"
+         onClick={() => alert("Импорт файлов будет подключён позже.")}
+         style={{ fontSize: "10px", padding: "6px 10px" }}
+        >
+         Импорт
+        </button>
+       </div>
+
+       <div style={{ marginTop: "10px" }}>
+        <p style={{ fontSize: "10px" }}>
+         В полной версии вы сможете быстро переходить к делу, открывать чат и
+         связанные документы в один клик.
+        </p>
+       </div>
+      </div>
+
+      <div
+       className="workspace-sidepanel"
+       style={{
+        marginTop: "16px",
+        background:
+         "radial-gradient(circle at top left, rgba(129, 140, 248, 0\n.35), rgba(24, 16, \n64, 0.98))",
+        boxShadow:
+         "0 0 20px rgba(147, 197, 253, 0.45), 0 0 0 1px rgba(168, 85, 247, 0.45)",
+       }}
+      >
+       <div className="workspace-sidepanel-header">
+        <button
+         type="button"
+         onClick={() => setActiveSidePanel("cases")}
+         style={{
+          background: "transparent",
+          border: "none",
+          color: "#e5e7eb",
+          textAlign: "left",
+          width: "100%",
+          fontSize: "12px",
+          fontWeight: 600,
+          cursor: "pointer",
+         }}
+        >
+         Мои дела
+        </button>
+       </div>
+
+       {activeSidePanel === "cases" && (
+        <div className="workspace-sidepanel-body">
+         <p style={{ fontSize: "10px", marginTop: 0 }}>
+          Выберите дело, чтобы загрузить связанные документы и продолжить работу
+          в контексте конкретного кейса.
+         </p>
+
+         {loadingCases && <div style={{ fontSize: "10px" }}>Загрузка дел…</div>}
+         {casesError && (
+          <div style={{ fontSize: "10px", color: "#fca5a5" }}>{casesError}</div>
+         )}
+
+         {!loadingCases && !casesError && cases.length === 0 && (
+          <div style={{ fontSize: "10px", opacity: 0.85 }}>
+           Дел пока нет. Создание дел будет добавлено отдельной кнопкой.
+          </div>
+         )}
+
+         <div
+          style={{
+           display: "flex",
+           flexDirection: "column",
+           gap: "6px",
+           marginTop: "10px",
+          }}
+         >
+          {cases.map((c) => (
+           <button
+            key={c.id}
+            type="button"
+            onClick={() => selectCase(c.id)}
+            style={{
+             width: "100%",
+             textAlign: "left",
+             background:
+              activeCaseId === c.id
+               ? "rgba(255,255,255,0.08)"
+               : "rgba(255,255,255,0.04)",
+             border: "1px solid rgba(255,255,255,0.08)",
+             color: "#e5e7eb",
+             padding: "8px",
+             borderRadius: "10px",
+             cursor: "pointer",
+             fontSize: "11px",
+            }}
+           >
+            <div style={{ fontWeight: 700 }}>{c.title || `Дело #${c.id}`}</div>
+            {c.description && (
+             <div style={{ fontSize: "10px", opacity: 0.85, marginTop: "4px" }}>
+              {c.description}
+             </div>
+            )}
+           </button>
+          ))}
+         </div>
+        </div>
+       )}
+
+       <div className="workspace-sidepanel-header">
+        <button
+         type="button"
+         onClick={() => setActiveSidePanel("docs")}
+         style={{
+          background: "transparent",
+          border: "none",
+          color: "#e5e7eb",
+          textAlign: "left",
+          width: "100%",
+          fontSize: "12px",
+          fontWeight: 600,
+          cursor: "pointer",
+         }}
+        >
+         Документы
+        </button>
+       </div>
+
+       {activeSidePanel === "docs" && (
+        <div className="workspace-sidepanel-body">
+         <p style={{ fontSize: "10px", marginTop: 0 }}>
+          Список документов выбранного дела. Выберите документ, чтобы открыть
+          его версии и продолжить работу в редакторе.
+         </p>
+
+         {!activeCaseId && (
+          <div style={{ fontSize: "10px", opacity: 0.85 }}>
+           Сначала выберите дело в разделе «Мои дела».
+          </div>
+         )}
+
+         {activeCaseId && loadingDocuments && (
+          <div style={{ fontSize: "10px" }}>Загрузка документов…</div>
+         )}
+
+         {activeCaseId && !loadingDocuments && documents.length === 0 && (
+          <div style={{ fontSize: "10px", opacity: 0.85 }}>
+           У этого дела пока нет документов. Создание документов будет добавлено
+           отдельной кнопкой.
+          </div>
+         )}
+
+         <div
+          style={{
+           display: "flex",
+           flexDirection: "column",
+           gap: "6px",
+           marginTop: "10px",
+          }}
+         >
+          {documents.map((d) => (
+           <button
+            key={d.id}
+            type="button"
+            onClick={() => selectDocument(d.id)}
+            style={{
+             width: "100%",
+             textAlign: "left",
+             background:
+              activeDocumentId === d.id
+               ? "rgba(255,255,255,0.08)"
+               : "rgba(255,255,255,0.04)",
+             border: "1px solid rgba(255,255,255,0.08)",
+             color: "#e5e7eb",
+             padding: "8px",
+             borderRadius: "10px",
+             cursor: "pointer",
+             fontSize: "11px",
+            }}
+           >
+            <div style={{ fontWeight: 700 }}>
+             {d.title || `Документ #${d.id}`}
+            </div>
+            {d.type && (
+             <div style={{ fontSize: "10px", opacity: 0.85, marginTop: "4px" }}>
+              {d.type}
+             </div>
+            )}
+           </button>
+          ))}
+         </div>
+
+         {activeDocumentId && (
+          <div style={{ marginTop: "12px" }}>
+           <div style={{ fontSize: "10px", opacity: 0.85 }}>
+            Версии документа: {loadingVersions ? "загрузка…" : versions.length}
+           </div>
+           {!loadingVersions && versions.length > 0 && (
+            <div
+             style={{
+              marginTop: "6px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "6px",
+             }}
+            >
+             {versions.slice(-5).map((v) => (
+              <div
+               key={v.id}
+               style={{
+                background: "rgba(0,0,0,0.22)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                padding: "8px",
+                borderRadius: "10px",
+                fontSize: "10px",
+               }}
+              >
+               <div style={{ fontWeight: 700 }}>
+                Версия #{v.id} {v.source ? `· ${v.source}` : ""}
+               </div>
+               {v.created_at && (
+                <div style={{ opacity: 0.85, marginTop: "4px" }}>
+                 {v.created_at}
+                </div>
+               )}
+              </div>
+             ))}
+            </div>
+           )}
+          </div>
+         )}
+        </div>
+       )}
+      </div>
+     </aside>
+
+     <section className="workspace-chat">
+      <div className="workspace-chat-card">
+       <div className="workspace-chat-header">
+        <div>
+         <div className="workspace-chat-title">Чат с Татьяной</div>
+         <div className="workspace-chat-subtitle">
+          Задайте вопрос или уточните задачу для документа
+         </div>
         </div>
 
-        <div className="workspace-editor-body">
-          <DocumentEditor value={documentHtml} onChange={handleDocumentChange} />
+        <div style={{ fontSize: "10px", opacity: 0.85 }}>
+         {DEMO_MODE ? "DEMO" : "LIVE"}
+        </div>
+       </div>
+
+       <div className="workspace-chat-messages">
+        {messages.length === 0 && (
+         <div className="workspace-chat-empty">
+          <div style={{ fontWeight: 700, marginBottom: "6px" }}>
+           Начните диалог
+          </div>
+          <div style={{ fontSize: "11px", opacity: 0.9 }}>
+           Например: «Составь претензию», «Проанализируй договор», «Какие риски в
+           этом документе?»
+          </div>
+         </div>
+        )}
+
+        {messages.map((m, idx) => (
+         <div
+          key={idx}
+          className={
+           m.from === "user"
+            ? "workspace-chat-bubble workspace-chat-bubble-user"
+            : "workspace-chat-bubble workspace-chat-bubble-ai"
+          }
+         >
+          {m.text}
+         </div>
+        ))}
+        <div ref={messagesEndRef} />
+       </div>
+
+       <div className="workspace-chat-input">
+        <textarea
+         value={input}
+         onChange={handleInputChange}
+         placeholder="Введите сообщение…"
+         rows={3}
+        />
+        <div className="workspace-chat-controls">
+         <button
+          type="button"
+          className="workspace-header-button"
+          onClick={handleSend}
+         >
+          Отправить
+         </button>
+         <button
+          type="button"
+          className="workspace-header-button"
+          onClick={() => setMessages([])}
+         >
+          Очистить
+         </button>
+        </div>
+       </div>
+      </div>
+     </section>
+
+     <section className="workspace-editor">
+      <div className="workspace-editor-card">
+       <div className="workspace-editor-header">
+        <div>
+         <div className="workspace-editor-title">Редактор документа</div>
+         <div className="workspace-editor-subtitle">
+          Подготовьте черновик. Сохраняйте версии по ходу работы.
+         </div>
         </div>
 
         <div className="workspace-editor-actions">
-          <button
-            type="button"
-            className="workspace-editor-button"
-            onClick={handleInsertDraftTemplate}
-            style={{ fontSize: "10px" }}
-          >
-            Вставить черновой шаблон
-          </button>
-          <button
-            type="button"
-            className="workspace-editor-button workspace-editor-button-primary"
-            onClick={handleSaveDraft}
-            style={{ fontSize: "10px" }}
-          >
-            Сохранить черновик
-          </button>
-          <button
-            type="button"
-            className="workspace-editor-button"
-            onClick={() => handleDownloadStub("docx")}
-            style={{ fontSize: "10px" }}
-          >
-            Скачать в Word (скоро)
-          </button>
-          <button
-            type="button"
-            className="workspace-editor-button"
-            onClick={() => handleDownloadStub("pdf")}
-            style={{ fontSize: "10px" }}
-          >
-            Скачать PDF (скоро)
-          </button>
+         <button
+          type="button"
+          className="workspace-editor-button"
+          onClick={handleInsertDraftTemplate}
+          style={{ fontSize: "10px" }}
+         >
+          Вставить черновой шаблон
+         </button>
+         <button
+          type="button"
+          className="workspace-editor-button workspace-editor-button-primary"
+          onClick={handleSaveDraft}
+          style={{ fontSize: "10px" }}
+         >
+          Сохранить черновик
+         </button>
         </div>
-      </section>
+       </div>
 
-      <footer
-        className="workspace-footer"
-        style={{
-          marginTop: "16px",
-          padding: "16px 24px 0",
-          fontSize: "10px",
-          opacity: 0.85,
-        }}
-      >
-        <div className="workspace-footer-links">
-          <a href="#" className="workspace-footer-link">
-            Пользовательское соглашение
-          </a>
-          {" · "}
-          <a href="#" className="workspace-footer-link">
-            Политика конфиденциальности
-          </a>
-          {" · "}
-          <a href="#" className="workspace-footer-link">
-            Контакты
-          </a>
+       <div className="workspace-editor-body">
+        <DocumentEditor value={documentHtml} onChange={handleDocumentHtmlChange} />
+       </div>
+
+       <div className="workspace-editor-footer">
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+         <button
+          type="button"
+          className="workspace-header-button"
+          onClick={() => handleDownloadStub("pdf")}
+         >
+          Экспорт PDF
+         </button>
+         <button
+          type="button"
+          className="workspace-header-button"
+          onClick={() => handleDownloadStub("docx")}
+         >
+          Экспорт DOCX
+         </button>
         </div>
-        <p style={{ marginTop: "8px" }}>
-          © {new Date().getFullYear()} LEGALAI. Все права защищены. Материалы,
-          создаваемые с помощью сервиса, не являются официальной юридической
-          консультацией. За окончательные решения и действия несёт
-          ответственность пользователь.
-        </p>
-      </footer>
+
+        <div style={{ fontSize: "10px", opacity: 0.85, marginTop: "10px" }}>
+         Подсказка: в боевом режиме сохраняйте версии, чтобы отслеживать правки.
+        </div>
+       </div>
+      </div>
+     </section>
     </div>
-  );
+   </main>
+
+   <footer className="workspace-footer">
+    <div className="workspace-footer-links">
+     <a href="#" className="workspace-footer-link">
+      Политика конфиденциальности
+     </a>
+     <a href="#" className="workspace-footer-link">
+      Пользовательское соглашение
+     </a>
+     <a href="#" className="workspace-footer-link">
+      Контакты
+     </a>
+    </div>
+    <p style={{ marginTop: "8px" }}>
+     © {new Date().getFullYear()} LEGALAI. Все права защищены. Материалы,
+     создаваемые с помощью сервиса, не являются официальной юридической
+     консультацией. За окончательные решения и действия несёт ответственность
+     пользователь.
+    </p>
+   </footer>
+  </div>
+ );
 };
 
 export default WorkspacePage;
