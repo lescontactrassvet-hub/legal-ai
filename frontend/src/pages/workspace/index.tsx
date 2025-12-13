@@ -189,6 +189,15 @@ async function requestTatianaReply(
   }
 }
 
+type CaseItem = {
+  id: number;
+  title: string;
+  status?: string | null;
+  description?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
 const WorkspacePage: React.FC<WorkspacePageProps> = ({
   onGoToProfile,
   onLogout,
@@ -199,6 +208,61 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const [input, setInput] = useState<string>("");
   const [documentHtml, setDocumentHtml] = useState<string>("");
   const [activeSidePanel, setActiveSidePanel] = useState<SidePanel>("cases");
+
+const [cases, setCases] = useState<CaseItem[]>([]);
+  const [activeCaseId, setActiveCaseId] = useState<number | null>(null);
+  const [casesLoading, setCasesLoading] = useState<boolean>(false);
+  const [casesError, setCasesError] = useState<string>("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCases = async () => {
+      const base =
+        (import.meta as any)?.env?.VITE_API_BASE?.toString?.() || "/api";
+      const url = `${base.replace(/\/$/, "")}/cases`;
+
+      setCasesLoading(true);
+      setCasesError("");
+
+      try {
+        const res = await fetch(url);
+        const raw = await res.text();
+
+        let data: unknown;
+        try {
+          data = JSON.parse(raw);
+        } catch {
+          throw new Error(`Не JSON: ${raw.slice(0, 140)}`);
+        }
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        if (!Array.isArray(data)) {
+          throw new Error("Ожидался массив дел");
+        }
+
+        const list = data as CaseItem[];
+
+        if (!cancelled) {
+          setCases(list);
+          if (list.length > 0) {
+            setActiveCaseId(prev => (prev === null ? list[0].id : prev));
+          }
+        }
+      } catch (e):
+        if not cancelled:
+          setCasesError(str(e))
+      finally:
+        if not cancelled:
+          setCasesLoading(false)
+    };
+
+    loadCases();
+    return () => { cancelled = true; };
+  }, []);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -652,17 +716,52 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
               </button>
             </div>
             {activeSidePanel === "cases" && (
-              <div className="workspace-sidepanel-body">
-                <p style={{ fontSize: "10px" }}>
-                  Здесь появится список ваших дел с кратким статусом: «на
-                  подготовке», «отправлено», «ожидание ответа», «завершено».
-                </p>
-                <p style={{ fontSize: "10px" }}>
-                  В полной версии вы сможете быстро переходить к делу, открывать
-                  чат и связанные документы в один клик.
-                </p>
-              </div>
-            )}
+  <div className="workspace-sidepanel-body">
+    {casesLoading && (
+      <p style={{ fontSize: "10px" }}>Загрузка дел…</p>
+    )}
+
+    {casesError && (
+      <p style={{ fontSize: "10px", color: "#fca5a5" }}>
+        Ошибка загрузки дел: {casesError}
+      </p>
+    )}
+
+    {!casesLoading && !casesError && cases.length === 0 && (
+      <p style={{ fontSize: "10px" }}>Дел пока нет.</p>
+    )}
+
+    {!casesLoading && !casesError && cases.length > 0 && (
+      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+        {cases.map((c) => (
+          <li key={c.id}>
+            <button
+              type="button"
+              onClick={() => setActiveCaseId(c.id)}
+              style={{
+                width: "100%",
+                textAlign: "left",
+                background:
+                  c.id === activeCaseId
+                    ? "rgba(168, 85, 247, 0.25)"
+                    : "transparent",
+                border: "none",
+                color: "#e5e7eb",
+                padding: "6px 4px",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "11px",
+                fontWeight: c.id === activeCaseId ? 600 : 400,
+              }}
+            >
+              {c.title || `Дело #${c.id}`}
+            </button>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+)}
           </div>
 
           <div
