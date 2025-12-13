@@ -7,9 +7,11 @@ from .config import get_settings
 from .db import Base, engine
 from .legal_doc.routes import router as legal_doc_router
 from .auth.routes import router as auth_router
-from .auth.reset.router import router as reset_router
+from .auth.reset.router import router as reset_router  # ✅ ИСПРАВЛЕНО: было .routes
+
 from routers.ai import router as ai_router
 from routers.admin_laws import router as admin_laws_router
+from routers.cases_documents import router as cases_documents_router  # ✅ ДОБАВИЛИ
 
 # База законов (локальная БД)
 from app.laws.routes import router as laws_router
@@ -17,7 +19,6 @@ from app.laws.routes import router as laws_router
 from app.updates.routes import router as updates_router
 # Загрузка логотипа
 from app.admin.logo_upload import router as logo_upload_router
-
 
 # --- Sentry (опционально) ---
 try:
@@ -31,7 +32,7 @@ except ImportError:
 # --- конец блока Sentry ---
 
 
-# Создание таблиц в БД
+# Создание таблиц в БД (SQLAlchemy модели проекта)
 Base.metadata.create_all(bind=engine)
 
 # Настройки приложения
@@ -45,8 +46,8 @@ if (
     and getattr(settings, "SENTRY_DSN", None)
 ):
     sentry_logging = LoggingIntegration(
-        level=logging.INFO,        # что писать в breadcrumbs
-        event_level=logging.ERROR  # что отправлять как события
+        level=logging.INFO,        # breadcrumbs
+        event_level=logging.ERROR, # события ошибок
     )
 
     sentry_sdk.init(
@@ -89,21 +90,26 @@ async def debug_sentry():
     1 / 0
 
 
-# ==========================
-#        Роутеры
-# ==========================
+# ===========================
+# Роутеры
+# ===========================
 
 # Авторизация
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])
 app.include_router(reset_router, tags=["Auth Reset"])
 
-# Документы
+# Документы (старый модуль, если используется)
 app.include_router(legal_doc_router, prefix="/docs", tags=["Docs"])
+
+# ✅ НОВОЕ: Дела / Документы / Версии (ЭТАП 1)
+# ВАЖНО: здесь НЕТ prefix="/api".
+# На проде nginx уже даёт /api/* -> /* на backend.
+app.include_router(cases_documents_router, tags=["Cases & Documents"])
 
 # AI-консультант (prefix уже внутри routers/ai.py)
 app.include_router(ai_router, tags=["AI"])
 
-# База законов (локальная БД /laws/…)
+# База законов (локальная БД /laws/...)
 app.include_router(laws_router, tags=["Laws"])
 
 # Онлайн-обновления законов (модуль updates)
