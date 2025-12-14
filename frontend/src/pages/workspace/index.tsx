@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, ChangeEvent } from "react";
+ import React, { useState, useEffect, useRef, ChangeEvent } from "react";
 import DocumentEditor from "../../components/DocumentEditor";
 
 type WorkspacePageProps = {
@@ -198,6 +198,15 @@ type CaseItem = {
   updated_at?: string | null;
 };
 
+type DocumentItem = {
+  id: number;
+  case_id: number;
+  title: string;
+  type?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
 const WorkspacePage: React.FC<WorkspacePageProps> = ({
   onGoToProfile,
   onLogout,
@@ -207,12 +216,87 @@ const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState<string>("");
   const [documentHtml, setDocumentHtml] = useState<string>("");
+  const [documentLoading, setDocumentLoading] = useState<boolean>(false);
+  const [documentError, setDocumentError] = useState<string>("");
   const [activeSidePanel, setActiveSidePanel] = useState<SidePanel>("cases");
+  const [saving, setSaving] = useState(false);
+const [saveError, setSaveError] = useState<string | null>(null);
+const [saveOk, setSaveOk] = useState<string | null>(null);
+const [draftOk, setDraftOk] = useState<string | null>(null);
 
-const [cases, setCases] = useState<CaseItem[]>([]);
+// чтобы не плодить одинаковые версии
+const lastSavedHashRef = useRef<string>("");
+
+// для автосохранения: таймер
+
+  const [cases, setCases] = useState<CaseItem[]>([]);
   const [activeCaseId, setActiveCaseId] = useState<number | null>(null);
   const [casesLoading, setCasesLoading] = useState<boolean>(false);
   const [casesError, setCasesError] = useState<string>("");
+
+  const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const [activeDocumentId, setActiveDocumentId] = useState<number | null>(null);
+  const [documentsLoading, setDocumentsLoading] = useState<boolean>(false);
+  const [documentsError, setDocumentsError] = useState<string>("");
+
+const API_BASE = import.meta.env.VITE_API_BASE || "/api";
+  
+function hashText(s: string): string {
+  // простой стабильный хеш (не крипто), нам только для сравнения
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return String(h);
+}
+
+async function saveVersion(mode: "manual" | "auto") {
+  if (!activeDocumentId) return;
+
+  const content = documentHtml || "";
+  const contentHash = hashText(content);
+
+  if (mode === "auto") {
+    if (!content.trim()) return;
+    if (contentHash === lastSavedHashRef.current) return;
+  }
+
+  if (mode === "manual") {
+    setSaving(true);
+    setSaveError(null);
+    setSaveOk(null);
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/documents/${activeDocumentId}/versions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content,
+        source: "user",
+      }),
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`HTTP ${res.status}: ${text || "save failed"}`);
+    }
+
+    lastSavedHashRef.current = contentHash;
+
+    if (mode === "manual") {
+      setSaveOk("Версия сохранена");
+      window.setTimeout(() => setSaveOk(null), 2000);
+    } else {
+      setDraftOk("Черновик сохранён");
+      window.setTimeout(() => setDraftOk(null), 1500);
+    }
+  } catch (e: any) {
+    if (mode === "manual") {
+      setSaveError(e?.message || "Ошибка сохранения версии документа");
+    }
+  } finally {
+    if (mode === "manual") setSaving(false);
+  }
+}
 
   useEffect(() => {
     let cancelled = false;
@@ -250,27 +334,188 @@ const [cases, setCases] = useState<CaseItem[]>([]);
           setCases(list);
           if (list.length > 0) {
             setActiveCaseId(prev => (prev === null ? list[0].id : prev));
-          }
-        }
-      } catch (e):
-        if not cancelled:
-          setCasesError(str(e))
-      finally:
-        if not cancelled:
-          setCasesLoading(false)
-    };
+          } } } catch (e: any) {
+  if (!cancelled) setCasesError(e?.message || String(e));
+} finally {
+  if (!cancelled) setCasesLoading(false);
+}
+};
 
     loadCases();
     return () => { cancelled = true; };
   }, []);
 
+useEffect(() => {
+  if (!activeCaseId) {
+    setDocuments([]);
+    setActiveDocumentId(null);
+    return;
+  }
+
+  let cancelled = false;
+
+  const loadDocuments = async () => {
+    const base =
+      (import.meta as any)?.env?.VITE_API_BASE?.toString?.() || "/api";
+    const url = `${base.replace(/\/$/, "")}/cases/${activeCaseId}/documents`;
+
+    setDocumentsLoading(true);
+    setDocumentsError("");
+    setActiveDocumentId(null);
+
+    try {
+      const res = await fetch(url);
+      const raw = await res.text();
+
+      let data: unknown;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        throw new Error(`Не JSON: ${raw.slice(0, 140)}`);
+      }
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      if (!Array.isArray(data)) {
+        throw new Error("Ожидался массив документов");
+      }
+
+      if (!cancelled) {
+        setDocuments(data as DocumentItem[]);
+      }
+    } catch (e) {
+      if (!cancelled) {
+        const msg =
+          e instanceof Error
+            ? e.message
+            : "Ошибка загрузки документов";
+        setDocumentsError(msg);
+        setDocuments([]);
+      }
+    } finally {
+      if (!cancelled) {
+        setDocumentsLoading(false);
+      }
+    }
+  };
+
+  loadDocuments();
+  return () => {
+    cancelled = true;
+  };
+}, [activeCaseId]);
+
+useEffect(() => {
+  if (!activeDocumentId) {
+    setDocumentError("");
+    return;
+  }
+
+  let cancelled = false;
+
+  const loadLatestDocumentVersion = async () => {
+    const base =
+      (import.meta as any)?.env?.VITE_API_BASE?.toString?.() || "/api";
+    const url = `${base.replace(/\/$/, "")}/documents/${activeDocumentId}/versions`;
+
+    setDocumentLoading(true);
+    setDocumentError("");
+
+    try {
+      const res = await fetch(url);
+      const raw = await res.text();
+
+      let data: unknown;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        throw new Error(`Не JSON: ${raw.slice(0, 140)}`);
+      }
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      if (!Array.isArray(data)) {
+        throw new Error("Ожидался массив версий документа");
+      }
+
+      const versions = data as Array<Record<string, unknown>>;
+      const latest = versions[0];
+
+      const content =
+        latest && typeof latest.content === "string" ? latest.content : "";
+
+      if (!cancelled) {
+        setDocumentHtml(content);
+      }
+    } catch (e) {
+      if (!cancelled) {
+        const msg =
+          e instanceof Error
+            ? e.message
+            : "Ошибка загрузки версии документа";
+        setDocumentError(msg);
+      }
+    } finally {
+      if (!cancelled) {
+        setDocumentLoading(false);
+      }
+    }
+  };
+
+  loadLatestDocumentVersion();
+  return () => {
+    cancelled = true;
+  };
+}, [activeDocumentId]);
+
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+// автосохранение: таймер и защита от дублей
+const autoSaveTimerRef = useRef<number | null>(null);
+const lastAutoSavedRef = useRef<string>("");
 
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+useEffect(() => {
+  if (DEMO_MODE) return;
+  if (!activeDocumentId) return;
+
+  // сбрасываем предыдущий таймер
+  if (autoSaveTimerRef.current) {
+    window.clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = null;
+  }
+
+  // ставим новый таймер на автосохранение
+  autoSaveTimerRef.current = window.setTimeout(async () => {
+    const text = (documentHtml || "").trim();
+    if (!text) return;
+
+    // защита от дублей (не сохраняем одно и то же повторно)
+    if (lastAutoSavedRef.current === text) return;
+
+    try {
+      await saveVersion(activeDocumentId, documentHtml, "user");
+      lastAutoSavedRef.current = text;
+    } catch {
+      // автосейв не спамит алертами — ошибки будем улучшать позже
+    }
+  }, 3000);
+
+  return () => {
+    if (autoSaveTimerRef.current) {
+      window.clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+  };
+}, [documentHtml, activeDocumentId]);
 
   const handleSend = async () => {
     const text = input.trim();
@@ -794,14 +1039,63 @@ const [cases, setCases] = useState<CaseItem[]>([]);
             </div>
             {activeSidePanel === "docs" && (
               <div className="workspace-sidepanel-body">
-                <p style={{ fontSize: "10px" }}>
-                  Здесь будет список документов: черновики, финальные версии,
-                  приложения и связанные файлы.
-                </p>
-                <p style={{ fontSize: "10px" }}>
-                  Черновики, созданные в редакторе ниже, позже будут сохраняться
-                  сюда автоматически.
-                </p>
+                {documentsLoading && (
+  <p style={{ fontSize: "10px" }}>Загрузка документов…</p>
+)}
+
+{documentsError && (
+  <p style={{ fontSize: "10px", color: "#fca5a5" }}>
+    Ошибка загрузки документов: {documentsError}
+  </p>
+)}
+
+{!documentsLoading && !documentsError && !activeCaseId && (
+  <p style={{ fontSize: "10px" }}>
+    Сначала выберите дело.
+  </p>
+)}
+
+{!documentsLoading &&
+  !documentsError &&
+  activeCaseId &&
+  documents.length === 0 && (
+    <p style={{ fontSize: "10px" }}>
+      В этом деле пока нет документов.
+    </p>
+  )}
+
+{!documentsLoading &&
+  !documentsError &&
+  activeCaseId &&
+  documents.length > 0 && (
+    <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+      {documents.map((d) => (
+        <li key={d.id}>
+          <button
+            type="button"
+            onClick={() => setActiveDocumentId(d.id)}
+            style={{
+              width: "100%",
+              textAlign: "left",
+              background:
+                d.id === activeDocumentId
+                  ? "rgba(56, 189, 248, 0.25)"
+                  : "transparent",
+              border: "none",
+              color: "#e5e7eb",
+              padding: "6px 4px",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontSize: "11px",
+              fontWeight: d.id === activeDocumentId ? 600 : 400,
+            }}
+          >
+            {d.title || `Документ #${d.id}`}
+          </button>
+        </li>
+      ))}
+    </ul>
+  )}
               </div>
             )}
           </div>
@@ -829,7 +1123,18 @@ const [cases, setCases] = useState<CaseItem[]>([]);
         </div>
 
         <div className="workspace-editor-body">
-          <DocumentEditor value={documentHtml} onChange={handleDocumentChange} />
+         {documentLoading && (
+  <p style={{ fontSize: "11px", marginBottom: "6px" }}>
+    Загрузка текста документа…
+  </p>
+)}
+
+{documentError && (
+  <p style={{ fontSize: "11px", color: "#fca5a5", marginBottom: "6px" }}>
+    Ошибка загрузки текста документа: {documentError}
+  </p>
+)} 
+         <DocumentEditor value={documentHtml} onChange={handleDocumentChange} />
         </div>
 
         <div className="workspace-editor-actions">
