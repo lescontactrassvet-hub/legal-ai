@@ -74,8 +74,11 @@ backend/
     user.py
     admin_laws.py
     __init__.py
+    cases_documents.py
   sql/
+    2025_cases_documents_versions.sql
     2025_legalai_law_update_log.sql
+    2025_cases_documents_versions.sOT EXISTS cases (TEGER PRIMARY KEY AUTOINCREMENT,OT NULL, TEXT,OT NULL DEFAULT (datetime('now')),OT NULL DEFAULT (datetime('now'))ts)OT EXISTS documents (TEGER PRIMARY KEY AUTOINCREMENT,TEGER NOT NULL,OT NULL,
     2025_legalai_law_documents.sql
     2025_legalai_law_sources_seed.sql
     2025_legalai_laws_schema.sql
