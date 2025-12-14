@@ -494,19 +494,11 @@ useEffect(() => {
   }
 
   // ставим новый таймер на автосохранение
-  autoSaveTimerRef.current = window.setTimeout(async () => {
-    const text = (documentHtml || "").trim();
-    if (!text) return;
-
-    // защита от дублей (не сохраняем одно и то же повторно)
-    if (lastAutoSavedRef.current === text) return;
-
-    try {
-      await saveVersion(activeDocumentId, documentHtml, "user");
-      lastAutoSavedRef.current = text;
-    } catch {
-      // автосейв не спамит алертами — ошибки будем улучшать позже
-    }
+  autoSaveTimerRef.current = window.setTimeout(() => {
+    // saveVersion сама:
+    // - проверяет пустой текст
+    // - не плодит дубли по hash
+    saveVersion("auto");
   }, 3000);
 
   return () => {
@@ -1008,6 +1000,94 @@ useEffect(() => {
   </div>
 )}
           </div>
+{/* История версий документа (2.5) */}
+<div className="workspace-sidepanel" style={{ marginTop: "16px" }}>
+  <div className="workspace-sidepanel-header">
+    <div
+      style={{
+        background: "transparent",
+        border: "none",
+        color: "#e5e7eb",
+        textAlign: "left",
+        width: "100%",
+        fontSize: "12px",
+        fontWeight: 600,
+      }}
+    >
+      История версий
+    </div>
+  </div>
+
+  <div className="workspace-sidepanel-body">
+    {!activeDocumentId ? (
+      <p style={{ fontSize: "10px", opacity: 0.85 }}>
+        Выберите документ, чтобы увидеть историю версий.
+      </p>
+    ) : versionsLoading ? (
+      <p style={{ fontSize: "10px" }}>Загрузка истории версий…</p>
+    ) : versionsError ? (
+      <p style={{ fontSize: "10px", color: "#fca5a5" }}>
+        Ошибка загрузки версий: {versionsError}
+      </p>
+    ) : versions.length === 0 ? (
+      <p style={{ fontSize: "10px", opacity: 0.85 }}>Версий пока нет.</p>
+    ) : (
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          {versions.map((v: any) => (
+            <button
+              key={v.id}
+              type="button"
+              onClick={() => {
+                setSelectedVersionId(v.id);
+                setSelectedVersionContent(typeof v.content === "string" ? v.content : "");
+              }}
+              style={{
+                textAlign: "left",
+                padding: "8px 10px",
+                borderRadius: 10,
+                border: "1px solid rgba(255,255,255,0.12)",
+                background:
+                  v.id === selectedVersionId
+                    ? "rgba(255,255,255,0.08)"
+                    : "rgba(255,255,255,0.03)",
+                cursor: "pointer",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 12, fontWeight: 700 }}>
+                  v{v.id} · {v.source}
+                </span>
+                <span style={{ fontSize: 11, opacity: 0.8 }}>
+                  {typeof v.created_at === "string"
+                    ? v.created_at.replace("T", " ").slice(0, 19)
+                    : ""}
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        <div
+          style={{
+            marginTop: 6,
+            padding: 10,
+            borderRadius: 12,
+            border: "1px solid rgba(255,255,255,0.12)",
+            background: "rgba(255,255,255,0.03)",
+          }}
+        >
+          <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
+            Предпросмотр (read-only)
+          </div>
+          <div style={{ fontSize: 13, whiteSpace: "pre-wrap" }}>
+            {selectedVersionContent || ""}
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+</div>
 
           <div
             className="workspace-sidepanel"
@@ -1099,6 +1179,80 @@ useEffect(() => {
               </div>
             )}
           </div>
+{/* История версий документа */}
+<div style={{ marginTop: 12 }}>
+  <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>
+    История версий
+  </div>
+
+  {!activeDocumentId ? (
+    <div style={{ opacity: 0.8, fontSize: 13 }}>
+      Выберите документ, чтобы увидеть историю версий.
+    </div>
+  ) : versionsLoading ? (
+    <div style={{ opacity: 0.8, fontSize: 13 }}>
+      Загрузка истории версий…
+    </div>
+  ) : versionsError ? (
+    <div style={{ color: "#fca5a5", fontSize: 13 }}>
+      Ошибка загрузки версий: {versionsError}
+    </div>
+  ) : versions.length === 0 ? (
+    <div style={{ opacity: 0.8, fontSize: 13 }}>
+      Версий пока нет.
+    </div>
+  ) : (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {versions.map((v) => (
+        <button
+          key={v.id}
+          type="button"
+          onClick={() => {
+            setSelectedVersionId(v.id);
+            setSelectedVersionContent(v.content || "");
+          }}
+          style={{
+            textAlign: "left",
+            padding: "8px 10px",
+            borderRadius: 10,
+            border: "1px solid rgba(255,255,255,0.12)",
+            background:
+              v.id === selectedVersionId
+                ? "rgba(255,255,255,0.08)"
+                : "rgba(255,255,255,0.03)",
+            cursor: "pointer",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 12, fontWeight: 700 }}>
+              v{v.id} · {v.source}
+            </span>
+            <span style={{ fontSize: 11, opacity: 0.8 }}>
+              {v.created_at?.replace("T", " ").slice(0, 19)}
+            </span>
+          </div>
+        </button>
+      ))}
+
+      <div
+        style={{
+          marginTop: 6,
+          padding: 10,
+          borderRadius: 12,
+          border: "1px solid rgba(255,255,255,0.12)",
+          background: "rgba(255,255,255,0.03)",
+        }}
+      >
+        <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
+          Предпросмотр (read-only)
+        </div>
+        <div style={{ fontSize: 13, whiteSpace: "pre-wrap" }}>
+          {selectedVersionContent || ""}
+        </div>
+      </div>
+    </div>
+  )}
+</div>
         </aside>
       </main>
 
@@ -1134,6 +1288,18 @@ useEffect(() => {
     Ошибка загрузки текста документа: {documentError}
   </p>
 )} 
+
+{saveOk && (
+  <p style={{ fontSize: "11px", color: "#86efac", marginBottom: "6px" }}>
+    {saveOk}
+  </p>
+)}
+{saveError && (
+  <p style={{ fontSize: "11px", color: "#fca5a5", marginBottom: "6px" }}>
+    {saveError}
+  </p>
+)}
+
          <DocumentEditor value={documentHtml} onChange={handleDocumentChange} />
         </div>
 
@@ -1146,6 +1312,15 @@ useEffect(() => {
           >
             Вставить черновой шаблон
           </button>
+          <button
+  type="button"
+  className="workspace-editor-button workspace-editor-button-primary"
+  onClick={() => saveVersion("manual")}
+  disabled={!activeDocumentId || saving}
+  style={{ fontSize: "10px" }}
+>
+  {saving ? "Сохранение..." : "Сохранить версию"}
+</button>
           <button
             type="button"
             className="workspace-editor-button workspace-editor-button-primary"

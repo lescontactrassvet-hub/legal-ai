@@ -1,3 +1,4 @@
+
 # Python caches
 __pycache__/
 *.pyc
@@ -54,3 +55,4 @@ backend/test_env.py
 
 # Python cache
 __pycache__/
+_trash_check/
