@@ -86,9 +86,21 @@ class ConsultantCore:
 
         # 8. Анализ рисков
         risk_info = self.risk_checker.analyze(answer)
+        # --- ЭТАП 2.8: строгий формат ответа (MODE / DRAFT) ---
+        mode = "ANSWER"
+        if intent == "template":
+            mode = "EDIT"
+        elif intent in ("analysis", "risk_check"):
+            mode = "ANALYSIS"
+
+        answer_wrapped = wrap_ai_response(
+            mode=mode,
+            main_text=answer,
+            comment="Предложена правка/текст для применения к выбранному фрагменту." if mode == "EDIT" else None,
+        )
 
         return {
-            "answer": answer,
+            "answer": answer_wrapped,
             "citations": validated_citations,
             "intent": intent,
             "risk_info": risk_info,
@@ -165,3 +177,38 @@ class ConsultantCore:
             "intent": intent,
             "suggestions": suggestions,
         }
+def wrap_ai_response(mode: str, main_text: str, comment: str | None = None) -> str:
+    """
+    Этап 2.8 — строгий контракт ответа ИИ (MODE / DRAFT).
+    Для EDIT: DRAFT обязателен.
+    Для ANSWER/ANALYSIS: обычный текст + END.
+    """
+    mode = (mode or "").upper().strip()
+    if mode not in {"EDIT", "ANALYSIS", "ANSWER"}:
+        mode = "ANSWER"
+
+    main_text = (main_text or "").strip()
+
+    if mode == "EDIT":
+        if not main_text:
+            raise ValueError("EDIT mode requires non-empty DRAFT")
+
+        parts: list[str] = []
+        parts.append("<<<MODE:EDIT>>>")
+        parts.append("<<<DRAFT>>>")
+        parts.append(main_text)
+        parts.append("<<<END>>>")
+        if comment and comment.strip():
+            parts.append("")
+            parts.append("<<<COMMENT>>>")
+            parts.append(comment.strip())
+            parts.append("<<<END>>>")
+        return "\n".join(parts)
+
+    # ANALYSIS / ANSWER
+    parts: list[str] = []
+    parts.append(f"<<<MODE:{mode}>>>")
+    parts.append(main_text)
+    parts.append("<<<END>>>")
+    return "\n".join(parts)
+
