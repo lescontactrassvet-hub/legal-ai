@@ -111,10 +111,10 @@ function formatCitations(citations: unknown): string {
     return "";
   }
 }
-
 async function requestTatianaReply(
   mode: WorkspaceMode,
-  userText: string
+  userText: string,
+  context?: any
 ): Promise<string> {
   const base =
     (import.meta as any)?.env?.VITE_API_BASE?.toString?.() || "/api";
@@ -128,6 +128,7 @@ async function requestTatianaReply(
       body: JSON.stringify({
         message: userText,
         intent: mode, // используем режим как "намерение" (simple/pro)
+    context: context || undefined,
       }),
     });
 
@@ -537,10 +538,18 @@ useEffect(() => {
 
   // 2.8: сбрасываем предыдущий draft при новом запросе
   setAiDraft(null);
+  const ctx =
+    selection && selection.from !== selection.to
+      ? {
+          mode: "edit_fragment",
+          selection_text: selection.text,
+          document_html: (documentHtml || "").slice(0, 4000),
+        }
+      : undefined;
 
 
-    const replyText = await requestTatianaReply(mode, text);
-    // --- Ищем draft-фрагмент от ИИ (для этапа 2.7) ---
+
+  const replyText = await requestTatianaReply(mode, text, ctx);
 const draftMatch = replyText.match(/<<<DRAFT>>>([\s\S]*?)<<<END>>>/);
 if (draftMatch) {
     const draftText = (draftMatch[1] || "").trim();
