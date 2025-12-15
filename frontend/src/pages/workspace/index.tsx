@@ -116,6 +116,23 @@ async function requestTatianaReply(
   userText: string,
   context?: any
 ): Promise<string> {
+
+  const finalMessage =
+    context?.mode === "edit_fragment"
+      ? `Ты юридический редактор. Твоя задача — переписать ТОЛЬКО выделенный фрагмент текста.\n\n
+СТРОГИЕ ПРАВИЛА:\n
+- Верни ТОЛЬКО новую версию фрагмента\n
+- БЕЗ комментариев, объяснений, списков\n
+- БЕЗ всего документа\n
+- Формат ответа СТРОГО:\n
+<<<DRAFT>>>\n
+<новая версия фрагмента>\n
+<<<END>>>\n\n
+ВЫДЕЛЕННЫЙ ФРАГМЕНТ:\n${context?.selection_text}\n\n
+КОНТЕКСТ ДОКУМЕНТА (для стиля и смысла):\n${context?.document_html}`
+      : userText;
+
+
   const base =
     (import.meta as any)?.env?.VITE_API_BASE?.toString?.() || "/api";
 
@@ -126,12 +143,11 @@ async function requestTatianaReply(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        message: userText,
+        message: finalMessage,
         intent: mode, // используем режим как "намерение" (simple/pro)
-    context: context || undefined,
+        context: context || undefined,
       }),
     });
-
     // Если backend отдаёт HTML/ошибку — поймаем и покажем нормально
     const rawText = await res.text();
     let data: TatianaAskResponse | null = null;
