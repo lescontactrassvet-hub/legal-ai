@@ -527,7 +527,7 @@ useEffect(() => {
 
     const replyText = await requestTatianaReply(mode, text);
     // --- Ищем draft-фрагмент от ИИ (для этапа 2.7) ---
-const draftMatch = reply.match(/<<<DRAFT>>>([\s\S]*?)<<<END>>>/);
+const draftMatch = replyText.match(/<<<DRAFT>>>([\s\S]*?)<<<END>>>/);
 if (draftMatch) {
   setAiDraft(draftMatch[1].trim());
 }
