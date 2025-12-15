@@ -235,6 +235,16 @@ const [selection, setSelection] = useState<{ from: number; to: number; text: str
 // черновик от ИИ (фрагмент для применения)
 const [aiDraft, setAiDraft] = useState<string | null>(null);
 
+  // 2.8: показываем применение только когда draft валиден и есть выделение
+  const canApplyAiDraft = Boolean(
+    aiDraft &&
+    aiDraft.trim().length >= 10 &&
+    selection &&
+    selection.from !== selection.to &&
+    aiDraft.trim() !== selection.text.trim()
+  );
+
+
 // для автосохранения: таймер
 
   const [cases, setCases] = useState<CaseItem[]>([]);
@@ -525,11 +535,18 @@ useEffect(() => {
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
 
+  // 2.8: сбрасываем предыдущий draft при новом запросе
+  setAiDraft(null);
+
+
     const replyText = await requestTatianaReply(mode, text);
     // --- Ищем draft-фрагмент от ИИ (для этапа 2.7) ---
 const draftMatch = replyText.match(/<<<DRAFT>>>([\s\S]*?)<<<END>>>/);
 if (draftMatch) {
-  setAiDraft(draftMatch[1].trim());
+    const draftText = (draftMatch[1] || "").trim();
+    if (draftText.length >= 10) {
+      setAiDraft(draftText);
+    }
 }
     const aiMessage: ChatMessage = { from: "ai", text: replyText };
     setMessages((prev) => [...prev, aiMessage]);
@@ -1313,7 +1330,8 @@ if (draftMatch) {
   </p>
 )}
 
-{aiDraft && (
+{canApplyAiDraft && (
+
   <div style={{ margin: "8px 0" }}>
     <button
       type="button"
@@ -1375,6 +1393,10 @@ if (draftMatch) {
     >
       Применить (заменить выделенное)
     </button>
+  <p style={{ fontSize: "10px", opacity: 0.85, marginTop: 6 }}>
+    Будет заменён только выделенный фрагмент документа.
+  </p>
+
   </div>
 )}
 
