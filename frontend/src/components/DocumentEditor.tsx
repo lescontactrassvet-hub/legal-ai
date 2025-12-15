@@ -1,19 +1,25 @@
+import { useEffect } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 
 type DocumentEditorProps = {
-  /** HTML-содержимое документа */
+  // HTML TipTap-документа (то, что хранится в версии)
   value: string;
-  /** Колбэк на изменение документа (HTML) */
   onChange: (html: string) => void;
+
+  // Даём Workspace доступ к editor (чтобы выполнить replace selection)
+  onEditorReady?: (editor: any) => void;
+
+  // Сообщаем Workspace текущее выделение (позиции и текст)
+  onSelectionChange?: (sel: { from: number; to: number; text: string }) => void;
 };
 
 /**
  * DocumentEditor — независимый мини-Word на TipTap.
  * Здесь Татьяна выдаёт результат, а пользователь правит документ вручную.
  */
-export function DocumentEditor({ value, onChange }: DocumentEditorProps) {
+export function DocumentEditor({ value, onChange, onEditorReady, onSelectionChange }: DocumentEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -31,6 +37,31 @@ export function DocumentEditor({ value, onChange }: DocumentEditorProps) {
       onChange(editor.getHTML());
     },
   });
+
+// Передаём editor наружу + отслеживаем выделение (TipTap selection)
+useEffect(() => {
+  if (!editor) return;
+
+  // 1) отдаём editor в Workspace
+  onEditorReady?.(editor);
+
+  // 2) функция, которая отправляет выделение
+  const pushSelection = () => {
+    const { from, to } = editor.state.selection;
+    const text = editor.state.doc.textBetween(from, to, "\n");
+    onSelectionChange?.({ from, to, text });
+  };
+
+  // первый пуш сразу
+  pushSelection();
+
+  // и дальше на каждое изменение выделения
+  editor.on("selectionUpdate", pushSelection);
+
+  return () => {
+    editor.off("selectionUpdate", pushSelection);
+  };
+}, [editor, onEditorReady, onSelectionChange]);
 
   if (!editor) {
     return null;

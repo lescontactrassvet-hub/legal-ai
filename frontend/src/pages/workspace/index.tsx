@@ -226,6 +226,14 @@ const [draftOk, setDraftOk] = useState<string | null>(null);
 
 // чтобы не плодить одинаковые версии
 const lastSavedHashRef = useRef<string>("");
+// TipTap editor instance (нужен, чтобы заменить выделенный текст)
+const editorRef = useRef<any>(null);
+
+// текущее выделение в редакторе (позиции TipTap)
+const [selection, setSelection] = useState<{ from: number; to: number; text: string } | null>(null);
+
+// черновик от ИИ (фрагмент для применения)
+const [aiDraft, setAiDraft] = useState<string | null>(null);
 
 // для автосохранения: таймер
 
@@ -518,6 +526,11 @@ useEffect(() => {
     setInput("");
 
     const replyText = await requestTatianaReply(mode, text);
+    // --- Ищем draft-фрагмент от ИИ (для этапа 2.7) ---
+const draftMatch = reply.match(/<<<DRAFT>>>([\s\S]*?)<<<END>>>/);
+if (draftMatch) {
+  setAiDraft(draftMatch[1].trim());
+}
     const aiMessage: ChatMessage = { from: "ai", text: replyText };
     setMessages((prev) => [...prev, aiMessage]);
   };
@@ -1300,7 +1313,81 @@ useEffect(() => {
   </p>
 )}
 
-         <DocumentEditor value={documentHtml} onChange={handleDocumentChange} />
+{aiDraft && (
+  <div style={{ margin: "8px 0" }}>
+    <button
+      type="button"
+      onClick={async () => {
+        if (!activeDocumentId) {
+          alert("Сначала выберите документ");
+          return;
+        }
+        if (!editorRef.current) {
+          alert("Редактор ещё не готов");
+          return;
+        }
+        if (!selection || selection.from === selection.to) {
+          alert("Выделите текст, который нужно заменить");
+          return;
+        }
+
+        // 1) заменяем выделение в TipTap
+        editorRef.current
+          .chain()
+          .focus()
+          .insertContentAt(
+            { from: selection.from, to: selection.to },
+            aiDraft
+          )
+          .run();
+
+        // 2) получаем новый HTML документа
+        const newHtml = editorRef.current.getHTML();
+
+        // 3) сохраняем новую версию от ИИ
+        const res = await fetch(
+          `${API_BASE}/documents/${activeDocumentId}/versions`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              content: newHtml,
+              source: "ai",
+            }),
+          }
+        );
+
+        if (!res.ok) {
+          const t = await res.text();
+          alert(
+            `Не удалось сохранить AI-версию: ${res.status} ${t.slice(0, 200)}`
+          );
+          return;
+        }
+
+        // 4) обновляем состояние и защищаемся от лишнего автосейва
+        setDocumentHtml(newHtml);
+        lastSavedHashRef.current = hashText(newHtml);
+
+        // 5) сбрасываем draft
+        setAiDraft(null);
+      }}
+    >
+      Применить (заменить выделенное)
+    </button>
+  </div>
+)}
+
+         <DocumentEditor
+  value={documentHtml}
+  onChange={handleDocumentChange}
+  onEditorReady={(ed) => {
+    editorRef.current = ed;
+  }}
+  onSelectionChange={(sel) => {
+    setSelection(sel);
+  }}
+/>
         </div>
 
         <div className="workspace-editor-actions">
