@@ -3,7 +3,6 @@ import sqlite3
 import os
 import re
 
-
 DB_PATH = os.getenv(
     "LEGALAI_DB_PATH",
     "/srv/legal-ai/data/legalai.db",
@@ -24,6 +23,7 @@ class DocumentRetriever:
     def retrieve(self, query: str, top_k: int = 8) -> List[Tuple[int, str]]:
         if not query or not query.strip():
             return []
+
         raw = query.strip().lower()
         parts = re.findall(r"[0-9a-zа-яё]+", raw, flags=re.IGNORECASE)
 
@@ -44,7 +44,9 @@ class DocumentRetriever:
 
         like_items = ["content_html LIKE ?"] * len(tokens)
         like_clauses = " OR ".join(like_items)
-        sql = """
+
+        # IMPORTANT: must be f-string because we inject {like_clauses}
+        sql = f"""
         SELECT
             id,
             content_html
@@ -53,19 +55,26 @@ class DocumentRetriever:
         AND ({like_clauses})
         LIMIT ?
         """
-        params = ["%" + t + "%" for t in tokens]
-        params.append(top_k)
 
-        results: List[Tuple[int, str]] = []
+        params = ["%" + t + "%" for t in tokens]
+        candidate_k = max(top_k * 6, 50)
+        params.append(candidate_k)
+
+        # keep score internally, then return pairs (doc_id, html)
+        results_scored: List[Tuple[int, str, int]] = []
 
         conn = sqlite3.connect(self.db_path)
         try:
             cur = conn.cursor()
             cur.execute(sql, params)
             for doc_id, html in cur.fetchall():
-                # пока без очистки HTML — отдадим как есть
-                results.append((doc_id, html))
+                text = (html or "").lower()
+                score = sum(1 for t in tokens if t in text)
+                results_scored.append((doc_id, html, score))
         finally:
             conn.close()
 
+        # B0: rank candidates by token match count
+        results_scored.sort(key=lambda x: x[2], reverse=True)
+        results = [(doc_id, html) for (doc_id, html, _score) in results_scored[:top_k]]
         return results
