@@ -2,6 +2,79 @@ from typing import List, Tuple
 import sqlite3
 import os
 import re
+import pymorphy2
+
+
+# --- C0+: Legal abbreviations normalization ---
+LEGAL_ABBR_MAP = {
+    "гк": "гражданский кодекс",
+    "гкф": "гражданский кодекс",
+    "гк рф": "гражданский кодекс",
+
+    "коап": "кодекс об административных правонарушениях",
+    "коапф": "кодекс об административных правонарушениях",
+    "коап рф": "кодекс об административных правонарушениях",
+
+    "ук": "уголовный кодекс",
+    "укрф": "уголовный кодекс",
+    "ук рф": "уголовный кодекс",
+
+    "гпк": "гражданский процессуальный кодекс",
+    "гпкф": "гражданский процессуальный кодекс",
+
+    "апк": "арбитражный процессуальный кодекс",
+    "апкф": "арбитражный процессуальный кодекс",
+
+    "фз": "федеральный закон",
+}
+
+MORPH = pymorphy2.MorphAnalyzer()
+
+
+def normalize_russian_query(text: str) -> str:
+    """
+    Lightweight normalization:
+    - lowercase
+    - normalize 'ё' -> 'е'
+    - collapse whitespace
+    """
+    t = (text or "").strip().lower()
+    t = t.replace("ё", "е")
+    t = re.sub(r"\s+", " ", t)
+    return t
+
+
+def normalize_legal_abbreviations(text: str) -> str:
+    t = text
+    for k, v in LEGAL_ABBR_MAP.items():
+        t = re.sub(rf"\b{k}\b", v, t)
+    return t
+
+
+# --- C0+: legal references extraction (articles / parts / points) ---
+ARTICLE_RE = re.compile(r"(?:ст\.?|статья)\s*(\d+)", re.IGNORECASE)
+PART_RE = re.compile(r"(?:ч\.?|часть)\s*(\d+)", re.IGNORECASE)
+POINT_RE = re.compile(r"(?:п\.?|пункт)\s*(\d+)", re.IGNORECASE)
+
+
+def extract_legal_refs(text: str) -> dict:
+    return {
+        "articles": ARTICLE_RE.findall(text),
+        "parts": PART_RE.findall(text),
+        "points": POINT_RE.findall(text),
+    }
+
+
+def lemmatize_tokens(tokens: list[str]) -> list[str]:
+    lemmas: list[str] = []
+    for t in tokens:
+        try:
+            p = MORPH.parse(t)[0]
+            lemmas.append(p.normal_form)
+        except Exception:
+            lemmas.append(t)
+    return lemmas
+
 
 DB_PATH = os.getenv(
     "LEGALAI_DB_PATH",
@@ -24,8 +97,10 @@ class DocumentRetriever:
         if not query or not query.strip():
             return []
 
-        raw = query.strip().lower()
-        parts = re.findall(r"[0-9a-zа-яё]+", raw, flags=re.IGNORECASE)
+        raw = normalize_legal_abbreviations(normalize_russian_query(query))
+        refs = extract_legal_refs(raw)
+
+        parts = re.findall(r"[0-9a-za-яё]+", raw, flags=re.IGNORECASE)
 
         tokens: List[str] = []
         seen = set()
@@ -42,6 +117,14 @@ class DocumentRetriever:
         if not tokens:
             tokens = [query.strip()]
 
+        # must_tokens: extracted article numbers have priority (keep as strings)
+        must_tokens = list(dict.fromkeys(refs.get("articles", [])))
+        optional_tokens = tokens
+        tokens = must_tokens + [t for t in optional_tokens if t not in must_tokens]
+
+        # C0: lemmatize tokens to improve recall across word forms
+        tokens = lemmatize_tokens(tokens)
+
         like_items = ["content_html LIKE ?"] * len(tokens)
         like_clauses = " OR ".join(like_items)
 
@@ -52,7 +135,7 @@ class DocumentRetriever:
             content_html
         FROM law_documents
         WHERE content_html IS NOT NULL
-        AND ({like_clauses})
+          AND ({like_clauses})
         LIMIT ?
         """
 
@@ -78,3 +161,4 @@ class DocumentRetriever:
         results_scored.sort(key=lambda x: x[2], reverse=True)
         results = [(doc_id, html) for (doc_id, html, _score) in results_scored[:top_k]]
         return results
+
