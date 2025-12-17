@@ -1,6 +1,6 @@
 LEGALAI REPOSITORY ANALYSIS
 ================================
-Generated (UTC): 2025-12-16T03:25:37Z
+Generated (UTC): 2025-12-17T03:21:15Z
 Root path: /home/runner/work/legal-ai/legal-ai
 
 1) Top-level directories summary
@@ -8,7 +8,7 @@ Root path: /home/runner/work/legal-ai/legal-ai
 Directory               Files   Code files   Code lines
 ------------------------------------------------------------
 .                          22            4          356
-backend                   125          103         5854
+backend                   125          103         5967
 deploy                      1            0            0
 frontend                   43           24         9184
 scripts                     3            0            0
@@ -25,7 +25,7 @@ JSON                        7         4380
 JavaScript/TypeScript       15         3400
 Markdown                    3          224
 Other                      63            0
-Python                    104         6143
+Python                    104         6256
 YAML                        1            0
 
 
