@@ -2,7 +2,10 @@ from typing import List, Tuple
 import sqlite3
 import os
 import re
-import pymorphy2
+try:
+    import pymorphy2  # type: ignore
+except Exception:
+    pymorphy2 = None
 
 
 # --- C0+: Legal abbreviations normalization ---
@@ -28,8 +31,12 @@ LEGAL_ABBR_MAP = {
     "фз": "федеральный закон",
 }
 
-MORPH = pymorphy2.MorphAnalyzer()
-
+MORPH = None
+if pymorphy2 is not None:
+    try:
+        MORPH = pymorphy2.MorphAnalyzer()
+    except Exception:
+        MORPH = None
 
 def normalize_russian_query(text: str) -> str:
     """
@@ -66,6 +73,9 @@ def extract_legal_refs(text: str) -> dict:
 
 
 def lemmatize_tokens(tokens: list[str]) -> list[str]:
+    if MORPH is None:
+        return tokens
+
     lemmas: list[str] = []
     for t in tokens:
         try:
@@ -131,11 +141,11 @@ class DocumentRetriever:
         # IMPORTANT: must be f-string because we inject {like_clauses}
         sql = f"""
         SELECT
-            id,
-            content_html
+        id,
+        content_html
         FROM law_documents
         WHERE content_html IS NOT NULL
-          AND ({like_clauses})
+        AND ({like_clauses})
         LIMIT ?
         """
 
