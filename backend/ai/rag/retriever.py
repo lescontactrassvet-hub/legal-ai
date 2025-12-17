@@ -90,6 +90,7 @@ DB_PATH = os.getenv(
     "LEGALAI_DB_PATH",
     "/srv/legal-ai/data/legalai.db",
 )
+USE_FTS = True
 
 
 class DocumentRetriever:
@@ -134,6 +135,36 @@ class DocumentRetriever:
 
         # C0: lemmatize tokens to improve recall across word forms
         tokens = lemmatize_tokens(tokens)
+
+        # B1: FTS5 (bm25) first, fallback to B0 LIKE
+        if USE_FTS:
+            try:
+                fts_terms = [t for t in tokens if t and len(t) >= 2]
+                if fts_terms:
+                    fts_query = " OR ".join(fts_terms)
+                    conn_fts = sqlite3.connect(self.db_path)
+                    try:
+                        cur_fts = conn_fts.cursor()
+                        cur_fts.execute(
+                            "SELECT rowid FROM law_documents_fts WHERE law_documents_fts MATCH ? ORDER BY bm25(law_documents_fts) LIMIT ?",
+                            (fts_query, top_k),
+                        )
+                        fts_ids = [r[0] for r in cur_fts.fetchall()]
+                        if fts_ids:
+                            placeholders = ",".join(["?"] * len(fts_ids))
+                            cur_fts.execute(
+                                f"SELECT id, content_html FROM law_documents WHERE id IN ({placeholders})",
+                                fts_ids,
+                            )
+                            id_to_html = {row[0]: row[1] for row in cur_fts.fetchall()}
+                            fts_results = [(doc_id, id_to_html.get(doc_id) or "") for doc_id in fts_ids if doc_id in id_to_html]
+                            if fts_results:
+                                return fts_results
+                    finally:
+                        conn_fts.close()
+            except Exception:
+                pass
+
 
         like_items = ["content_html LIKE ?"] * len(tokens)
         like_clauses = " OR ".join(like_items)
