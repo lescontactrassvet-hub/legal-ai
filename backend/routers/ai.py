@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, HttpUrl
 
 # Ядро ИИ-юриста Татьяны (по структуре проекта оно лежит в backend/ai/core.py)
 from ai.core import ConsultantCore
+from ai.nlp.rubert_intent import classify_intent
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +100,15 @@ async def ask_ai(payload: ChatRequest) -> AiResponse:
     # Защита от слишком длинных запросов — не даём «убить» бэкенд
     if len(text) > MAX_QUESTION_LEN:
         text = text[:MAX_QUESTION_LEN]
+    # --- NLP слой (RuBERT / fallback) ---
+    nlp_info = classify_intent(text)
+    logger.info(
+        "NLP intent=%s confidence=%.2f engine=%s",
+        nlp_info.get("intent"),
+        nlp_info.get("confidence", 0.0),
+        nlp_info.get("engine"),
+    )
+    # -----------------------------------
 
     try:
         # Вызов ядра Татьяны.
