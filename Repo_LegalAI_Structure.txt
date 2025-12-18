@@ -57,6 +57,8 @@ backend/
       safety.py
       risk_checker.py
       law_guard.py
+    nlp/
+      rubert_intent.py
     generators/
       gpt_adapter.py
       gigachat_adapter.py
