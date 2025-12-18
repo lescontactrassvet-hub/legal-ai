@@ -327,6 +327,7 @@ async function saveVersion(mode: "manual" | "auto") {
     if (mode === "manual") {
       setSaveOk("Версия сохранена");
       window.setTimeout(() => setSaveOk(null), 2000);
+      }
     } else {
       setDraftOk("Черновик сохранён");
       window.setTimeout(() => setDraftOk(null), 1500);
@@ -426,6 +427,10 @@ useEffect(() => {
 
       if (!cancelled) {
         setDocuments(data as DocumentItem[]);
+    // AUTOSELECT: выбираем первый документ, чтобы редактор сразу загрузился
+    if (!activeDocumentId && (data as DocumentItem[]).length > 0) {
+      setActiveDocumentId((data as DocumentItem[])[0].id);
+    }
       }
     } catch (e) {
       if (!cancelled) {
@@ -561,6 +566,11 @@ useEffect(() => {
 
   // 2.8: сбрасываем предыдущий draft при новом запросе
   setAiDraft(null);
+      }
+      } else {
+        // AI_APPLY: документ уже выбран — просто показать черновик в редакторе
+        setDocumentHtml(draftText);
+      }
   const ctx =
     selection && selection.from !== selection.to
       ? {
@@ -578,6 +588,36 @@ if (draftMatch) {
     const draftText = (draftMatch[1] || "").trim();
     if (draftText.length >= 10) {
       setAiDraft(draftText);
+
+      // AI_CREATE: Татьяна создаёт документ и сразу показывает в редакторе
+      if (!activeDocumentId && activeCaseId) {
+        
+        const base = (import.meta as any)?.env?.VITE_API_BASE?.toString?.() || "/api";
+        const title = "Документ от Татьяны";
+        const res = await fetch(`${base.replace(/\/$/, "")}/cases/${activeCaseId}/documents`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title }),
+        });
+        const doc = await res.json();
+        const docId = doc?.id;
+        if (docId) {
+          await fetch(`${base.replace(/\/$/, "")}/documents/${docId}/versions`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content: draftText, source: "ai" }),
+          });
+          setDocuments(prev => [{ id: docId, title }, ...prev]);
+          setActiveDocumentId(docId);
+          setDocumentHtml(draftText);
+      }
+        }
+
+    // AI_APPLY: всегда показываем черновик в редакторе
+    setDocumentHtml(draftText);
+setAiDraft(null);
+
+      }
     }
 }
     const aiMessage: ChatMessage = { from: "ai", text: replyText };
@@ -657,6 +697,7 @@ if (draftMatch) {
   const handleGoToDocumentsClick = () => {
     if (onGoToDocuments) {
       onGoToDocuments();
+      }
     } else {
       alert(
         "Раздел «Документы» будет доступен через отдельную страницу.\n" +
@@ -686,6 +727,7 @@ if (draftMatch) {
         "Важно: сейчас включён демонстрационный режим (VITE_DEMO_MODE=true).",
         "Ответы могут быть примером и не обращаться к серверу."
       );
+      }
     } else {
       lines.push(
         "Важно: сейчас используется боевой режим (ответы приходят с сервера).",
@@ -1421,6 +1463,11 @@ if (draftMatch) {
 
         // 5) сбрасываем draft
         setAiDraft(null);
+      }
+      } else {
+        // AI_APPLY: документ уже выбран — просто показать черновик в редакторе
+        setDocumentHtml(draftText);
+      }
       }}
     >
       Применить (заменить выделенное)
