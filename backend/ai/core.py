@@ -41,7 +41,13 @@ class ConsultantCore:
         self.risk_checker = risk_checker or RiskChecker()
         self.intent_classifier = intent_classifier or RuBERTIntentClassifier()
 
-    async def ask(self, query: str) -> Dict[str, Any]:
+    async def ask(
+        self,
+        query: str,
+        *,
+        intent: str | None = None,
+        context: Dict[str, Any] | None = None,
+    ) -> Dict[str, Any]:
         """
         Основной режим: получить ответ Татьяны с цитатами и анализом рисков.
         """
@@ -51,8 +57,13 @@ class ConsultantCore:
                 "Пустой запрос. Пожалуйста, сформулируйте ваш вопрос или ситуацию."
             )
 
-        # 1. Определяем намерение пользователя
-        intent = self.intent_classifier.classify(clean_query)
+        # 1. Определяем намерение пользователя (можно форсировать извне)
+        if intent is None:
+            intent = self.intent_classifier.classify(clean_query)
+
+        # Контекстный режим редактирования фрагмента
+        if context and isinstance(context, dict) and context.get("mode") == "edit_fragment":
+            intent = "template"
 
         # 2. Ищем документы (СИНХРОННЫЙ вызов, без await!)
         docs: Sequence[Tuple[str, str]] = self.retriever.retrieve(
@@ -78,7 +89,7 @@ class ConsultantCore:
                 "AI-ответ не прошёл проверку безопасности. Попробуйте переформулировать вопрос."
             )
 
-        # 7. Проверка ссылок на нормы (мягкий режим: при ошибке не падаем)
+        # 7. Проверка ссылок на нормы (мягкий режим)
         try:
             validated_citations = self.law_guard.validate_references(citations)
         except Exception:
@@ -86,6 +97,7 @@ class ConsultantCore:
 
         # 8. Анализ рисков
         risk_info = self.risk_checker.analyze(answer)
+
         # --- ЭТАП 2.8: строгий формат ответа (MODE / DRAFT) ---
         mode = "ANSWER"
         if intent == "template":
@@ -96,7 +108,11 @@ class ConsultantCore:
         answer_wrapped = wrap_ai_response(
             mode=mode,
             main_text=answer,
-            comment="Предложена правка/текст для применения к выбранному фрагменту." if mode == "EDIT" else None,
+            comment=(
+                "Предложена правка/текст для применения к выбранному фрагменту."
+                if mode == "EDIT"
+                else None
+            ),
         )
 
         return {
@@ -177,6 +193,8 @@ class ConsultantCore:
             "intent": intent,
             "suggestions": suggestions,
         }
+
+
 def wrap_ai_response(mode: str, main_text: str, comment: str | None = None) -> str:
     """
     Этап 2.8 — строгий контракт ответа ИИ (MODE / DRAFT).
@@ -205,7 +223,6 @@ def wrap_ai_response(mode: str, main_text: str, comment: str | None = None) -> s
             parts.append("<<<END>>>")
         return "\n".join(parts)
 
-    # ANALYSIS / ANSWER
     parts: list[str] = []
     parts.append(f"<<<MODE:{mode}>>>")
     parts.append(main_text)
