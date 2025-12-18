@@ -1431,7 +1431,7 @@ if (draftMatch) {
 )}
 
          <DocumentEditor
-  value={documentHtml}
+  value={documentHtml || aiDraft || ""}
   onChange={handleDocumentChange}
   onEditorReady={(ed) => {
     editorRef.current = ed;
