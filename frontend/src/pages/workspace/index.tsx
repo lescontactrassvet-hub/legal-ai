@@ -176,6 +176,11 @@ async function requestTatianaReply(
 
     const cites = data?.citations ? formatCitations(data.citations) : "";
 
+  if (data && typeof (data as any).document_draft === "string" && (data as any).document_draft.trim()) {
+    setDocumentHtml((data as any).document_draft);
+  }
+
+
     if (!answer) {
       // странный ответ, но не падаем
       return `Ответ получен, но поле "answer" пустое.${cites}`;
