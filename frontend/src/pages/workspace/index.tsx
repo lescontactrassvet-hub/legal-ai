@@ -178,6 +178,8 @@ async function requestTatianaReply(
 
   if (data && typeof (data as any).document_draft === "string" && (data as any).document_draft.trim()) {
     setDocumentHtml((data as any).document_draft);
+    setAiDraft((data as any).document_draft);
+
   }
 
 
