@@ -38,6 +38,15 @@ export function DocumentEditor({ value, onChange, onEditorReady, onSelectionChan
     },
   });
 
+  useEffect(() => {
+    if (!editor) return;
+    const current = editor.getHTML();
+    if (value && value !== current) {
+      editor.commands.setContent(value, false);
+    }
+  }, [value, editor]);
+
+
 // Передаём editor наружу + отслеживаем выделение (TipTap selection)
 useEffect(() => {
   if (!editor) return;
