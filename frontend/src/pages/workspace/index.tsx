@@ -25,9 +25,7 @@ type TatianaAskResponse = {
 
 // Демо-режим включается ТОЛЬКО явным флагом.
 // По умолчанию: боевой режим (backend).
-const DEMO_MODE =
-  ((import.meta as any)?.env?.VITE_DEMO_MODE?.toString?.() || "").toLowerCase() ===
-  "true";
+const DEMO_MODE = false;
 
 function getTatianaDemoReply(mode: WorkspaceMode, userText: string): string {
   const trimmed = userText.trim();
