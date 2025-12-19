@@ -307,38 +307,38 @@ async function saveVersion(mode: "manual" | "auto") {
     setSaveOk(null);
   }
 
-  try {
-    const res = await fetch(`${API_BASE}/documents/${activeDocumentId}/versions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        content,
-        source: "user",
-      }),
-    });
+try {
+  const res = await fetch(`${API_BASE}/documents/${activeDocumentId}/versions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      content,
+      source: "user",
+    }),
+  });
 
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(`HTTP ${res.status}: ${text || "save failed"}`);
-    }
-
-    lastSavedHashRef.current = contentHash;
-
-    if (mode === "manual") {
-      setSaveOk("Версия сохранена");
-      window.setTimeout(() => setSaveOk(null), 2000);
-      }
-    } else {
-      setDraftOk("Черновик сохранён");
-      window.setTimeout(() => setDraftOk(null), 1500);
-    }
-  } catch (e: any) {
-    if (mode === "manual") {
-      setSaveError(e?.message || "Ошибка сохранения версии документа");
-    }
-  } finally {
-    if (mode === "manual") setSaving(false);
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`HTTP ${res.status}: ${text || "save failed"}`);
   }
+
+  lastSavedHashRef.current = contentHash;
+
+  if (mode === "manual") {
+    setSaveOk("Версия сохранена");
+    window.setTimeout(() => setSaveOk(null), 2000);
+  } else {
+    setDraftOk("Черновик сохранён");
+    window.setTimeout(() => setDraftOk(null), 1500);
+  }
+} catch (e: any) {
+  if (mode === "manual") {
+    setSaveError(e?.message || "Ошибка сохранения версии документа");
+  }
+} finally {
+  if (mode === "manual") setSaving(false);
+}
+
 }
 
   useEffect(() => {
@@ -566,11 +566,6 @@ useEffect(() => {
 
   // 2.8: сбрасываем предыдущий draft при новом запросе
   setAiDraft(null);
-      }
-      } else {
-        // AI_APPLY: документ уже выбран — просто показать черновик в редакторе
-        setDocumentHtml(draftText);
-      }
   const ctx =
     selection && selection.from !== selection.to
       ? {
@@ -619,7 +614,6 @@ setAiDraft(null);
 
       }
     }
-}
     const aiMessage: ChatMessage = { from: "ai", text: replyText };
     setMessages((prev) => [...prev, aiMessage]);
   };
@@ -698,7 +692,7 @@ setAiDraft(null);
     if (onGoToDocuments) {
       onGoToDocuments();
       }
-    } else {
+  else {
       alert(
         "Раздел «Документы» будет доступен через отдельную страницу.\n" +
           "Сейчас эта кнопка работает как заглушка."
@@ -727,7 +721,6 @@ setAiDraft(null);
         "Важно: сейчас включён демонстрационный режим (VITE_DEMO_MODE=true).",
         "Ответы могут быть примером и не обращаться к серверу."
       );
-      }
     } else {
       lines.push(
         "Важно: сейчас используется боевой режим (ответы приходят с сервера).",
@@ -1464,12 +1457,7 @@ setAiDraft(null);
         // 5) сбрасываем draft
         setAiDraft(null);
       }
-      } else {
-        // AI_APPLY: документ уже выбран — просто показать черновик в редакторе
-        setDocumentHtml(draftText);
-      }
-      }}
-    >
+}>
       Применить (заменить выделенное)
     </button>
   <p style={{ fontSize: "10px", opacity: 0.85, marginTop: 6 }}>
