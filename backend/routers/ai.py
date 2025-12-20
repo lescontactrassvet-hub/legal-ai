@@ -253,6 +253,23 @@ async def ask_ai(payload: ChatRequest) -> AiResponse:
 
     # ✅ Убираем мусор и вытаскиваем draft в редактор
     plain_answer, draft = _unwrap_answer(answer_text)
+    # Fallback: если модель не вернула <<<DRAFT>>>, но запрос про создание документа — кладём текст в draft
+    if draft is None:
+        intent_hint = (core_intent or "").lower() if isinstance(core_intent, str) else ""
+        text_l = text.lower()
+        if intent_hint in {"document_draft", "document_create", "create_document", "template"} or any(
+            k in text_l for k in (
+                "создай договор",
+                "составь договор",
+                "подготовь договор",
+                "подготовить договор",
+                "составить договор",
+                "договор аренды",
+                "шаблон договора",
+            )
+        ):
+            draft = plain_answer
+
 
     # Цитаты законов: аккуратно приводим к нашей Pydantic-модели
     raw_citations = core_result.get("citations") or []
