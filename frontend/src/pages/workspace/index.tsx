@@ -113,27 +113,13 @@ async function requestTatianaReply(
   mode: WorkspaceMode,
   userText: string,
   context?: any
-): Promise<string> {
-
+): Promise<{ answerText: string; documentDraft: string | null }> {
   const finalMessage =
     context?.mode === "edit_fragment"
-      ? `Ты юридический редактор. Твоя задача — переписать ТОЛЬКО выделенный фрагмент текста.\n\n
-СТРОГИЕ ПРАВИЛА:\n
-- Верни ТОЛЬКО новую версию фрагмента\n
-- БЕЗ комментариев, объяснений, списков\n
-- БЕЗ всего документа\n
-- Формат ответа СТРОГО:\n
-<<<DRAFT>>>\n
-<новая версия фрагмента>\n
-<<<END>>>\n\n
-ВЫДЕЛЕННЫЙ ФРАГМЕНТ:\n${context?.selection_text}\n\n
-КОНТЕКСТ ДОКУМЕНТА (для стиля и смысла):\n${context?.document_html}`
+      ? `Ты юридический редактор. Твоя задача — переписать ТОЛЬКО выделенный фрагмент текста.\n\nСТРОГИЕ ПРАВИЛА:\n- Верни ТОЛЬКО новую версию фрагмента\n- БЕЗ комментариев, объяснений, списков\n- БЕЗ всего документа\n- Формат ответа СТРОГО:\n<<<DRAFT>>>\n<новая версия фрагмента>\n<<<END>>>\n\nВЫДЕЛЕННЫЙ ФРАГМЕНТ:\n${context?.selection_text}\n\nКОНТЕКСТ ДОКУМЕНТА (для стиля и смысла):\n${context?.document_html}`
       : userText;
 
-
-  const base =
-    (import.meta as any)?.env?.VITE_API_BASE?.toString?.() || "/api";
-
+  const base = (import.meta as any)?.env?.VITE_API_BASE?.toString?.() || "/api";
   const url = `${base.replace(/\/$/, "")}/ai/ask`;
 
   try {
@@ -142,10 +128,10 @@ async function requestTatianaReply(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message: finalMessage,
-        intent: mode, // используем режим как "намерение" (simple/pro)
         context: context || undefined,
       }),
     });
+
     // Если backend отдаёт HTML/ошибку — поймаем и покажем нормально
     const rawText = await res.text();
     let data: TatianaAskResponse | null = null;
@@ -157,40 +143,49 @@ async function requestTatianaReply(
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}: ${rawText.slice(0, 200)}`);
       }
-      // если ok, но не JSON — возвращаем как текст
-      return rawText;
+      return { answerText: rawText, documentDraft: null };
     }
 
     if (!res.ok) {
       const msg =
-        (data && (data.error || data.message)) || `HTTP ${res.status}`;
+        (data && ((data as any).error || (data as any).message)) ||
+        `HTTP ${res.status}`;
       throw new Error(msg);
     }
 
     const answer =
-      (data && typeof data.answer === "string" && data.answer.trim()) ||
-      (data && typeof data.message === "string" && data.message.trim()) ||
+      (data &&
+        typeof (data as any).answer === "string" &&
+        (data as any).answer.trim()) ||
+      (data &&
+        typeof (data as any).message === "string" &&
+        (data as any).message.trim()) ||
       "";
 
-    const cites = data?.citations ? formatCitations(data.citations) : "";
+    const cites = (data as any)?.citations
+      ? formatCitations((data as any).citations)
+      : "";
 
-  if (data && typeof (data as any).document_draft === "string" && (data as any).document_draft.trim()) {
-    setDocumentHtml((data as any).document_draft);
-    setAiDraft((data as any).document_draft);
-
-  }
-
+    // фактический контракт: backend отдаёт черновик в JSON поле document_draft
+    const documentDraft =
+      data &&
+      typeof (data as any).document_draft === "string" &&
+      (data as any).document_draft.trim()
+        ? (data as any).document_draft
+        : null;
 
     if (!answer) {
-      // странный ответ, но не падаем
-      return `Ответ получен, но поле "answer" пустое.${cites}`;
+      return {
+        answerText: `Ответ получен, но поле "answer" пустое.${cites}`,
+        documentDraft,
+      };
     }
 
-    return `${answer}${cites}`;
+    return { answerText: `${answer}${cites}`, documentDraft };
   } catch (e) {
     // В БОЕВОМ режиме НЕ подменяем ответ демо-ответом — показываем честную ошибку.
     if (DEMO_MODE) {
-      return getTatianaDemoReply(mode, userText);
+      return { answerText: getTatianaDemoReply(mode, userText), documentDraft: null };
     }
 
     const msg =
@@ -198,16 +193,19 @@ async function requestTatianaReply(
         ? e.message
         : "Неизвестная ошибка при обращении к серверу ИИ.";
 
-    return [
-      "Ошибка при обращении к серверу ИИ.",
-      "",
-      "Что можно сделать:",
-      "1) Проверьте, что сервис доступен и интернет-соединение работает.",
-      "2) Попробуйте повторить запрос через несколько секунд.",
-      "3) Если проблема повторяется — проверьте настройки VITE_API_BASE и прокси /api.",
-      "",
-      `Техническая информация: ${msg}`,
-    ].join("\n");
+    return {
+      answerText: [
+        "Ошибка при обращении к серверу ИИ.",
+        "",
+        "Что можно сделать:",
+        "1) Проверьте, что сервис доступен и интернет-соединение работает.",
+        "2) Попробуйте повторить запрос через несколько секунд.",
+        "3) Если проблема повторяется — проверьте настройки VITE_API_BASE и прокси /api.",
+        "",
+        `Техническая информация: ${msg}`,
+      ].join("\n"),
+      documentDraft: null,
+    };
   }
 }
 
@@ -574,17 +572,14 @@ useEffect(() => {
       : undefined;
 
 
+    const { answerText, documentDraft } = await requestTatianaReply(mode, text, ctx);
 
-  const replyText = await requestTatianaReply(mode, text, ctx);
-const draftMatch = replyText.match(/<<<DRAFT>>>([\s\S]*?)<<<END>>>/);
-if (draftMatch) {
-    const draftText = (draftMatch[1] || "").trim();
-    if (draftText.length >= 10) {
-      setAiDraft(draftText);
+    // По фактическому контракту backend отдаёт черновик в JSON поле document_draft
+    if (documentDraft && documentDraft.trim()) {
+      const draftText = documentDraft.trim();
 
-      // AI_CREATE: Татьяна создаёт документ и сразу показывает в редакторе
+      // AI_CREATE: если нет активного документа — создаём и сразу сохраняем версию
       if (!activeDocumentId && activeCaseId) {
-        
         const base = (import.meta as any)?.env?.VITE_API_BASE?.toString?.() || "/api";
         const title = "Документ от Татьяны";
         const res = await fetch(`${base.replace(/\/$/, "")}/cases/${activeCaseId}/documents`, {
@@ -603,19 +598,18 @@ if (draftMatch) {
           setDocuments(prev => [{ id: docId, title }, ...prev]);
           setActiveDocumentId(docId);
           setDocumentHtml(draftText);
-      }
         }
-
-    // AI_APPLY: всегда показываем черновик в редакторе
-    setDocumentHtml(draftText);
-setAiDraft(null);
-
       }
-    }
-    const aiMessage: ChatMessage = { from: "ai", text: replyText };
-    setMessages((prev) => [...prev, aiMessage]);
-  };
 
+      // AI_APPLY: показываем черновик в редакторе
+      setDocumentHtml(draftText);
+      setAiDraft(null);
+    }
+
+    const aiMessage: ChatMessage = { from: "ai", text: answerText };
+    setMessages((prev) => [...prev, aiMessage]);
+
+};
   const handleInputChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setInput(event.target.value);
   };
@@ -1274,80 +1268,6 @@ setAiDraft(null);
               </div>
             )}
           </div>
-{/* История версий документа */}
-<div style={{ marginTop: 12 }}>
-  <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>
-    История версий
-  </div>
-
-  {!activeDocumentId ? (
-    <div style={{ opacity: 0.8, fontSize: 13 }}>
-      Выберите документ, чтобы увидеть историю версий.
-    </div>
-  ) : versionsLoading ? (
-    <div style={{ opacity: 0.8, fontSize: 13 }}>
-      Загрузка истории версий…
-    </div>
-  ) : versionsError ? (
-    <div style={{ color: "#fca5a5", fontSize: 13 }}>
-      Ошибка загрузки версий: {versionsError}
-    </div>
-  ) : versions.length === 0 ? (
-    <div style={{ opacity: 0.8, fontSize: 13 }}>
-      Версий пока нет.
-    </div>
-  ) : (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      {versions.map((v) => (
-        <button
-          key={v.id}
-          type="button"
-          onClick={() => {
-            setSelectedVersionId(v.id);
-            setSelectedVersionContent(v.content || "");
-          }}
-          style={{
-            textAlign: "left",
-            padding: "8px 10px",
-            borderRadius: 10,
-            border: "1px solid rgba(255,255,255,0.12)",
-            background:
-              v.id === selectedVersionId
-                ? "rgba(255,255,255,0.08)"
-                : "rgba(255,255,255,0.03)",
-            cursor: "pointer",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 12, fontWeight: 700 }}>
-              v{v.id} · {v.source}
-            </span>
-            <span style={{ fontSize: 11, opacity: 0.8 }}>
-              {v.created_at?.replace("T", " ").slice(0, 19)}
-            </span>
-          </div>
-        </button>
-      ))}
-
-      <div
-        style={{
-          marginTop: 6,
-          padding: 10,
-          borderRadius: 12,
-          border: "1px solid rgba(255,255,255,0.12)",
-          background: "rgba(255,255,255,0.03)",
-        }}
-      >
-        <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
-          Предпросмотр (read-only)
-        </div>
-        <div style={{ fontSize: 13, whiteSpace: "pre-wrap" }}>
-          {selectedVersionContent || ""}
-        </div>
-      </div>
-    </div>
-  )}
-</div>
         </aside>
       </main>
 
@@ -1554,6 +1474,5 @@ setAiDraft(null);
     </div>
   );
 };
-
 export default WorkspacePage;
 
