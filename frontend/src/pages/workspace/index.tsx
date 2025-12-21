@@ -183,10 +183,6 @@ async function requestTatianaReply(
 
     return { answerText: `${answer}${cites}`, documentDraft };
   } catch (e) {
-    // В БОЕВОМ режиме НЕ подменяем ответ демо-ответом — показываем честную ошибку.
-    if (DEMO_MODE) {
-      return { answerText: getTatianaDemoReply(mode, userText), documentDraft: null };
-    }
 
     const msg =
       e instanceof Error
