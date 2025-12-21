@@ -86,10 +86,9 @@ class LocalGenerator:
 
         context = self._build_context(docs_source)
         fallback_answer = self._build_fallback_answer(query, context, intent)
-
-        logger.info("GEN=fallback")
         # Если GigaChat не настроен — сразу отдаём fallback.
         if not self.gigachat:
+            logger.info("GEN=fallback")
             return fallback_answer
 
         # Пытаемся спросить GigaChat, но не роняем сервис при ошибках.
@@ -99,8 +98,8 @@ class LocalGenerator:
                 context=context,
                 intent=intent,
             )
-            answer = self.gigachat.chat(messages)
             logger.info("GEN=gigachat")
+            answer = self.gigachat.chat(messages)
             if not answer:
                 return fallback_answer
             return answer[: self.max_answer_len]
