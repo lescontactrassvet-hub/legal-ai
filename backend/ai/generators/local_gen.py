@@ -2,7 +2,7 @@
 from typing import List, Optional, Sequence, Tuple, Union
 
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn.error")
 
 from .gigachat_adapter import GigaChatAdapter, GigaChatConfigError
 
