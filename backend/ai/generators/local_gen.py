@@ -1,4 +1,8 @@
+
 from typing import List, Optional, Sequence, Tuple, Union
+
+import logging
+logger = logging.getLogger(__name__)
 
 from .gigachat_adapter import GigaChatAdapter, GigaChatConfigError
 
@@ -83,6 +87,7 @@ class LocalGenerator:
         context = self._build_context(docs_source)
         fallback_answer = self._build_fallback_answer(query, context, intent)
 
+        logger.info("GEN=fallback")
         # Если GigaChat не настроен — сразу отдаём fallback.
         if not self.gigachat:
             return fallback_answer
@@ -95,6 +100,7 @@ class LocalGenerator:
                 intent=intent,
             )
             answer = self.gigachat.chat(messages)
+            logger.info("GEN=gigachat")
             if not answer:
                 return fallback_answer
             return answer[: self.max_answer_len]
