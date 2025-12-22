@@ -268,10 +268,20 @@ const [aiDraft, setAiDraft] = useState<string | null>(null);
   const [casesLoading, setCasesLoading] = useState<boolean>(false);
   const [casesError, setCasesError] = useState<string>("");
 
-  const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const [documents, setDocuments] = useState<DocumentItem[]>([]);  
+
   const [activeDocumentId, setActiveDocumentId] = useState<number | null>(null);
   const [documentsLoading, setDocumentsLoading] = useState<boolean>(false);
   const [documentsError, setDocumentsError] = useState<string>("");
+// 2.5: версии документа
+const [versions, setVersions] = useState<Array<{
+  id: number;
+  created_at?: string | null;
+  source?: string | null;
+  content?: string;
+}>>([]);
+
+const [activeVersionId, setActiveVersionId] = useState<number | null>(null);
 
 const API_BASE = import.meta.env.VITE_API_BASE || "/api";
   
@@ -481,15 +491,28 @@ useEffect(() => {
         throw new Error("Ожидался массив версий документа");
       }
 
-      const versions = data as Array<Record<string, unknown>>;
-      const latest = versions[0];
+      const versionsRaw = data as Array<Record<string, unknown>>;
+      const latest = versionsRaw[0];
 
       const content =
         latest && typeof latest.content === "string" ? latest.content : "";
 
+      // 2.5: сохраняем список версий для UI
+      const normalized = versionsRaw
+        .map((v) => ({
+          id: typeof v.id === "number" ? v.id : Number(v.id),
+          created_at: typeof v.created_at === "string" ? v.created_at : null,
+          source: typeof v.source === "string" ? v.source : null,
+          content: typeof v.content === "string" ? v.content : "",
+        }))
+        .filter((v) => Number.isFinite(v.id));
+
       if (!cancelled) {
+        setVersions(normalized);
+        setActiveVersionId(normalized.length > 0 ? normalized[0].id : null);
         setDocumentHtml(content);
       }
+
     } catch (e) {
       if (!cancelled) {
         const msg =
@@ -1380,6 +1403,90 @@ useEffect(() => {
 
   </div>
 )}
+
+{/* 2.5: История версий документа */}
+<div
+  className="workspace-versions"
+  style={{
+    marginBottom: "10px",
+    padding: "10px",
+    borderRadius: "12px",
+    background: "rgba(16, 85, 140, 0.22)",
+    border: "1px solid rgba(147, 197, 253, 0.25)",
+  }}
+>
+  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+    <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em" }}>
+      ВЕРСИИ ДОКУМЕНТА
+    </div>
+    <div style={{ fontSize: "10px", opacity: 0.8 }}>
+      {activeDocumentId ? `Документ #${activeDocumentId}` : "Документ не выбран"}
+    </div>
+  </div>
+
+  {!activeDocumentId ? (
+    <div style={{ marginTop: "8px", fontSize: "10px", opacity: 0.85 }}>
+      Сначала выберите документ.
+    </div>
+  ) : versions.length === 0 ? (
+    <div style={{ marginTop: "8px", fontSize: "10px", opacity: 0.85 }}>
+      Версий пока нет. Сохраните версию вручную или начните редактирование —
+      автосохранение создаст первую версию.
+    </div>
+  ) : (
+    <div
+      style={{
+        marginTop: "8px",
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "6px",
+      }}
+    >
+      {versions.slice(0, 8).map((v) => {
+        const isActive = v.id === activeVersionId;
+        const labelDate = v.created_at
+          ? new Date(v.created_at).toLocaleString()
+          : `Версия ${v.id}`;
+        const labelSource =
+          v.source === "ai" ? "ИИ" : v.source === "user" ? "Вы" : v.source || "";
+
+        return (
+          <button
+            key={v.id}
+            type="button"
+            onClick={() => {
+              setActiveVersionId(v.id);
+              setDocumentHtml(v.content || "");
+            }}
+            style={{
+              cursor: "pointer",
+              borderRadius: 999,
+              padding: "6px 10px",
+              fontSize: "10px",
+              border: isActive
+                ? "1px solid rgba(99, 165, 255, 0.9)"
+                : "1px solid rgba(255, 255, 255, 0.12)",
+              background: isActive
+                ? "rgba(99, 165, 255, 0.22)"
+                : "rgba(0,0,0,0.18)",
+              color: "#e5f0ff",
+              opacity: isActive ? 1 : 0.9,
+            }}
+            title={labelDate}
+          >
+            {labelSource ? `${labelSource} · ` : ""}
+            {labelDate}
+          </button>
+        );
+      })}
+    </div>
+  )}
+
+  <div style={{ marginTop: "8px", fontSize: "10px", opacity: 0.75 }}>
+    Просмотр версии подставляет текст в редактор. Чтобы сохранить изменения —
+    нажмите «Сохранить версию» (создаст новую).
+  </div>
+</div>
 
          <DocumentEditor
   value={documentHtml}
