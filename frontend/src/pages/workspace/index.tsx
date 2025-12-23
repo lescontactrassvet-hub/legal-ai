@@ -283,6 +283,9 @@ const [versions, setVersions] = useState<Array<{
 
 const [activeVersionId, setActiveVersionId] = useState<number | null>(null);
 
+const [selectedVersionId, setSelectedVersionId] = useState<number | null>(null);
+const [selectedVersionContent, setSelectedVersionContent] = useState<string>("");
+
 // ===== 2.7 Diff between document versions (read-only) =====
 const [diffBaseVersionId, setDiffBaseVersionId] = useState<number | null>(null);
 const [diffTargetVersionId, setDiffTargetVersionId] = useState<number | null>(null);
