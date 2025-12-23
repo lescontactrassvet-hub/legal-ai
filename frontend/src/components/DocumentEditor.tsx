@@ -12,6 +12,7 @@ type DocumentEditorProps = {
   onEditorReady?: (editor: any) => void;
 
   // Сообщаем Workspace текущее выделение (позиции и текст)
+  readOnly?: boolean;
   onSelectionChange?: (sel: { from: number; to: number; text: string }) => void;
 };
 
@@ -19,8 +20,9 @@ type DocumentEditorProps = {
  * DocumentEditor — независимый мини-Word на TipTap.
  * Здесь Татьяна выдаёт результат, а пользователь правит документ вручную.
  */
-export function DocumentEditor({ value, onChange, onEditorReady, onSelectionChange }: DocumentEditorProps) {
+export function DocumentEditor({ value, onChange, onEditorReady, onSelectionChange, readOnly }: DocumentEditorProps) {
   const editor = useEditor({
+    editable: !readOnly,
     extensions: [
       StarterKit.configure({
         heading: {

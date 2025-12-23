@@ -1486,18 +1486,34 @@ useEffect(() => {
     Просмотр версии подставляет текст в редактор. Чтобы сохранить изменения —
     нажмите «Сохранить версию» (создаст новую).
   </div>
+  {selectedVersionId !== null && (
+    <div style={{ marginTop: "6px" }}>
+      <button
+        type="button"
+        className="workspace-editor-button"
+        onClick={() => {
+          setSelectedVersionId(null);
+          setSelectedVersionContent("");
+        }}
+        style={{ fontSize: "10px" }}
+      >
+        Вернуться к текущей версии
+      </button>
+    </div>
+  )}
 </div>
 
-         <DocumentEditor
-  value={documentHtml}
-  onChange={handleDocumentChange}
-  onEditorReady={(ed) => {
-    editorRef.current = ed;
-  }}
-  onSelectionChange={(sel) => {
-    setSelection(sel);
-  }}
-/>
+      <DocumentEditor
+        value={selectedVersionId ? selectedVersionContent : documentHtml}
+        readOnly={!!selectedVersionId}
+        onChange={selectedVersionId ? (() => {}) : handleDocumentChange}
+        onEditorReady={(ed) => {
+          editorRef.current = ed;
+        }}
+        onSelectionChange={(sel) => {
+          setSelection(sel);
+        }}
+      />
         </div>
 
         <div className="workspace-editor-actions">
