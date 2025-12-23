@@ -283,6 +283,11 @@ const [versions, setVersions] = useState<Array<{
 
 const [activeVersionId, setActiveVersionId] = useState<number | null>(null);
 
+// ===== 2.7 Diff between document versions (read-only) =====
+const [diffBaseVersionId, setDiffBaseVersionId] = useState<number | null>(null);
+const [diffTargetVersionId, setDiffTargetVersionId] = useState<number | null>(null);
+const [diffHtml, setDiffHtml] = useState<string | null>(null);
+
 const API_BASE = import.meta.env.VITE_API_BASE || "/api";
   
 function hashText(s: string): string {
@@ -290,6 +295,35 @@ function hashText(s: string): string {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
   return String(h);
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function buildDiffHtml(oldText: string, newText: string): string {
+  // lazy require to avoid TS import type issues in this file style
+  const DiffMatchPatch = require("diff-match-patch");
+  const dmp = new DiffMatchPatch.diff_match_patch();
+
+  const diffs = dmp.diff_main(oldText || "", newText || "");
+  dmp.diff_cleanupSemantic(diffs);
+
+  // diffs: Array<[number, string]>
+  return diffs
+    .map((d: [number, string]) => {
+      const op = d[0];
+      const text = escapeHtml(d[1] || "");
+      if (!text) return "";
+      if (op === 1) return `<ins>${text}</ins>`;
+      if (op === -1) return `<del>${text}</del>`;
+      return `<span>${text}</span>`;
+    })
+    .join("");
 }
 
 async function saveVersion(mode: "manual" | "auto") {
@@ -1191,6 +1225,73 @@ useEffect(() => {
           <div style={{ fontSize: 13, whiteSpace: "pre-wrap" }}>
             {selectedVersionContent || ""}
           </div>
+          {/* ===== 2.7 Diff between versions (read-only) ===== */}
+<div
+  style={{
+    marginTop: 12,
+    padding: 10,
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(255,255,255,0.03)",
+  }}
+>
+  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
+    Сравнение версий
+  </div>
+
+  <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+    <select
+      value={diffBaseVersionId ?? ""}
+      onChange={(e) => setDiffBaseVersionId(Number(e.target.value) || null)}
+    >
+      <option value="">Базовая версия</option>
+      {versions.map((v: any) => (
+        <option key={v.id} value={v.id}>
+          Версия {v.id}
+        </option>
+      ))}
+    </select>
+
+    <select
+      value={diffTargetVersionId ?? ""}
+      onChange={(e) => setDiffTargetVersionId(Number(e.target.value) || null)}
+    >
+      <option value="">Новая версия</option>
+      {versions.map((v: any) => (
+        <option key={v.id} value={v.id}>
+          Версия {v.id}
+        </option>
+      ))}
+    </select>
+
+    <button
+      type="button"
+      disabled={!diffBaseVersionId || !diffTargetVersionId}
+      onClick={() => {
+        const base = versions.find((v: any) => v.id === diffBaseVersionId);
+        const target = versions.find((v: any) => v.id === diffTargetVersionId);
+        setDiffHtml(
+          base && target
+            ? buildDiffHtml(
+                typeof base.content === "string" ? base.content : "",
+                typeof target.content === "string" ? target.content : ""
+              )
+            : null
+        );
+      }}
+    >
+      Сравнить
+    </button>
+  </div>
+
+  {diffHtml && (
+    <div
+      style={{ fontSize: 13, whiteSpace: "pre-wrap" }}
+      dangerouslySetInnerHTML={{ __html: diffHtml }}
+    />
+  )}
+</div>
+
         </div>
       </div>
     )}
