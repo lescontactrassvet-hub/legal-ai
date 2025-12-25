@@ -28,12 +28,15 @@ def run_migrations_online():
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
-    url=settings.sqlite_url,
+        url=settings.sqlite_url,
     )
-    
-    context.configure(connection=connection, target_metadata=target_metadata)
-with context.begin_transaction():
-     context.run_migrations()
+
+    with connectable.connect() as connection:
+        context.configure(connection=connection, target_metadata=target_metadata)
+
+        with context.begin_transaction():
+            context.run_migrations()
+
 
 if context.is_offline_mode():
     run_migrations_offline()
