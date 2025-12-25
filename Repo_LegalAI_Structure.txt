@@ -141,6 +141,7 @@ backend/
       versions/
         4f9c98227fbb_ensure_email_tokens_table_exists.py
         a58bfe546da3_add_2fa_columns.py
+        f33e1b168d51_add_is_superuser_to_users.py
         d290db6f6dd1_add_2fa_columns_to_users.py
     legal_doc/
       utils.py
