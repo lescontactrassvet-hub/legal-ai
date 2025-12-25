@@ -28,7 +28,7 @@ def run_migrations_online():
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
-        url=settings.sqlite_url,
+        url=settings.sqlite_url.replace("sqlite+aiosqlite", "sqlite"),
     )
 
     with connectable.connect() as connection:
