@@ -12,6 +12,10 @@ class UserCreate(UserBase):
     last_name: Optional[str] = None
     first_name: Optional[str] = None
     middle_name: Optional[str] = None
+    birth_year: Optional[int] = None
+    country: Optional[str] = None
+    activity: Optional[str] = None
+
     phone: Optional[str] = None
     company: Optional[str] = None
     position: Optional[str] = None
@@ -26,6 +30,10 @@ class UserOut(BaseModel):
     last_name: Optional[str] = None
     first_name: Optional[str] = None
     middle_name: Optional[str] = None
+    birth_year: Optional[int] = None
+    country: Optional[str] = None
+    activity: Optional[str] = None
+
     phone: Optional[str] = None
     company: Optional[str] = None
     position: Optional[str] = None

@@ -27,6 +27,18 @@ def register(user_create: schemas.UserCreate, db: Session = Depends(get_db)):
         username=user_create.username,
         email=user_create.email,
         hashed_password=hashed_pw,
+        last_name=user_create.last_name,
+        first_name=user_create.first_name,
+        middle_name=user_create.middle_name,
+        birth_year=user_create.birth_year,
+        country=user_create.country,
+        activity=user_create.activity,
+        phone=user_create.phone,
+        company=user_create.company,
+        position=user_create.position,
+        city=user_create.city,
+        about=user_create.about,
+
     )
     db.add(new_user)
     db.commit()

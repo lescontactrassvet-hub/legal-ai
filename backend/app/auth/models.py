@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
-from ..db import Base
+from app.db.base import Base
 
 
 class User(Base):
@@ -14,7 +14,30 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
+    is_superuser = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Profile / registration fields (must be persisted)
+    last_name = Column(String, nullable=True)
+    first_name = Column(String, nullable=True)
+    middle_name = Column(String, nullable=True)
+    birth_year = Column(Integer, nullable=True)
+
+    phone = Column(String, unique=True, index=True, nullable=True)
+    is_phone_verified = Column(Boolean, default=False)
+
+    country = Column(String, nullable=True)
+    city = Column(String, nullable=True)
+    activity = Column(String, nullable=True)
+
+    company = Column(String, nullable=True)
+    position = Column(String, nullable=True)
+    about = Column(String, nullable=True)
+
+    # 2FA fields (used by routes_2fa.py)
+    totp_secret = Column(String, nullable=True)
+    is_2fa_enabled = Column(Boolean, default=False)
+
 
     # Relationship to refresh tokens
     tokens = relationship("RefreshToken", back_populates="user")
