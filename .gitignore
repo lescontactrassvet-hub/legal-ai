@@ -56,3 +56,12 @@ backend/test_env.py
 # Python cache
 __pycache__/
 _trash_check/
+
+# --- server/local backups (do not commit) ---
+_server_backups/
+*.db.bak*
+*.bak
+*.BAK*
+backend/*.db.bak*
+data/*.db.bak*
+

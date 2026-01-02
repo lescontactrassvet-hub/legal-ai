@@ -1,8 +1,8 @@
-"""initial auth schema
+"""initial_auth_schema
 
-Revision ID: c8627650149b
+Revision ID: 32a02b0ba695
 Revises: 
-Create Date: 2025-12-24 21:44:11.636836
+Create Date: 2025-12-26 04:07:13.215448
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'c8627650149b'
+revision: str = '32a02b0ba695'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -26,14 +26,15 @@ def upgrade() -> None:
     sa.Column('username', sa.String(), nullable=False),
     sa.Column('email', sa.String(), nullable=False),
     sa.Column('hashed_password', sa.String(), nullable=False),
-    sa.Column('is_active', sa.Boolean(), nullable=True),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('is_superuser', sa.Boolean(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('last_name', sa.String(), nullable=True),
     sa.Column('first_name', sa.String(), nullable=True),
     sa.Column('middle_name', sa.String(), nullable=True),
     sa.Column('birth_year', sa.Integer(), nullable=True),
-    sa.Column('phone', sa.String(), nullable=True),
-    sa.Column('is_phone_verified', sa.Boolean(), nullable=True),
+    sa.Column('phone', sa.String(), nullable=False),
+    sa.Column('is_phone_verified', sa.Boolean(), nullable=False),
     sa.Column('country', sa.String(), nullable=True),
     sa.Column('city', sa.String(), nullable=True),
     sa.Column('activity', sa.String(), nullable=True),
@@ -41,7 +42,7 @@ def upgrade() -> None:
     sa.Column('position', sa.String(), nullable=True),
     sa.Column('about', sa.String(), nullable=True),
     sa.Column('totp_secret', sa.String(), nullable=True),
-    sa.Column('is_2fa_enabled', sa.Boolean(), nullable=True),
+    sa.Column('is_2fa_enabled', sa.Boolean(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
@@ -51,9 +52,9 @@ def upgrade() -> None:
     op.create_table('refresh_tokens',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('token', sa.String(), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('expires_at', sa.DateTime(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )

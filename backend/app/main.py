@@ -33,7 +33,7 @@ except ImportError:
 
 
 # Создание таблиц в БД (SQLAlchemy модели проекта)
-Base.metadata.create_all(bind=engine)
+# DISABLED: Base.metadata.create_all(bind=engine)
 
 # Настройки приложения
 settings = get_settings()

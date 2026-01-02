@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError
 
 from ..db import get_db
 from . import models, schemas, utils
@@ -21,8 +23,12 @@ def register(user_create: schemas.UserCreate, db: Session = Depends(get_db)):
     ).first()
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username or email already registered")
+    existing_phone = db.query(models.User).filter(models.User.phone == user_create.phone).first()
+    if existing_phone:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Phone already registered")
+
     # Hash the password
-    hashed_pw = utils.get_password_hash(user_create.password)
+    hashed_pw = utils.hash_password(user_create.password)
     new_user = models.User(
         username=user_create.username,
         email=user_create.email,
@@ -38,11 +44,22 @@ def register(user_create: schemas.UserCreate, db: Session = Depends(get_db)):
         position=user_create.position,
         city=user_create.city,
         about=user_create.about,
-
     )
+
     db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+
+    try:
+
+        db.commit()
+
+        db.refresh(new_user)
+
+    except IntegrityError:
+
+        db.rollback()
+
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username, email or phone already registered")
+
     return new_user
 
 

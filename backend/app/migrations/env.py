@@ -4,10 +4,8 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 from app.db.base import Base
-from app.models.user import User
+from app.auth.models import User, RefreshToken
 
-from app.models.device import Device
-from app.models.token import RefreshToken
 from app.core.config import settings
 
 config = context.config
@@ -25,7 +23,7 @@ def run_migrations_offline():
 
 def run_migrations_online():
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        {},
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
         url=settings.sqlite_url.replace("sqlite+aiosqlite", "sqlite"),

@@ -6,6 +6,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
+import hashlib
 
 from app.config import get_settings
 from app.db import get_db
@@ -22,15 +23,16 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 
 # ---------------- Пароли ---------------- #
-
 def hash_password(password: str) -> str:
-    """Вернуть bcrypt-хеш пароля."""
-    return pwd_context.hash(password)
-
+    """SHA-256 → bcrypt. Защита от лимита 72 байта bcrypt."""
+    sha256 = hashlib.sha256(password.encode("utf-8")).hexdigest()
+    return pwd_context.hash(sha256)
 
 def check_password(plain_password: str, hashed_password: str) -> bool:
-    """Проверить соответствие пароля и хеша."""
-    return pwd_context.verify(plain_password, hashed_password)
+    """Проверка пароля: SHA-256(plain) → verify(bcrypt-hash)."""
+    sha256 = hashlib.sha256(plain_password.encode("utf-8")).hexdigest()
+    return pwd_context.verify(sha256, hashed_password)
+
 
 
 def get_password_policy() -> dict:
@@ -104,7 +106,7 @@ def get_current_user(
         )
 
     user: Optional[User] = (
-        db.query(User).filter(User.email == username).first()
+        db.query(User).filter(User.username == username).first()
     )
     if user is None:
         raise HTTPException(
@@ -114,3 +116,28 @@ def get_current_user(
         )
 
     return user
+
+
+# ------------------- Login helpers (restored) -------------------
+def authenticate_user(db: Session, username_or_email: str, password: str) -> Optional[User]:
+    """Find user by username OR email OR phone, then verify password."""
+    ident = (username_or_email or "").strip()
+    if not ident:
+        return None
+    user = db.query(User).filter((User.username == ident) | (User.email == ident) | (User.phone == ident)).first()
+
+    if user is None:
+        return None
+    if getattr(user, "is_active", True) is False:
+        return None
+    if not check_password(password, user.hashed_password):
+        return None
+    return user
+
+
+def decode_access_token(token: str) -> dict:
+    """Compatibility wrapper for routes.py (expects decode_access_token)."""
+    return _decode_token(token)
+
+
+ 

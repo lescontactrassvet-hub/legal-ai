@@ -8,19 +8,20 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
-    # Дополнительные поля анкеты
-    last_name: Optional[str] = None
-    first_name: Optional[str] = None
-    middle_name: Optional[str] = None
-    birth_year: Optional[int] = None
-    country: Optional[str] = None
-    activity: Optional[str] = None
+    # Поля анкеты — ВСЕ обязательные
+    last_name: str
+    first_name: str
+    middle_name: str
+    birth_year: int
+    country: str
+    city: str
+    activity: str
 
-    phone: Optional[str] = None
-    company: Optional[str] = None
-    position: Optional[str] = None
-    city: Optional[str] = None
-    about: Optional[str] = None
+    phone: str
+    company: str
+    position: str
+    about: str
+
 
 class UserOut(BaseModel):
     id: int

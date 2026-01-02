@@ -19,8 +19,11 @@ export default function RegisterPage({
   const [country, setCountry] = useState("");
   const [city, setCity] = useState("");
   const [activity, setActivity] = useState("");
-  const [login, setLogin] = useState("");
-  const [password, setPassword] = useState("");
+const [company, setCompany] = useState("");
+const [position, setPosition] = useState("");
+const [about, setAbout] = useState("");
+const [login, setLogin] = useState("");
+const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,6 +39,9 @@ export default function RegisterPage({
     const trimmedPhoneConfirm = phoneConfirm.trim();
     const trimmedCountry = country.trim();
     const trimmedCity = city.trim();
+const trimmedCompany = company.trim();
+const trimmedPosition = position.trim();
+const trimmedAbout = about.trim();
     const trimmedActivity = activity.trim();
     const trimmedLogin = login.trim();
     const trimmedPassword = password.trim();
@@ -49,7 +55,7 @@ export default function RegisterPage({
       !trimmedPhoneConfirm ||
       !trimmedCountry ||
       !trimmedCity ||
-      !trimmedActivity ||
+      !trimmedActivity || !trimmedCompany || !trimmedPosition || !trimmedAbout ||
       !trimmedLogin ||
       !trimmedPassword
     ) {
@@ -92,13 +98,43 @@ export default function RegisterPage({
     }
 
     setIsSubmitting(true);
-
-    // Демо-логика регистрации.
-    // Здесь позже появится реальный запрос к backend.
-    setTimeout(() => {
-      setIsSubmitting(false);
-      onRegisterSuccess();
-    }, 700);
+    // Реальная регистрация: POST /auth/register
+    fetch("/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: trimmedLogin,
+        email: trimmedEmail,
+        password: trimmedPassword,
+        last_name: trimmedLastName,
+        first_name: trimmedFirstName,
+        middle_name: middleName.trim() || "",
+        birth_year: Number(trimmedBirthYear),
+        phone: trimmedPhone,
+        country: trimmedCountry,
+        city: trimmedCity,
+        activity: trimmedActivity,
+        company: trimmedCompany,
+        position: trimmedPosition,
+        about: trimmedAbout,
+      }),
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const msg = (data && (data.detail || data.error || data.message)) || `HTTP ${res.status}`;
+          throw new Error(msg);
+        }
+        return data;
+      })
+      .then(() => {
+        setIsSubmitting(false);
+        onRegisterSuccess();
+      })
+      .catch((e) => {
+        setIsSubmitting(false);
+        alert(e?.message || "Ошибка регистрации");
+      });
   };
 
   const handleTogglePassword = () => {
@@ -274,6 +310,46 @@ export default function RegisterPage({
               Укажите, как вы планируете пользоваться сервисом.
             </p>
           </div>
+
+
+{/* Компания */}
+<div className="auth-field">
+  <label className="auth-label" htmlFor="reg-company">Компания *</label>
+  <input
+    id="reg-company"
+    type="text"
+    className="auth-input"
+    placeholder="Название компании"
+    value={company}
+    onChange={(e) => setCompany(e.target.value)}
+  />
+</div>
+
+{/* Должность */}
+<div className="auth-field">
+  <label className="auth-label" htmlFor="reg-position">Должность *</label>
+  <input
+    id="reg-position"
+    type="text"
+    className="auth-input"
+    placeholder="Должность"
+    value={position}
+    onChange={(e) => setPosition(e.target.value)}
+  />
+</div>
+
+{/* О себе */}
+<div className="auth-field">
+  <label className="auth-label" htmlFor="reg-about">О себе *</label>
+  <textarea
+    id="reg-about"
+    className="auth-input"
+    placeholder="Кратко опишите себя"
+    value={about}
+    onChange={(e) => setAbout(e.target.value)}
+    rows={3}
+  />
+</div>
 
           {/* Логин */}
           <div className="auth-field">

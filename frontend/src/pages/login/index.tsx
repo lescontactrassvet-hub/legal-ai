@@ -31,12 +31,33 @@ export default function LoginPage({
 
     setIsSubmitting(true);
 
-    // Пока логика демо: считаем, что логин всегда успешный
-    // Здесь позже появится реальный запрос к backend
-    setTimeout(() => {
-      setIsSubmitting(false);
-      onLoginSuccess();
-    }, 500);
+    // Реальный логин: POST /auth/login
+    const storage = rememberMe ? localStorage : sessionStorage;
+    fetch("/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ username: trimmedEmail, password: trimmedPassword }).toString(),
+    })
+      .then(async (res) => {
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const msg = (data && (data.detail || data.error || data.message)) || `HTTP ${res.status}`;
+          throw new Error(msg);
+        }
+        const token = data.access_token || data.token;
+        if (!token) throw new Error("Не получен access_token");
+        storage.setItem("access_token", token);
+        return token;
+      })
+      .then(() => {
+        setIsSubmitting(false);
+        onLoginSuccess();
+      })
+      .catch((e) => {
+        setIsSubmitting(false);
+        alert(e?.message || "Ошибка входа");
+      });
   };
 
   const handleTogglePassword = () => {
@@ -57,7 +78,7 @@ export default function LoginPage({
             </label>
             <input
               id="login-email"
-              type="email"
+              type="text"
               className="auth-input"
               placeholder="example@domain.ru"
               value={email}
