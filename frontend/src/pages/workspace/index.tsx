@@ -361,6 +361,36 @@ try {
     throw new Error(`HTTP ${res.status}: ${text || "save failed"}`);
   }
 
+// 2.7: после сохранения версии сразу обновляем список версий для UI (без перезагрузки)
+try {
+  const r2 = await fetch(`${API_BASE}/documents/${activeDocumentId}/versions`);
+  const raw2 = await r2.text();
+
+  let data2: unknown;
+  try {
+    data2 = JSON.parse(raw2);
+  } catch {
+    throw new Error(`Не JSON: ${raw2.slice(0, 140)}`);
+  }
+
+  if (r2.ok && Array.isArray(data2)) {
+    const versionsRaw2 = data2 as Array<Record<string, unknown>>;
+    const normalized2 = versionsRaw2
+      .map((v) => ({
+        id: typeof v.id === "number" ? v.id : Number(v.id),
+        created_at: typeof v.created_at === "string" ? v.created_at : null,
+        source: typeof v.source === "string" ? v.source : null,
+        content: typeof v.content === "string" ? v.content : "",
+      }))
+      .filter((v) => Number.isFinite(v.id));
+
+    setVersions(normalized2);
+    setActiveVersionId(normalized2.length > 0 ? normalized2[0].id : null);
+  }
+} catch (e) {
+  console.warn("Не удалось обновить список версий:", e);
+}
+
   lastSavedHashRef.current = contentHash;
 
   if (mode === "manual") {
@@ -645,13 +675,51 @@ useEffect(() => {
         });
         const doc = await res.json();
         const docId = doc?.id;
+    const docTitle =
+      typeof doc?.title === "string" && doc.title.trim() ? doc.title : title;
+
         if (docId) {
-          await fetch(`${base.replace(/\/$/, "")}/documents/${docId}/versions`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content: draftText, source: "ai" }),
-          });
-          setDocuments(prev => [{ id: docId, title }, ...prev]);
+    const resV = await fetch(`${base.replace(/\/$/, "")}/documents/${docId}/versions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: draftText, source: "ai" }),
+    });
+
+    if (!resV.ok) {
+      const t = await resV.text().catch(() => "");
+      console.warn("Не удалось создать первую версию:", resV.status, t.slice(0, 200));
+    }
+
+        // 2.7: сразу обновляем список версий после POST /versions
+        try {
+          const r2 = await fetch(`${base.replace(/\/$/, "")}/documents/${docId}/versions`);
+          const raw2 = await r2.text();
+          let data2: unknown;
+          try {
+            data2 = JSON.parse(raw2);
+          } catch {
+            throw new Error(`Не JSON: ${raw2.slice(0, 140)}`);
+          }
+          if (r2.ok && Array.isArray(data2)) {
+            const versionsRaw2 = data2 as Array<Record<string, unknown>>;
+            const normalized2 = versionsRaw2
+              .map((v) => ({
+                id: typeof v.id === "number" ? v.id : Number(v.id),
+                created_at: typeof v.created_at === "string" ? v.created_at : null,
+                source: typeof v.source === "string" ? v.source : null,
+                content: typeof v.content === "string" ? v.content : "",
+              }))
+              .filter((v) => Number.isFinite(v.id));
+            setVersions(normalized2);
+            setActiveVersionId(normalized2.length > 0 ? normalized2[0].id : null);
+          }
+        } catch (e) {
+          console.warn("Не удалось обновить список версий:", e);
+        }
+
+
+        setDocuments((prev) => [{ id: docId, title: docTitle }, ...prev.filter((d) => d.id !== docId)]);
+
           setActiveDocumentId(docId);
           setDocumentHtml(draftText);
         }
@@ -1491,6 +1559,36 @@ useEffect(() => {
           return;
         }
 
+// 3.1: сразу обновляем список версий (2.7), чтобы UI обновился без перезагрузки
+try {
+  const r2 = await fetch(`${API_BASE}/documents/${activeDocumentId}/versions`);
+  const raw2 = await r2.text();
+
+  let data2: unknown;
+  try {
+    data2 = JSON.parse(raw2);
+  } catch {
+    throw new Error(`Не JSON: ${raw2.slice(0, 140)}`);
+  }
+
+  if (r2.ok && Array.isArray(data2)) {
+    const versionsRaw2 = data2 as Array<Record<string, unknown>>;
+    const normalized2 = versionsRaw2
+      .map((v) => ({
+        id: typeof v.id === "number" ? v.id : Number(v.id),
+        created_at: typeof v.created_at === "string" ? v.created_at : null,
+        source: typeof v.source === "string" ? v.source : null,
+        content: typeof v.content === "string" ? v.content : "",
+      }))
+      .filter((v) => Number.isFinite(v.id));
+
+    setVersions(normalized2);
+    setActiveVersionId(normalized2.length > 0 ? normalized2[0].id : null);
+  }
+} catch (e) {
+  console.warn("Не удалось обновить список версий:", e);
+}
+        
         // 4) обновляем состояние и защищаемся от лишнего автосейва
         setDocumentHtml(newHtml);
         lastSavedHashRef.current = hashText(newHtml);
