@@ -267,6 +267,12 @@ const [aiDraft, setAiDraft] = useState<string | null>(null);
   const [activeCaseId, setActiveCaseId] = useState<number | null>(null);
   const [casesLoading, setCasesLoading] = useState<boolean>(false);
   const [casesError, setCasesError] = useState<string>("");
+  const [createCaseOpen, setCreateCaseOpen] = useState(false);
+  const [newCaseTitle, setNewCaseTitle] = useState<string>("");
+  const [newCaseDescription, setNewCaseDescription] = useState<string>("");
+  const [createCaseLoading, setCreateCaseLoading] = useState(false);
+  const [createCaseError, setCreateCaseError] = useState<string>("");
+
 
   const [documents, setDocuments] = useState<DocumentItem[]>([]);  
 
@@ -414,51 +420,99 @@ try {
 }
 
 }
+  const fetchCases = async () => {
+    const base = (import.meta as any)?.env?.VITE_API_BASE?.toString?.() || "/api";
+    const baseClean = base.endsWith("/") ? base.slice(0, -1) : base;
+    const url = `${baseClean}/cases`;
+
+    setCasesLoading(true);
+    setCasesError("");
+
+    try {
+      const res = await fetch(url);
+      const raw = await res.text();
+      let data: unknown;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        throw new Error(`Не JSON: ${raw.slice(0, 140)}`);
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!Array.isArray(data)) throw new Error("Ожидался массив дел");
+      const list = data as CaseItem[];
+      setCases(list);
+      if (list.length > 0) {
+        setActiveCaseId((prev) => (prev === null ? list[0].id : prev));
+      }
+    } catch (e: any) {
+      setCasesError(e?.message || String(e));
+    } finally {
+      setCasesLoading(false);
+    }
+  };
+
+
+
+
+  const handleCreateCase = async () => {
+    const title = newCaseTitle.trim();
+    const description = newCaseDescription.trim();
+
+    if (!title) {
+      setCreateCaseError("Введите название дела.");
+      return;
+    }
+
+    setCreateCaseLoading(true);
+    setCreateCaseError("");
+
+    try {
+      const base = (import.meta as any)?.env?.VITE_API_BASE?.toString?.() || "/api";
+      const baseClean = base.endsWith("/") ? base.slice(0, -1) : base;
+      const url = baseClean + "/cases";
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, description }),
+      });
+
+      const raw = await res.text();
+      let data: any = null;
+      try {
+        data = raw ? JSON.parse(raw) : null;
+      } catch {
+        data = null;
+      }
+
+      if (!res.ok) {
+        const msg = (data && (data.detail || data.message)) || raw || ("HTTP " + res.status);
+        throw new Error(String(msg));
+      }
+
+      if (data && typeof data.id === "number") {
+        setCases((prev) => [data as CaseItem, ...prev.filter((c) => c.id !== data.id)]);
+        setActiveCaseId(data.id);
+      } else {
+        await fetchCases();
+      }
+
+      setCreateCaseOpen(false);
+      setNewCaseTitle("");
+      setNewCaseDescription("");
+    } catch (e: any) {
+      setCreateCaseError(e?.message || String(e));
+    } finally {
+      setCreateCaseLoading(false);
+    }
+  };
+
 
   useEffect(() => {
     let cancelled = false;
 
-    const loadCases = async () => {
-      const base =
-        (import.meta as any)?.env?.VITE_API_BASE?.toString?.() || "/api";
-      const url = `${base.replace(/\/$/, "")}/cases`;
 
-      setCasesLoading(true);
-      setCasesError("");
-
-      try {
-        const res = await fetch(url);
-        const raw = await res.text();
-
-        let data: unknown;
-        try {
-          data = JSON.parse(raw);
-        } catch {
-          throw new Error(`Не JSON: ${raw.slice(0, 140)}`);
-        }
-
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-
-        if (!Array.isArray(data)) {
-          throw new Error("Ожидался массив дел");
-        }
-
-        const list = data as CaseItem[];
-
-        if (!cancelled) {
-          setCases(list);
-          if (list.length > 0) {
-            setActiveCaseId(prev => (prev === null ? list[0].id : prev));
-          } } } catch (e: any) {
-  if (!cancelled) setCasesError(e?.message || String(e));
-} finally {
-  if (!cancelled) setCasesLoading(false);
-}
-};
-
-    loadCases();
+    fetchCases();
     return () => { cancelled = true; };
   }, []);
 
@@ -1161,7 +1215,7 @@ useEffect(() => {
                   border: "none",
                   color: "#e5e7eb",
                   textAlign: "left",
-                  width: "100%",
+                  flex: 1,
                   fontSize: "12px",
                   fontWeight: 600,
                   cursor: "pointer",
@@ -1169,6 +1223,27 @@ useEffect(() => {
               >
                 Мои дела
               </button>
+      <button
+        type="button"
+        onClick={() => {
+          setCreateCaseError("");
+          setCreateCaseOpen(true);
+        }}
+        style={{
+          background: "rgba(168, 85, 247, 0.25)",
+          border: "1px solid rgba(168, 85, 247, 0.45)",
+          color: "#e5e7eb",
+          borderRadius: "10px",
+          padding: "6px 10px",
+          fontSize: "12px",
+          fontWeight: 600,
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+        }}
+      >
+        Создать дело
+      </button>
+
             </div>
             {activeSidePanel === "cases" && (
   <div className="workspace-sidepanel-body">
@@ -1797,7 +1872,144 @@ try {
           ответственность пользователь.
         </p>
       </footer>
+
+      {createCaseOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+            zIndex: 1000,
+          }}
+          onClick={() => !createCaseLoading && setCreateCaseOpen(false)}
+        >
+          <div
+            style={{
+              background: "rgba(15, 23, 42, 0.98)",
+              border: "1px solid rgba(148, 163, 184, 0.25)",
+              borderRadius: 14,
+              padding: 16,
+              width: "min(520px, 100%)",
+              color: "#e5e7eb",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+                alignItems: "center",
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: "14px" }}>Создать дело</h3>
+              <button
+                type="button"
+                onClick={() => !createCaseLoading && setCreateCaseOpen(false)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#e5e7eb",
+                  fontSize: "16px",
+                  cursor: "pointer",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={{ fontSize: "12px", opacity: 0.9 }}>Название *</span>
+                <input
+                  value={newCaseTitle}
+                  onChange={(e) => setNewCaseTitle(e.target.value)}
+                  placeholder="Например: Договор аренды 2026"
+                  disabled={createCaseLoading}
+                  style={{
+                    padding: "10px 12px",
+                    borderRadius: 12,
+                    border: "1px solid rgba(148, 163, 184, 0.25)",
+                    background: "rgba(2, 6, 23, 0.8)",
+                    color: "#e5e7eb",
+                    fontSize: "12px",
+                  }}
+                />
+              </label>
+
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={{ fontSize: "12px", opacity: 0.9 }}>Описание</span>
+                <textarea
+                  value={newCaseDescription}
+                  onChange={(e) => setNewCaseDescription(e.target.value)}
+                  placeholder="Кратко: что за задача/контекст"
+                  rows={4}
+                  disabled={createCaseLoading}
+                  style={{
+                    padding: "10px 12px",
+                    borderRadius: 12,
+                    border: "1px solid rgba(148, 163, 184, 0.25)",
+                    background: "rgba(2, 6, 23, 0.8)",
+                    color: "#e5e7eb",
+                    fontSize: "12px",
+                    resize: "vertical",
+                  }}
+                />
+              </label>
+
+              {!!createCaseError && (
+                <div style={{ color: "#fca5a5", fontSize: "12px" }}>{createCaseError}</div>
+              )}
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 6 }}>
+                <button
+                  type="button"
+                  onClick={() => setCreateCaseOpen(false)}
+                  disabled={createCaseLoading}
+                  style={{
+                    background: "transparent",
+                    border: "1px solid rgba(148, 163, 184, 0.25)",
+                    color: "#e5e7eb",
+                    borderRadius: 10,
+                    padding: "8px 12px",
+                    fontSize: "12px",
+                    cursor: createCaseLoading ? "default" : "pointer",
+                  }}
+                >
+                  Отмена
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateCase}
+                  disabled={createCaseLoading}
+                  style={{
+                    background: "rgba(168, 85, 247, 0.35)",
+                    border: "1px solid rgba(168, 85, 247, 0.55)",
+                    color: "#e5e7eb",
+                    borderRadius: 10,
+                    padding: "8px 12px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    cursor: createCaseLoading ? "default" : "pointer",
+                  }}
+                >
+                  {createCaseLoading ? "Создаю…" : "Создать"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
+
+
   );
 };
 export default WorkspacePage;
