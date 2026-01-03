@@ -275,11 +275,14 @@ const [aiDraft, setAiDraft] = useState<string | null>(null);
   const [documentsError, setDocumentsError] = useState<string>("");
 // 2.5: версии документа
 const [versions, setVersions] = useState<Array<{
+
   id: number;
   created_at?: string | null;
   source?: string | null;
   content?: string;
 }>>([]);
+
+const [versionsLoading, setVersionsLoading] = useState(false);
 
 const [activeVersionId, setActiveVersionId] = useState<number | null>(null);
 
