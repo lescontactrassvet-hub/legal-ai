@@ -1,4 +1,3 @@
-cat > frontend/src/pages/documents/index.tsx <<'EOF'
 // frontend/src/pages/documents/index.tsx
 import React, { useMemo, useState } from "react";
 
