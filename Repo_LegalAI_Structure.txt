@@ -4,7 +4,6 @@ legal-ai/
   requirements.txt
   repair_and_run.sh
   server_report.txt
-  legalai.db
   lighthouse.config.json
   auth_check.sh
   full_repo_diagnose_and_fix.sh
@@ -139,12 +138,7 @@ backend/
       script.py.mako
       README
       versions/
-        4f9c98227fbb_ensure_email_tokens_table_exists.py
-        a58bfe546da3_add_2fa_columns.py
-        f33e1b168d51_add_is_superuser_to_users.py
-        c8627650149b_initial_auth_schema.py
-        d290db6f6dd1_add_2fa_columns_to_users.py
-        3e9b10e04fe6_merge_auth_migration_heads.py
+        32a02b0ba695_initial_auth_schema.py
     legal_doc/
       utils.py
       schemas.py
