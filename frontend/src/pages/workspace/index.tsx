@@ -283,6 +283,8 @@ const [versions, setVersions] = useState<Array<{
 }>>([]);
 
 const [versionsLoading, setVersionsLoading] = useState(false);
+const [versionsError, setVersionsError] = useState<string>("");
+
 
 const [activeVersionId, setActiveVersionId] = useState<number | null>(null);
 
