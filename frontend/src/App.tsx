@@ -109,7 +109,7 @@ export default function App() {
     case "documents":
       return (
         <DocumentsPage
-        // позже добавим onGoBack
+          onGoBack={() => setPage("workspace")}
         />
       );
 
