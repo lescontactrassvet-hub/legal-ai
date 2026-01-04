@@ -1,5 +1,5 @@
 // frontend/src/pages/documents/index.tsx
-import React, { useMemo, useState } from "react";
+import React, {useEffect, useMemo, useState } from "react";
 
 type DocumentsPageProps = {
   onGoBack: () => void;
@@ -25,28 +25,80 @@ export default function DocumentsPage({ onGoBack }: DocumentsPageProps) {
   // Пока это “каркас”: UI готов, API подключим следующим шагом.
   const [query, setQuery] = useState<string>("");
   const [activeCaseId, setActiveCaseId] = useState<number | null>(null);
+  const apiBaseRaw = (import.meta as any).env?.VITE_API_BASE || "";
+  const apiBase = apiBaseRaw.endsWith("/") ? apiBaseRaw.slice(0, -1) : apiBaseRaw;
+  const apiUrl = (path: string) => `${apiBase}${path}`;
 
-  // заглушечные данные (чтобы страница была НЕ пустая). На следующем шаге заменим на fetch.
-  const mockCases: CaseRow[] = [
-    { id: 1, title: "Пример дела", description: "После подключения API здесь будут реальные дела." },
-  ];
-  const mockDocs: DocRow[] = [
-    {
-      id: 101,
-      case_id: 1,
-      title: "Пример документа",
-      status: "Черновик",
-      updated_at: "",
-      created_at: "",
-    },
-  ];
+  const [casesData, setCasesData] = useState<CaseRow[]>([]);
+  const [docsData, setDocsData] = useState<DocRow[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchCases() {
+      try {
+        const r = await fetch(apiUrl("/cases"));
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data = (await r.json()) as CaseRow[];
+        if (cancelled) return;
+
+        const arr = Array.isArray(data) ? data : [];
+        setCasesData(arr);
+
+        if (activeCaseId == null && arr.length > 0) {
+          setActiveCaseId(arr[0].id);
+        }
+      } catch (e) {
+        console.error("DocumentsPage: fetch /cases failed", e);
+        if (!cancelled) setCasesData([]);
+      }
+    }
+
+    fetchCases();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchDocs(caseId: number) {
+      try {
+        const r = await fetch(apiUrl(`/cases/${caseId}/documents`));
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data = (await r.json()) as DocRow[];
+        if (cancelled) return;
+
+        setDocsData(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error("DocumentsPage: fetch documents failed", e);
+        if (!cancelled) setDocsData([]);
+      }
+    }
+
+    if (activeCaseId == null) {
+      setDocsData([]);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    fetchDocs(activeCaseId);
+    return () => {
+      cancelled = true;
+    };
+  }, [activeCaseId]);
+
+
 
   const cases = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const base = mockCases;
+    const base = casesData;
     if (!q) return base;
     return base.filter((c) => (c.title || "").toLowerCase().includes(q));
-  }, [query]);
+  }, [query, casesData]);
 
   const activeCase = useMemo(
     () => cases.find((c) => c.id === activeCaseId) || cases[0] || null,
@@ -55,8 +107,8 @@ export default function DocumentsPage({ onGoBack }: DocumentsPageProps) {
 
   const documents = useMemo(() => {
     if (!activeCase) return [];
-    return mockDocs.filter((d) => d.case_id === activeCase.id);
-  }, [activeCase]);
+    return docsData;
+}, [activeCase]);
 
   return (
     <div
