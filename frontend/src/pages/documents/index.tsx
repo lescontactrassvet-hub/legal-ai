@@ -3,6 +3,7 @@ import React, {useEffect, useMemo, useState } from "react";
 
 type DocumentsPageProps = {
   onGoBack: () => void;
+  onOpenInWorkspace: (caseId: number, documentId: number) => void;
 };
 
 type CaseRow = {
@@ -21,7 +22,7 @@ type DocRow = {
   status?: string | null; // под ТЗ
 };
 
-export default function DocumentsPage({ onGoBack }: DocumentsPageProps) {
+export default function DocumentsPage({ onGoBack, onOpenInWorkspace }: DocumentsPageProps) {
   // Пока это “каркас”: UI готов, API подключим следующим шагом.
   const [query, setQuery] = useState<string>("");
   const [activeCaseId, setActiveCaseId] = useState<number | null>(null);
@@ -285,7 +286,7 @@ export default function DocumentsPage({ onGoBack }: DocumentsPageProps) {
                               className="auth-primary-button"
                               style={{ width: "auto", padding: "10px 14px", fontSize: 12 }}
                               // Следующий шаг: реально “опрокидывать” в Workspace.
-                              onClick={() => alert("Следующий шаг: открыть этот документ в Workspace")}
+                              onClick={() => onOpenInWorkspace(d.case_id, d.id)}
                             >
                               Открыть в Workspace
                             </button>

@@ -27,6 +27,7 @@ type AppPage =
 export default function App() {
   const [page, setPage] = useState<AppPage>("landing");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [workspaceTarget, setWorkspaceTarget] = useState<{ caseId: number; documentId: number } | null>(null);
 
   // ---- Авторизация ----
   const handleLoginSuccess = () => {
@@ -110,6 +111,7 @@ export default function App() {
       return (
         <DocumentsPage
           onGoBack={() => setPage("workspace")}
+        onOpenInWorkspace={(caseId, documentId) => { setWorkspaceTarget({ caseId, documentId }); setPage("workspace"); }}
         />
       );
 
@@ -119,7 +121,8 @@ export default function App() {
     case "workspace":
     default:
       return (
-        <WorkspacePage
+        <WorkspacePage openTarget={workspaceTarget}
+        onOpenTargetConsumed={() => setWorkspaceTarget(null)}
           onGoToProfile={handleGoToProfile}
           onLogout={handleLogout}
           onGoToDocuments={handleGoToDocuments}

@@ -2,6 +2,7 @@
 import DocumentEditor from "../../components/DocumentEditor";
 
 type WorkspacePageProps = {
+  openTarget?: { caseId: number; documentId: number } | null;
   onGoToProfile: () => void;
   onLogout: () => void;
   onGoToDocuments?: () => void;
@@ -26,6 +27,7 @@ type TatianaAskResponse = {
 // Демо-режим включается ТОЛЬКО явным флагом.
 // По умолчанию: боевой режим (backend).
 const DEMO_MODE = false;
+
 
 function getTatianaDemoReply(mode: WorkspaceMode, userText: string): string {
   const trimmed = userText.trim();
@@ -105,7 +107,7 @@ function formatCitations(citations: unknown): string {
     }
 
     return ["", "Источники:", String(citations)].join("\n");
-  } catch {
+  } catch (e) {
     return "";
   }
 }
@@ -138,7 +140,7 @@ async function requestTatianaReply(
 
     try {
       data = JSON.parse(rawText) as TatianaAskResponse;
-    } catch {
+    } catch (e) {
       // не JSON (например, HTML)
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}: ${rawText.slice(0, 200)}`);
@@ -224,10 +226,25 @@ type DocumentItem = {
 };
 
 const WorkspacePage: React.FC<WorkspacePageProps> = ({
+  openTarget,
+  onOpenTargetConsumed,
+
   onGoToProfile,
   onLogout,
   onGoToDocuments,
 }) => {
+  // Если пришли из страницы "Документы" — держим цель до загрузки списка документов
+  const pendingOpenDocIdRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!openTarget) return;
+    pendingOpenDocIdRef.current = openTarget.documentId;
+    setDocuments([]);
+    setActiveDocumentId(null);
+    setActiveCaseId(openTarget.caseId);
+    onOpenTargetConsumed && onOpenTargetConsumed();
+  }, [openTarget]);
+
+
   const [mode, setMode] = useState<WorkspaceMode>("simple");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState<string>("");
@@ -380,7 +397,7 @@ try {
   let data2: unknown;
   try {
     data2 = JSON.parse(raw2);
-  } catch {
+  } catch (e) {
     throw new Error(`Не JSON: ${raw2.slice(0, 140)}`);
   }
 
@@ -434,7 +451,7 @@ try {
       let data: unknown;
       try {
         data = JSON.parse(raw);
-      } catch {
+      } catch (e) {
         throw new Error(`Не JSON: ${raw.slice(0, 140)}`);
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -481,7 +498,7 @@ try {
       let data: any = null;
       try {
         data = raw ? JSON.parse(raw) : null;
-      } catch {
+      } catch (e) {
         data = null;
       }
 
@@ -534,46 +551,50 @@ useEffect(() => {
     setDocumentsError("");
     setActiveDocumentId(null);
 
-    try {
-      const res = await fetch(url);
-      const raw = await res.text();
-
-      let data: unknown;
       try {
-        data = JSON.parse(raw);
-      } catch {
-        throw new Error(`Не JSON: ${raw.slice(0, 140)}`);
-      }
+        const res = await fetch(url);
+        const raw = await res.text();
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
+        let data: unknown;
+        try {
+          data = JSON.parse(raw);
+        } catch (e) {
+          throw new Error(`Не JSON: ${raw.slice(0, 140)}`);
+        }
 
-      if (!Array.isArray(data)) {
-        throw new Error("Ожидался массив документов");
-      }
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
 
-      if (!cancelled) {
-        setDocuments(data as DocumentItem[]);
-    // AUTOSELECT: выбираем первый документ, чтобы редактор сразу загрузился
-    if (!activeDocumentId && (data as DocumentItem[]).length > 0) {
-      setActiveDocumentId((data as DocumentItem[])[0].id);
-    }
+        if (!Array.isArray(data)) {
+          throw new Error("Ожидался массив документов");
+        }
+
+        if (!cancelled) {
+          setDocuments(data as DocumentItem[]);
+
+          // AUTSELECT: если пришли из "Документы" — открываем цель, иначе первый документ
+          const items = data as DocumentItem[];
+          const pendingId = pendingOpenDocIdRef.current;
+          if (pendingId != null) {
+            const hit = items.find((x) => x.id === pendingId);
+            if (hit) setActiveDocumentId(hit.id);
+            pendingOpenDocIdRef.current = null;
+          } else if (!activeDocumentId && items.length > 0) {
+            setActiveDocumentId(items[0].id);
+          }
+        }
+      } catch (e) {
+        if (!cancelled) {
+          const msg = e instanceof Error ? e.message : "Ошибка загрузки документов";
+          setDocumentsError(msg);
+          setDocuments([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setDocumentsLoading(false);
+        }
       }
-    } catch (e) {
-      if (!cancelled) {
-        const msg =
-          e instanceof Error
-            ? e.message
-            : "Ошибка загрузки документов";
-        setDocumentsError(msg);
-        setDocuments([]);
-      }
-    } finally {
-      if (!cancelled) {
-        setDocumentsLoading(false);
-      }
-    }
   };
 
   loadDocuments();
@@ -605,7 +626,7 @@ useEffect(() => {
       let data: unknown;
       try {
         data = JSON.parse(raw);
-      } catch {
+      } catch (e) {
         throw new Error(`Не JSON: ${raw.slice(0, 140)}`);
       }
 
@@ -756,7 +777,7 @@ useEffect(() => {
           let data2: unknown;
           try {
             data2 = JSON.parse(raw2);
-          } catch {
+          } catch (e) {
             throw new Error(`Не JSON: ${raw2.slice(0, 140)}`);
           }
           if (r2.ok && Array.isArray(data2)) {
@@ -1647,7 +1668,7 @@ try {
   let data2: unknown;
   try {
     data2 = JSON.parse(raw2);
-  } catch {
+  } catch (e) {
     throw new Error(`Не JSON: ${raw2.slice(0, 140)}`);
   }
 
