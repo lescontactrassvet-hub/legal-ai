@@ -269,5 +269,4 @@ export default function DocumentsPage({ onGoBack }: DocumentsPageProps) {
     </div>
   );
 }
-EOF
 
