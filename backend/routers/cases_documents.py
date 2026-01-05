@@ -282,4 +282,210 @@ def create_version(document_id: int, payload: DocumentVersionCreate) -> Document
     row = cur.fetchone()
     conn.close()
     return DocumentVersionOut(**dict(row))
+# -----------------------------
+# EXPORT (DOCX / PDF / ZIP)
+# из document_versions.content
+# -----------------------------
+import io
+import os
+import re
+import html as _html
+import zipfile
+import tempfile
+import shutil
+
+from fastapi import Query
+from fastapi.responses import StreamingResponse, FileResponse
+from starlette.background import BackgroundTask
+
+try:
+    from docx import Document as DocxDocument
+except Exception:
+    DocxDocument = None
+
+try:
+    # уже есть в проекте (использует unoconv)
+    from app.legal_doc.pdf_utils import convert_docx_to_pdf
+except Exception:
+    convert_docx_to_pdf = None
+
+
+def _html_to_text(s: str) -> str:
+    if not s:
+        return ""
+    s = s.replace("\r", "")
+    s = re.sub(r"(?i)<br\s*/?>", "\n", s)
+    s = re.sub(r"(?i)</p\s*>", "\n", s)
+    s = re.sub(r"<[^>]+>", "", s)
+    s = _html.unescape(s)
+    s = re.sub(r"\n{3,}", "\n\n", s).strip()
+    return s
+
+
+def _safe_filename(name: str) -> str:
+    name = (name or "").strip()
+    name = re.sub(r"[^\w\-. А-Яа-я]+", "_", name)
+    name = re.sub(r"\s+", " ", name).strip()
+    return name or "document"
+
+
+def _get_version_row(cur, document_id: int, version_id: int | None):
+    if version_id is not None:
+        cur.execute(
+            "SELECT id, document_id, content, source, created_at "
+            "FROM document_versions WHERE id = ? AND document_id = ?",
+            (version_id, document_id),
+        )
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Version not found")
+        return row
+
+    cur.execute(
+        "SELECT id, document_id, content, source, created_at "
+        "FROM document_versions WHERE document_id = ? ORDER BY id DESC LIMIT 1",
+        (document_id,),
+    )
+    row = cur.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="No versions for this document")
+    return row
+
+
+def _build_docx_bytes(text: str) -> bytes:
+    if DocxDocument is None:
+        raise HTTPException(status_code=500, detail="python-docx is not installed on server")
+    doc = DocxDocument()
+    for line in (text or "").split("\n"):
+        doc.add_paragraph(line)
+    bio = io.BytesIO()
+    doc.save(bio)
+    return bio.getvalue()
+
+
+@router.get("/documents/{document_id}/export.docx")
+def export_document_docx(document_id: int, version_id: int | None = Query(default=None)):
+    conn = _connect()
+    cur = conn.cursor()
+
+    cur.execute("SELECT title FROM documents WHERE id = ?", (document_id,))
+    doc_row = cur.fetchone()
+    if not doc_row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    vrow = _get_version_row(cur, document_id, version_id)
+    conn.close()
+
+    title = _safe_filename(doc_row["title"])
+    v_id = vrow["id"]
+    filename = f"{title}_v{v_id}.docx"
+
+    text = _html_to_text(vrow["content"])
+    data = _build_docx_bytes(text)
+
+    headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
+    return StreamingResponse(
+        io.BytesIO(data),
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers=headers,
+    )
+
+
+@router.get("/documents/{document_id}/export.pdf")
+def export_document_pdf(document_id: int, version_id: int | None = Query(default=None)):
+    if convert_docx_to_pdf is None:
+        raise HTTPException(status_code=500, detail="PDF export backend is not available (convert_docx_to_pdf not found)")
+
+    conn = _connect()
+    cur = conn.cursor()
+
+    cur.execute("SELECT title FROM documents WHERE id = ?", (document_id,))
+    doc_row = cur.fetchone()
+    if not doc_row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    vrow = _get_version_row(cur, document_id, version_id)
+    conn.close()
+
+    title = _safe_filename(doc_row["title"])
+    v_id = vrow["id"]
+    base = f"{title}_v{v_id}"
+    docx_name = f"{base}.docx"
+    pdf_name = f"{base}.pdf"
+
+    text = _html_to_text(vrow["content"])
+    docx_bytes = _build_docx_bytes(text)
+
+    tmp_dir = tempfile.mkdtemp(prefix="legalai_export_")
+    docx_path = os.path.join(tmp_dir, docx_name)
+    with open(docx_path, "wb") as f:
+        f.write(docx_bytes)
+
+    try:
+        pdf_path = convert_docx_to_pdf(docx_path)
+    except Exception as exc:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        raise HTTPException(status_code=500, detail=str(exc))
+
+    return FileResponse(
+        path=pdf_path,
+        filename=pdf_name,
+        media_type="application/pdf",
+        background=BackgroundTask(shutil.rmtree, tmp_dir, ignore_errors=True),
+    )
+
+
+@router.get("/documents/{document_id}/export.zip")
+def export_document_zip(document_id: int, version_id: int | None = Query(default=None)):
+    conn = _connect()
+    cur = conn.cursor()
+
+    cur.execute("SELECT title FROM documents WHERE id = ?", (document_id,))
+    doc_row = cur.fetchone()
+    if not doc_row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    vrow = _get_version_row(cur, document_id, version_id)
+    conn.close()
+
+    title = _safe_filename(doc_row["title"])
+    v_id = vrow["id"]
+    base = f"{title}_v{v_id}"
+    docx_name = f"{base}.docx"
+    pdf_name = f"{base}.pdf"
+    zip_name = f"{base}.zip"
+
+    text = _html_to_text(vrow["content"])
+    docx_bytes = _build_docx_bytes(text)
+
+    pdf_bytes = None
+    tmp_dir = None
+    if convert_docx_to_pdf is not None:
+        tmp_dir = tempfile.mkdtemp(prefix="legalai_export_")
+        docx_path = os.path.join(tmp_dir, docx_name)
+        with open(docx_path, "wb") as f:
+            f.write(docx_bytes)
+        try:
+            pdf_path = convert_docx_to_pdf(docx_path)
+            with open(pdf_path, "rb") as f:
+                pdf_bytes = f.read()
+        except Exception:
+            pdf_bytes = None  # ZIP всё равно отдаём (как минимум DOCX)
+
+    zbio = io.BytesIO()
+    with zipfile.ZipFile(zbio, "w", compression=zipfile.ZIP_DEFLATED) as z:
+        z.writestr(docx_name, docx_bytes)
+        if pdf_bytes:
+            z.writestr(pdf_name, pdf_bytes)
+        z.writestr("attachments/README.txt", "Вложения будут добавлены в ZIP после реализации раздела attachments.\n")
+    zbio.seek(0)
+
+    headers = {"Content-Disposition": f'attachment; filename="{zip_name}"'}
+    resp = StreamingResponse(zbio, media_type="application/zip", headers=headers)
+    if tmp_dir:
+        resp.background = BackgroundTask(shutil.rmtree, tmp_dir, ignore_errors=True)
+    return resp
 
