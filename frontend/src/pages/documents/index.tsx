@@ -312,10 +312,6 @@ export default function DocumentsPage({ onGoBack, onOpenInWorkspace }: Documents
               </section>
             </div>
 
-            <p className="workspace-chat-tip" style={{ marginTop: 12 }}>
-              В следующем шаге подключим реальные API: /cases и /cases/:id/documents и сделаем “опрокидывание”
-              выбранного документа обратно в Workspace.
-            </p>
           </div>
         </div>
       </main>
