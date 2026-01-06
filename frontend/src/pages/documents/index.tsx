@@ -290,9 +290,37 @@ export default function DocumentsPage({ onGoBack, onOpenInWorkspace }: Documents
                             >
                               Открыть в Workspace
                             </button>
+          <div style={{ display: "flex", gap: 8, marginLeft: 8 }}>
+            <button
+              type="button"
+              className="auth-button"
+              style={{ width: "auto", padding: "8px 10px", fontSize: 11, whiteSpace: "nowrap" }}
+              onClick={() => window.open(apiUrl(`/documents/${d.id}/export.docx`), "_blank")}
+            >
+              DOCX
+            </button>
+            <button
+              type="button"
+              className="auth-button"
+              style={{ width: "auto", padding: "8px 10px", fontSize: 11, whiteSpace: "nowrap" }}
+              onClick={() => window.open(apiUrl(`/documents/${d.id}/export.pdf`), "_blank")}
+            >
+              PDF
+            </button>
+            <button
+              type="button"
+              className="auth-button"
+              style={{ width: "auto", padding: "8px 10px", fontSize: 11, whiteSpace: "nowrap" }}
+              onClick={() => window.open(apiUrl(`/documents/${d.id}/export.zip`), "_blank")}
+            >
+              ZIP
+            </button>
+          </div>
                           </div>
                         ))}
                       </div>
+
+
                     )}
 
                     {/* Блок под ТЗ Татьяны: экспорт/вложения */}
@@ -301,7 +329,7 @@ export default function DocumentsPage({ onGoBack, onOpenInWorkspace }: Documents
                         Экспорт и вложения (по ТЗ)
                       </div>
                       <div className="workspace-placeholder">
-                        Здесь будет: экспорт DOCX/PDF, ZIP с вложениями, список приложений (чеки, доказательства),
+        Экспорт доступен в списке документов выше (кнопки DOCX/PDF/ZIP). Вложения будут добавлены следующим шагом.
                         статусы “Готово/Черновик”, и управление версиями.
                       </div>
                     </div>

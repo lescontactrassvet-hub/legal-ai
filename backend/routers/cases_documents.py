@@ -480,7 +480,6 @@ def export_document_zip(document_id: int, version_id: int | None = Query(default
         z.writestr(docx_name, docx_bytes)
         if pdf_bytes:
             z.writestr(pdf_name, pdf_bytes)
-        z.writestr("attachments/README.txt", "Вложения будут добавлены в ZIP после реализации раздела attachments.\n")
     zbio.seek(0)
 
     headers = {"Content-Disposition": f'attachment; filename="{zip_name}"'}
