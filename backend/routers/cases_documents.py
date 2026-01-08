@@ -384,7 +384,7 @@ def export_document_docx(document_id: int, version_id: int | None = Query(defaul
     text = _html_to_text(vrow["content"])
     data = _build_docx_bytes(text)
 
-    headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
+    headers = {"Content-Disposition": f'attachment; filename="document-{document_id}.docx"'}
     return StreamingResponse(
         io.BytesIO(data),
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -431,7 +431,7 @@ def export_document_pdf(document_id: int, version_id: int | None = Query(default
 
     return FileResponse(
         path=pdf_path,
-        filename=pdf_name,
+        filename=f"document-{document_id}.pdf",
         media_type="application/pdf",
         background=BackgroundTask(shutil.rmtree, tmp_dir, ignore_errors=True),
     )
@@ -482,7 +482,7 @@ def export_document_zip(document_id: int, version_id: int | None = Query(default
             z.writestr(pdf_name, pdf_bytes)
     zbio.seek(0)
 
-    headers = {"Content-Disposition": f'attachment; filename="{zip_name}"'}
+    headers = {"Content-Disposition": f'attachment; filename="document-{document_id}.zip"'}
     resp = StreamingResponse(zbio, media_type="application/zip", headers=headers)
     if tmp_dir:
         resp.background = BackgroundTask(shutil.rmtree, tmp_dir, ignore_errors=True)
