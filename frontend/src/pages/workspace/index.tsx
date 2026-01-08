@@ -876,13 +876,16 @@ useEffect(() => {
     );
   };
 
-  const handleDownloadStub = (format: "pdf" | "docx") => {
-    const label = format === "pdf" ? "PDF" : "Word (DOCX)";
-    alert(
-      `Экспорт в ${label} будет доступен после подключения модуля генерации файлов на backend.\n` +
-        "Пока вы можете скопировать текст и вставить его в привычный редактор."
-    );
-  };
+const handleDownloadStub = (format: "pdf" | "docx") => {
+  if (!activeDocumentId) {
+    alert("Сначала выберите документ для экспорта.");
+    return;
+  }
+  const base = (import.meta as any)?.env?.VITE_API_BASE?.toString?.() || "/api";
+  const cleanBase = base.replace(/\/$/, "");
+  const url = `${cleanBase}/documents/${activeDocumentId}/export.${format}`;
+  window.open(url, "_blank");
+};
 
   const handleGoToDocumentsClick = () => {
     if (onGoToDocuments) {
