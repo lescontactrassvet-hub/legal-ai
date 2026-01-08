@@ -323,16 +323,6 @@ export default function DocumentsPage({ onGoBack, onOpenInWorkspace }: Documents
 
                     )}
 
-                    {/* Блок под ТЗ Татьяны: экспорт/вложения */}
-                    <div style={{ marginTop: 14 }}>
-                      <div className="workspace-section-title" style={{ fontSize: 16, marginBottom: 10 }}>
-                        Экспорт и вложения (по ТЗ)
-                      </div>
-                      <div className="workspace-placeholder">
-        Экспорт доступен в списке документов выше (кнопки DOCX/PDF/ZIP). Вложения будут добавлены следующим шагом.
-                        статусы “Готово/Черновик”, и управление версиями.
-                      </div>
-                    </div>
                   </>
                 ) : (
                   <div className="workspace-placeholder">Сначала выберите дело слева.</div>
