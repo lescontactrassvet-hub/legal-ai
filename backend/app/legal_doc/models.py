@@ -2,6 +2,8 @@ from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
+
+from app.auth.models import User
 from ..db import Base
 
 
@@ -16,7 +18,7 @@ class Template(Base):
     description = Column(Text, nullable=True)
     file_path = Column(String, nullable=False)
     owner_id = Column(Integer, ForeignKey("users.id"))
-    owner = relationship("User")
+    owner = relationship(User)
     documents = relationship("Document", back_populates="template")
 
 
@@ -151,7 +153,7 @@ class Document(Base):
     )
 
     template = relationship("Template", back_populates="documents")
-    owner = relationship("User")
+    owner = relationship(User)
     case = relationship("Case", back_populates="documents")
 
     versions = relationship(
