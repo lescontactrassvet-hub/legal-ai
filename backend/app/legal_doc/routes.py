@@ -15,7 +15,7 @@ try:
 except ImportError:
     Document = None
 
-from app.db import get_db
+from app.cases_db import get_db
 from app.auth.utils import get_current_user
 from app.auth.models import User
 from .models import (
