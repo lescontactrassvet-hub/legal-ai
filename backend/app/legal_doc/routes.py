@@ -497,7 +497,7 @@ async def upload_case_attachment(
             detail="File too large",
         )
 
-        backend_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+    backend_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
     attach_dir = os.path.join(backend_root, "workspaces", "cases", str(case_id), "attachments")
     os.makedirs(attach_dir, exist_ok=True)
 
