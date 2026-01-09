@@ -5,6 +5,7 @@ from typing import List, Optional
 import html
 import os
 import re
+import uuid
 from datetime import datetime
 
 # LEGALAI: безопасный импорт python-docx.
@@ -467,6 +468,56 @@ def update_workspace_document(
     db.refresh(doc)
     return doc
 
+
+@router.post(
+    "/workspace/cases/{case_id}/attachments",
+    response_model=AttachmentRead,
+)
+async def upload_case_attachment(
+    case_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """
+    Загрузка вложения для конкретного дела.
+    Сохраняем файл на диск и создаём запись в таблице attachments.
+    """
+    case = db.query(CaseModel).filter(CaseModel.id == case_id).first()
+    if not case:
+        raise HTTPException(status_code=404, detail="Дело не найдено")
+
+    contents = await file.read()
+    if not contents:
+        raise HTTPException(status_code=400, detail="Empty file")
+
+    if len(contents) > 25 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="File too large",
+        )
+
+        backend_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+    attach_dir = os.path.join(backend_root, "workspaces", "cases", str(case_id), "attachments")
+    os.makedirs(attach_dir, exist_ok=True)
+
+    original_name = (file.filename or "file").strip()
+    safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", original_name) or "file"
+    stored_name = f"{uuid.uuid4()}_{safe_name}"
+    stored_path = os.path.join(attach_dir, stored_name)
+
+    with open(stored_path, "wb") as f:
+        f.write(contents)
+
+    att = AttachmentModel(
+        case_id=case_id,
+        original_name=original_name,
+        stored_path=stored_path,
+    )
+    db.add(att)
+    db.commit()
+    db.refresh(att)
+    return att
 
 @router.get(
     "/workspace/cases/{case_id}/attachments",
