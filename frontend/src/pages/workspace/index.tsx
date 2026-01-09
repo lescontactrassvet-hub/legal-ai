@@ -818,7 +818,7 @@ useEffect(() => {
     setInput(event.target.value);
   };
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
@@ -832,10 +832,41 @@ useEffect(() => {
       return;
     }
 
-    alert(
-      "Прикрепление файлов пока не подключено на сервере.\n" +
-        "Следующий шаг проекта: загрузка вложений и анализ документов «Татьяной»."
-    );
+    if (!activeCaseId) {
+      alert("Сначала выберите дело.");
+      return;
+    }
+
+    const token =
+      localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
+    if (!token) {
+      alert("Сначала выполните вход.");
+      return;
+    }
+
+    const base = (import.meta as any)?.env?.VITE_API_BASE?.toString?.() || "/api";
+    const url = `${base.replace(/\/$/, "")}/docs/workspace/cases/${activeCaseId}/attachments`;
+
+    const fd = new FormData();
+    fd.append("file", files[0]);
+
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = (data && (data.detail || data.error || data.message)) || `HTTP ${res.status}`;
+        throw new Error(msg);
+      }
+      console.log("Attachment uploaded:", data);
+      alert("Файл загружен.");
+      event.target.value = "";
+    } catch (e: any) {
+      alert(e?.message || "Ошибка загрузки файла");
+    }
   };
 
   const handleDocumentChange = (html: string) => {
