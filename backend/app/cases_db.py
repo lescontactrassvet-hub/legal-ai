@@ -9,7 +9,7 @@ def _sqlite_url(path: str) -> str:
     if path.startswith("sqlite:"):
         return path
     if os.path.isabs(path):
-        return "sqlite:////" + path.lstrip("/")
+        return "sqlite://///" + path.lstrip("/")
     return "sqlite:///" + path
 
 # Prefer systemd env LEGALAI_DB_PATH=/srv/legal-ai/backend/cases.db
