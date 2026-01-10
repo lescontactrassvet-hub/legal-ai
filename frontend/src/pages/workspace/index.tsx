@@ -257,6 +257,10 @@ const [saveError, setSaveError] = useState<string | null>(null);
 const [saveOk, setSaveOk] = useState<string | null>(null);
 const [draftOk, setDraftOk] = useState<string | null>(null);
 
+  const [attachments, setAttachments] = useState<any[]>([]);
+  const [attachmentsLoading, setAttachmentsLoading] = useState(false);
+  const [attachmentsError, setAttachmentsError] = useState<string | null>(null);
+
 // чтобы не плодить одинаковые версии
 const lastSavedHashRef = useRef<string>("");
 // TipTap editor instance (нужен, чтобы заменить выделенный текст)
@@ -468,6 +472,39 @@ try {
     }
   };
 
+  const fetchAttachments = async (caseId: number) => {
+    const base = (import.meta as any).env?.VITE_API_BASE?.toString?.() || "/api";
+    const baseClean = base.endsWith("/") ? base.slice(0, -1) : base;
+    const url = baseClean + "/docs/workspace/cases/" + caseId + "/attachments";
+
+    setAttachmentsLoading(true);
+    setAttachmentsError(null);
+    try {
+      const token = localStorage.getItem("access_token") || "";
+      const res = await fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const raw = await res.text();
+      let data: any = [];
+      try {
+        data = raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        data = [];
+      }
+      if (!res.ok) {
+        const msg = (data && (data.detail || data.message)) || raw || ("HTTP " + res.status);
+        throw new Error(String(msg));
+      }
+      setAttachments(Array.isArray(data) ? data : []);
+    } catch (e: any) {
+      setAttachments([]);
+      setAttachmentsError(e?.message || String(e));
+    } finally {
+      setAttachmentsLoading(false);
+    }
+  };
+
+
 
 
 
@@ -499,6 +536,15 @@ try {
       try {
         data = raw ? JSON.parse(raw) : null;
       } catch (e) {
+
+  useEffect(() => {
+    if (!activeCaseId) {
+      setAttachments([]);
+      return;
+    }
+    fetchAttachments(activeCaseId);
+  }, [activeCaseId]);
+
         data = null;
       }
 
@@ -862,6 +908,10 @@ useEffect(() => {
         throw new Error(msg);
       }
       console.log("Attachment uploaded:", data);
+    if (activeCaseId) {
+      await fetchAttachments(activeCaseId);
+    }
+
       alert("Файл загружен.");
       event.target.value = "";
     } catch (e: any) {
