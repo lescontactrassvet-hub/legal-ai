@@ -1248,6 +1248,32 @@ const handleDownloadStub = (format: "pdf" | "docx") => {
                 </button>
               </div>
             </div>
+
+            {activeCaseId && (
+              <div style={{ marginTop: "8px", width: "100%", fontSize: "12px" }}>
+                <div style={{ opacity: 0.8, marginBottom: "4px" }}>Вложения дела:</div>
+                {attachmentsLoading ? (
+                  <div>Загрузка...</div>
+                ) : attachmentsError ? (
+                  <div style={{ opacity: 0.9 }}>{attachmentsError}</div>
+                ) : attachments.length === 0 ? (
+                  <div style={{ opacity: 0.7 }}>Нет вложений</div>
+                ) : (
+                  <ul style={{ margin: 0, paddingLeft: "18px" }}>
+                    {attachments.map((a) => (
+                      <li key={a.id}>
+                        {a.original_name}
+                        {a.uploaded_at ? (
+                          <span style={{ marginLeft: "8px", opacity: 0.6 }}>
+                            {new Date(a.uploaded_at).toLocaleString()}
+                          </span>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
         </section>
 
