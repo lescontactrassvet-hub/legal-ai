@@ -89,6 +89,7 @@ backend/
     train_rubert.py
   app/
     main.py.bak_20251116_182734
+    cases_db.py
     dependencies.py
     database.py
     main.py
