@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 import html
 import os
+from PyPDF2 import PdfReader
 import re
 import uuid
 from pathlib import Path
@@ -569,6 +570,27 @@ def get_attachment_text(
             "original_name": att.original_name,
             "stored_path": att.stored_path,
             "kind": "text",
+            "text": text,
+        }
+
+
+    # 1.1) PDF (текстовый, без OCR)
+    if ext == ".pdf":
+        try:
+            reader = PdfReader(path)
+            pages_text = []
+            for p in reader.pages:
+                t = p.extract_text() or ""
+                pages_text.append(t)
+            text = "\n\n".join(pages_text)
+        except Exception as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Failed to read PDF: {e}")
+        return {
+            "id": att.id,
+            "case_id": att.case_id,
+            "original_name": att.original_name,
+            "stored_path": att.stored_path,
+            "kind": "pdf",
             "text": text,
         }
 
