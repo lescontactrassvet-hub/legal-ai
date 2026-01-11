@@ -6,6 +6,7 @@ import html
 import os
 import re
 import uuid
+from pathlib import Path
 from datetime import datetime
 
 # LEGALAI: безопасный импорт python-docx.
@@ -538,4 +539,47 @@ def list_case_attachments(
         .all()
     )
     return attachments
+
+@router.get("/workspace/attachments/{attachment_id}/text")
+def get_attachment_text(
+    attachment_id: int,
+    db: Session = Depends(get_db),
+):
+    """Вернуть текст вложения (пока гарантированно поддерживаем .txt)."""
+    att = db.query(AttachmentModel).filter(AttachmentModel.id == attachment_id).first()
+    if not att:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found")
+
+    path = att.stored_path
+    if not path or not os.path.isfile(path):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attachment file not found on disk")
+
+    name = att.original_name or os.path.basename(path)
+    ext = os.path.splitext(name)[1].lower()
+
+    # 1) Точно поддерживаем текстовые файлы
+    if ext in (".txt", ".md", ".csv", ".log"):
+        try:
+            text = Path(path).read_text(encoding="utf-8", errors="replace")
+        except Exception as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Failed to read text: {e}")
+        return {
+            "id": att.id,
+            "case_id": att.case_id,
+            "original_name": att.original_name,
+            "stored_path": att.stored_path,
+            "kind": "text",
+            "text": text,
+        }
+
+    # 2) Остальные типы добавим следующим шагом (PDF/DOCX/OCR)
+    return {
+        "id": att.id,
+        "case_id": att.case_id,
+        "original_name": att.original_name,
+        "stored_path": att.stored_path,
+        "kind": "unsupported_yet",
+        "detail": "Text extraction not implemented for this file type yet",
+        "ext": ext,
+    }
 
