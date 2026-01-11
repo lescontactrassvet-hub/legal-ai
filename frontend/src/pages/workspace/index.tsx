@@ -121,6 +121,27 @@ async function requestTatianaReply(
       ? `Ты юридический редактор. Твоя задача — переписать ТОЛЬКО выделенный фрагмент текста.\n\nСТРОГИЕ ПРАВИЛА:\n- Верни ТОЛЬКО новую версию фрагмента\n- БЕЗ комментариев, объяснений, списков\n- БЕЗ всего документа\n- Формат ответа СТРОГО:\n<<<DRAFT>>>\n<новая версия фрагмента>\n<<<END>>>\n\nВЫДЕЛЕННЫЙ ФРАГМЕНТ:\n${context?.selection_text}\n\nКОНТЕКСТ ДОКУМЕНТА (для стиля и смысла):\n${context?.document_html}`
       : userText;
 
+  const attachmentsInfo =
+    context?.attachments && Array.isArray(context.attachments) && context.attachments.length > 0
+      ? [
+          "",
+          "ВЛОЖЕНИЯ (файлы пользователя):",
+          "- Ниже передан список прикреплённых файлов (метаданные). Ты обязана учитывать их в контексте беседы.",
+          "- Для каждого файла: предположи тип/роль (доказательство / договор / переписка / платёж / удостоверение / иное) и как он может быть использован в задаче.",
+          "- Если файл похож на договор/проект: кратко укажи возможные преимущества/риски/опасные условия и что стоит уточнить.",
+          "- Если ты НЕ понимаешь, что это за файл или как его использовать, ОБЯЗАТЕЛЬНО задай уточняющий вопрос пользователю:",
+          "  * что это за документ?",
+          "  * нужно ли его учесть как доказательство/приложение или это справочная информация?",
+          "  * не загружен ли файл по ошибке, нужно ли его удалить/заменить?",
+          "- Если для анализа не хватает текста (скан/фото): попроси пользователя подтвердить, что это нужный документ, и сообщи, что требуется распознавание (OCR).",
+          "",
+          "Список файлов (attachments JSON):",
+          JSON.stringify(context.attachments, null, 2),
+        ].join("\n")
+      : "";
+
+  const finalMessageWithAttachments = [finalMessage, attachmentsInfo].filter(Boolean).join("\n\n");
+
   const base = (import.meta as any)?.env?.VITE_API_BASE?.toString?.() || "/api";
   const url = `${base.replace(/\/$/, "")}/ai/ask`;
 
@@ -129,7 +150,7 @@ async function requestTatianaReply(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        message: finalMessage,
+        message: finalMessageWithAttachments,
         context: context || undefined,
       }),
     });
@@ -556,6 +577,19 @@ try {
       if (data && typeof data.id === "number") {
         setCases((prev) => [data as CaseItem, ...prev.filter((c) => c.id !== data.id)]);
         setActiveCaseId(data.id);
+      // ТЗ: при создании нового дела очищаем чат и редактор
+      setMessages([]);
+      setAiDraft(null);
+      setDocumentHtml("");
+      setSelectedVersionId(null);
+      setSelectedVersionContent("");
+      setActiveVersionId(null);
+      setVersions([]);
+      setDocuments([]);
+      setActiveDocumentId(null);
+      setAttachments([]);
+      setAttachmentsError(null);
+
       } else {
         await fetchCases();
       }
@@ -784,7 +818,8 @@ useEffect(() => {
       : undefined;
 
 
-    const { answerText, documentDraft } = await requestTatianaReply(mode, text, ctx);
+    const ctx2 = { ...(ctx || {}), case_id: activeCaseId ?? null, attachments };
+    const { answerText, documentDraft } = await requestTatianaReply(mode, text, ctx2);
 
     // По фактическому контракту backend отдаёт черновик в JSON поле document_draft
     if (documentDraft && documentDraft.trim()) {
