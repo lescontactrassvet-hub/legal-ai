@@ -221,6 +221,25 @@ async def ask_ai(payload: ChatRequest) -> AiResponse:
         "4) Если данных недостаточно или файл непонятен — ЗАДАТЬ УТОЧНЯЮЩИЕ ВОПРОСЫ.\n"
         "5) ЗАПРЕЩЕНО игнорировать вложения или выдумывать факты, которых нет в файлах.\n"
     )
+    # === Агрегация текста вложений (ТЗ 5.3) ===
+    attachments_text = ""
+    ctx = payload.context if isinstance(payload.context, dict) else {}
+    atts = ctx.get("attachments") if isinstance(ctx, dict) else None
+    if isinstance(atts, list):
+        for i, att in enumerate(atts, start=1):
+            try:
+                from app.legal_doc.text_extractor import extract_attachment_text
+                att_id = att.get("id") if isinstance(att, dict) else None
+                att_name = att.get("original_name", f"file_{att_id}")
+                if att_id is not None:
+                    extracted = extract_attachment_text(att_id)
+                    if extracted:
+                        attachments_text += f"=== ВЛОЖЕНИЕ #{i}: {att_name} ===\n{extracted}\n\n"
+            except Exception as _e:
+                pass
+    if attachments_text.strip():
+        text = f"ТЕКСТ ВЛОЖЕНИЙ:\n{attachments_text}\n" + text
+
     text = ATTACHMENTS_RULES + "\n" + text
 
     try:
