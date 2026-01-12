@@ -85,11 +85,11 @@ def lemmatize_tokens(tokens: list[str]) -> list[str]:
             lemmas.append(t)
     return lemmas
 
-
 DB_PATH = os.getenv(
-    "LEGALAI_DB_PATH",
+    "LEGALAI_LAWS_DB_PATH",
     "/srv/legal-ai/data/legalai.db",
 )
+
 USE_FTS = True
 
 
