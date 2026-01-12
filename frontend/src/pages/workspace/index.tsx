@@ -111,6 +111,25 @@ function formatCitations(citations: unknown): string {
     return "";
   }
 }
+async function fetchAttachmentText(id: number): Promise<string> {
+  try {
+    const base = (import.meta as any)?.env?.VITE_API_BASE?.toString?.() || "/api";
+    const token = localStorage.getItem("access_token");
+    const res = await fetch(
+      `${base.replace(/\/$/, "")}/docs/workspace/attachments/${id}/text`,
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      }
+    );
+    if (!res.ok) return "";
+    const data = await res.json();
+    if (!data || !data.text) return "";
+    return String(data.text).slice(0, 4000);
+  } catch {
+    return "";
+  }
+}
+
 async function requestTatianaReply(
   mode: WorkspaceMode,
   userText: string,
@@ -121,24 +140,23 @@ async function requestTatianaReply(
       ? `Ты юридический редактор. Твоя задача — переписать ТОЛЬКО выделенный фрагмент текста.\n\nСТРОГИЕ ПРАВИЛА:\n- Верни ТОЛЬКО новую версию фрагмента\n- БЕЗ комментариев, объяснений, списков\n- БЕЗ всего документа\n- Формат ответа СТРОГО:\n<<<DRAFT>>>\n<новая версия фрагмента>\n<<<END>>>\n\nВЫДЕЛЕННЫЙ ФРАГМЕНТ:\n${context?.selection_text}\n\nКОНТЕКСТ ДОКУМЕНТА (для стиля и смысла):\n${context?.document_html}`
       : userText;
 
-  const attachmentsInfo =
-    context?.attachments && Array.isArray(context.attachments) && context.attachments.length > 0
-      ? [
-          "",
-          "ВЛОЖЕНИЯ (файлы пользователя):",
-          "- Ниже передан список прикреплённых файлов (метаданные). Ты обязана учитывать их в контексте беседы.",
-          "- Для каждого файла: предположи тип/роль (доказательство / договор / переписка / платёж / удостоверение / иное) и как он может быть использован в задаче.",
-          "- Если файл похож на договор/проект: кратко укажи возможные преимущества/риски/опасные условия и что стоит уточнить.",
-          "- Если ты НЕ понимаешь, что это за файл или как его использовать, ОБЯЗАТЕЛЬНО задай уточняющий вопрос пользователю:",
-          "  * что это за документ?",
-          "  * нужно ли его учесть как доказательство/приложение или это справочная информация?",
-          "  * не загружен ли файл по ошибке, нужно ли его удалить/заменить?",
-          "- Если для анализа не хватает текста (скан/фото): попроси пользователя подтвердить, что это нужный документ, и сообщи, что требуется распознавание (OCR).",
-          "",
-          "Список файлов (attachments JSON):",
-          JSON.stringify(context.attachments, null, 2),
-        ].join("\n")
-      : "";
+  let attachmentsInfo = "";
+
+  if (context?.attachments && Array.isArray(context.attachments) && context.attachments.length > 0) {
+    const texts = await Promise.all(
+      context.attachments.map(async (a: any, idx: number) => {
+        const t = await fetchAttachmentText(a.id);
+        if (!t) return null;
+        const title = a.original_name || a.name || "файл";
+        return ["", `=== ВЛОЖЕНИЕ ${idx + 1}: ${title} ===`, t].join("\n");
+      })
+    );
+
+    const joined = texts.filter(Boolean).join("\n\n");
+    if (joined) {
+      attachmentsInfo = ["", "ТЕКСТ ВЛОЖЕНИЙ:", joined].join("\n");
+    }
+  }
 
   const finalMessageWithAttachments = [finalMessage, attachmentsInfo].filter(Boolean).join("\n\n");
 
