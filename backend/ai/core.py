@@ -82,6 +82,23 @@ class ConsultantCore:
             context_docs=ranked_docs,
             intent=intent,
         )
+        # === ТЗ 5.4: явная ссылка на использованные вложения ===
+        try:
+            ctx = context if isinstance(context, dict) else {}
+            atts = ctx.get("attachments") if isinstance(ctx, dict) else None
+            if isinstance(atts, list) and atts and isinstance(answer, str):
+                names = []
+                for a in atts:
+                    if isinstance(a, dict):
+                        n = a.get("original_name") or a.get("name")
+                        if n:
+                            names.append(str(n))
+                        elif a.get("id") is not None:
+                            names.append("attachment#" + str(a.get("id")))
+                if names:
+                    answer = "Использованы вложения: " + ", ".join(names) + ".\n\n" + answer
+        except Exception:
+            pass
 
         # 6. Проверка безопасности
         if not self.safety.verify(answer):
