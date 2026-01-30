@@ -228,13 +228,16 @@ async def ask_ai(payload: ChatRequest) -> AiResponse:
     if isinstance(atts, list):
         for i, att in enumerate(atts, start=1):
             try:
-                from app.legal_doc.text_extractor import extract_attachment_text
+                from legal_doc.text_extractor import extract_attachment_text, get_status
                 att_id = att.get("id") if isinstance(att, dict) else None
                 att_name = att.get("original_name", f"file_{att_id}")
                 if att_id is not None:
                     extracted = extract_attachment_text(att_id)
+                    st = get_status(att_id)
                     if extracted:
                         attachments_text += f"=== ВЛОЖЕНИЕ #{i}: {att_name} ===\n{extracted}\n\n"
+                    else:
+                        attachments_text += f"=== ВЛОЖЕНИЕ #{i}: {att_name} (НЕ ИСПОЛЬЗОВАНО) ===\nПричина: {st.get("reason")}\nКак исправить: {st.get("how_to_fix")}\n\n"
             except Exception as _e:
                 pass
     if attachments_text.strip():
