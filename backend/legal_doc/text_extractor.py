@@ -132,7 +132,7 @@ def extract_attachment_text(att_id: int) -> str:
         set_status(att_id, False, "attachment_not_found", "Проверьте id вложения")
         return ""
 
-    raw_path = att.get("file_path") or att.get("path")
+    raw_path = att.get("stored_path")
     if not raw_path:
         set_status(att_id, False, "no_file_path", "В БД отсутствует путь к файлу")
         return ""
