@@ -83,6 +83,9 @@ backend/
     2025_legalai_law_documents.sql
     2025_legalai_law_sources_seed.sql
     2025_legalai_laws_schema.sql
+  legal_doc/
+    text_extractor.py
+    __init__.py
   tasks/
     update_laws.py
     distill_local_llm.py
