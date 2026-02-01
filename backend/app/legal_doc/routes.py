@@ -499,7 +499,7 @@ async def upload_case_attachment(
             reader = PdfReader(io.BytesIO(contents))
             pages = len(reader.pages)
         except Exception:
-            raise HTTPException(status_code=400, detail="Invalid PDF file")
+            raise HTTPException(status_code=400, detail="PDF could not be parsed or exceeds page limits. Please reduce the number of pages.")
         if pages > 50:
             raise HTTPException(
                 status_code=400,
