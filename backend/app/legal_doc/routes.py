@@ -492,6 +492,20 @@ async def upload_case_attachment(
     contents = await file.read()
     if not contents:
         raise HTTPException(status_code=400, detail="Empty file")
+    # PDF pages limit (max 50)
+    if (file.filename or "").lower().endswith(".pdf"):
+        try:
+            from PyPDF2 import PdfReader
+            reader = PdfReader(io.BytesIO(contents))
+            pages = len(reader.pages)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid PDF file")
+        if pages > 50:
+            raise HTTPException(
+                status_code=400,
+                detail=f"PDF contains {pages} pages. Maximum allowed is 50. Please reduce the number of pages."
+            )
+
 
     if len(contents) > 25 * 1024 * 1024:
         raise HTTPException(
