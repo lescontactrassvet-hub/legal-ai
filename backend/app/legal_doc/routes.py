@@ -594,14 +594,15 @@ def get_attachment_text(
             "text": text,
         }
 
-    # 2) Остальные типы добавим следующим шагом (PDF/DOCX/OCR)
+    # 2) Остальные форматы — через общий экстрактор (PDF OCR / DOCX / IMG OCR)
+    from legal_doc.text_extractor import extract_attachment_text
+    text = extract_attachment_text(attachment_id)
     return {
         "id": att.id,
         "case_id": att.case_id,
         "original_name": att.original_name,
         "stored_path": att.stored_path,
-        "kind": "unsupported_yet",
-        "detail": "Text extraction not implemented for this file type yet",
-        "ext": ext,
+        "kind": ext.lstrip("."),
+        "text": text,
     }
 

@@ -94,6 +94,28 @@ def extract_pdf(path: str) -> str:
             text.append(t)
     return "\n".join(text)[:MAX_TEXT_CHARS]
 
+# ============= PDF (OCR fallback) =============
+def extract_pdf_ocr(path: str) -> str:
+    import subprocess, tempfile, os
+    texts = []
+    with tempfile.TemporaryDirectory() as tmpdir:
+        prefix = os.path.join(tmpdir, "page")
+        subprocess.run(
+            ["pdftoppm", "-png", path, prefix],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        from PIL import Image
+        import pytesseract
+        for fname in sorted(os.listdir(tmpdir)):
+            if fname.endswith(".png"):
+                img = Image.open(os.path.join(tmpdir, fname))
+                t = pytesseract.image_to_string(img, lang="rus+eng")
+                if t.strip():
+                    texts.append(t)
+    return "\n".join(texts)[:MAX_TEXT_CHARS]
+
 
 # =========================
 # DOCX
@@ -108,6 +130,23 @@ def extract_docx(path: str) -> str:
     text = [p.text for p in doc.paragraphs if p.text]
     return "\n".join(text)[:MAX_TEXT_CHARS]
 
+# ============= DOC via LibreOffice =============
+def extract_doc_lo(path: str) -> str:
+    import subprocess, tempfile, os
+    with tempfile.TemporaryDirectory() as tmpdir:
+        subprocess.run(
+            ["libreoffice", "--headless", "--convert-to", "txt", "--outdir", tmpdir, path],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        base = os.path.splitext(os.path.basename(path))[0]
+        txt_path = os.path.join(tmpdir, base + ".txt")
+        if not os.path.exists(txt_path):
+            return ""
+        with open(txt_path, "r", encoding="utf-8", errors="replace") as f:
+            return f.read()[:MAX_TEXT_CHARS]
+
 
 # =========================
 # IMG (OCR)
@@ -119,9 +158,18 @@ def extract_img(path: str) -> str:
     except ImportError:
         raise RuntimeError("OCR_dependencies_not_installed")
 
+
     img = Image.open(path)
     return pytesseract.image_to_string(img)[:MAX_TEXT_CHARS]
 
+
+# ============= text normalize =============
+def normalize_text(text: str) -> str:
+    import re
+    text = text.replace("\x0c", "")
+    text = text.replace("\r", "\n")
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
 
 # =========================
 # Главная точка входа
@@ -133,9 +181,6 @@ def extract_attachment_text(att_id: int) -> str:
         return ""
 
     raw_path = att.get("stored_path")
-    if not raw_path:
-        set_status(att_id, False, "no_file_path", "В БД отсутствует путь к файлу")
-        return ""
 
     path = resolve_path(raw_path)
     if not os.path.exists(path):
@@ -143,30 +188,32 @@ def extract_attachment_text(att_id: int) -> str:
         return ""
 
     ext = os.path.splitext(path)[1].lower()
-
     try:
         if ext in (".txt", ".md", ".log"):
             text = extract_txt(path)
         elif ext == ".pdf":
             text = extract_pdf(path)
+            if not text.strip():
+                text = extract_pdf_ocr(path)
         elif ext == ".docx":
             text = extract_docx(path)
-        elif ext in (".png", ".jpg", ".jpeg", ".bmp", ".tiff"):
+        elif ext == ".doc":
+            text = extract_doc_lo(path)
+        elif ext in (".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif", ".webp"):
             text = extract_img(path)
         else:
             set_status(att_id, False, "unsupported_format", f"Формат {ext} не поддержан")
             return ""
-
         if text.strip():
             set_status(att_id, True, "used")
-            return text
-
+            return normalize_text(text)
         set_status(att_id, False, "empty_text", "Файл не содержит извлекаемого текста")
         return ""
-
     except RuntimeError as e:
         set_status(att_id, False, str(e), "Установите необходимые зависимости")
         return ""
     except Exception as e:
+        set_status(att_id, False, "extract_error", str(e))
+        return ""
         set_status(att_id, False, "extract_error", str(e))
         return ""
