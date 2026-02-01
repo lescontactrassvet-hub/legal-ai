@@ -106,7 +106,7 @@ async def upload_template(
     if size > 5 * 1024 * 1024:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="File too large",
+            detail="Файл слишком большой (макс. 25 МБ). Пожалуйста, уменьшите размер файла. / File too large (max 25 MB). Please reduce the file size.",
         )
 
     # Validate that it's a proper docx file
@@ -491,26 +491,39 @@ async def upload_case_attachment(
 
     contents = await file.read()
     if not contents:
-        raise HTTPException(status_code=400, detail="Empty file")
+        raise HTTPException(status_code=400, detail="Пустой файл. Пожалуйста, выберите файл для загрузки. / Empty file. Please select a file to upload.")
     # PDF pages limit (max 50)
     if (file.filename or "").lower().endswith(".pdf"):
+        pages = None
         try:
             from PyPDF2 import PdfReader
             reader = PdfReader(io.BytesIO(contents))
             pages = len(reader.pages)
         except Exception:
-            raise HTTPException(status_code=400, detail="PDF could not be parsed or exceeds page limits. Please reduce the number of pages.")
+            try:
+                import tempfile, subprocess, glob
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    pdf_path = os.path.join(tmpdir, "input.pdf")
+                    with open(pdf_path, "wb") as f:
+                        f.write(contents)
+                    subprocess.run(["pdftoppm", "-png", pdf_path, os.path.join(tmpdir, "p")], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    pages = len(glob.glob(os.path.join(tmpdir, "p-*.png")))
+            except Exception:
+                raise HTTPException(status_code=400, detail="PDF не удалось обработать или он превышает допустимое количество страниц (макс. 50). Пожалуйста, уменьшите количество страниц. / PDF could not be parsed or exceeds the allowed number of pages (max 50). Please reduce the number of pages.")
+        if pages is not None and pages > 50:
+            raise HTTPException(status_code=400, detail=f"PDF содержит {pages} страниц. Максимально допустимо — 50. Пожалуйста, уменьшите количество страниц. / PDF contains {pages} pages. Maximum allowed is 50. Please reduce the number of pages.")
+
         if pages > 50:
             raise HTTPException(
                 status_code=400,
-                detail=f"PDF contains {pages} pages. Maximum allowed is 50. Please reduce the number of pages."
+                detail=f"PDF содержит {pages} страниц. Максимально допустимо — 50. Пожалуйста, уменьшите количество страниц. / PDF contains {pages} pages. Maximum allowed is 50. Please reduce the number of pages."
             )
 
 
     if len(contents) > 25 * 1024 * 1024:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="File too large",
+            detail="Файл слишком большой (макс. 25 МБ). Пожалуйста, уменьшите размер файла. / File too large (max 25 MB). Please reduce the file size.",
         )
 
     backend_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
@@ -553,6 +566,29 @@ def list_case_attachments(
         .order_by(AttachmentModel.uploaded_at.desc())
         .all()
     )
+@router.delete("/workspace/cases/{case_id}/attachments/{attachment_id}")
+def delete_case_attachment(
+    case_id: int,
+    attachment_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    att = db.query(AttachmentModel).filter(
+        AttachmentModel.id == attachment_id,
+        AttachmentModel.case_id == case_id,
+    ).first()
+    if not att:
+        raise HTTPException(status_code=404, detail="Attachment not found")
+    path = att.stored_path
+    if path and os.path.isfile(path):
+        try:
+            os.remove(path)
+        except Exception:
+            pass
+    db.delete(att)
+    db.commit()
+    return {"ok": True}
+
     return attachments
 
 @router.get("/workspace/attachments/{attachment_id}/text")
