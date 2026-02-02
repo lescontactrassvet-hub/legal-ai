@@ -73,3 +73,11 @@ def fill_template(template_file_path: str, fields: Dict[str, str]) -> str:
     new_file_path = os.path.join(GENERATED_DIR, new_filename)
     doc.save(new_file_path)
     return new_file_path
+
+def get_status(attachment_id: int):
+    # Временная безопасная реализация статуса
+    return {
+        "attachment_id": attachment_id,
+        "used": False,
+        "reason": "status not yet implemented"
+    }
