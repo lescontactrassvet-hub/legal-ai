@@ -47,7 +47,7 @@ from .pdf_utils import convert_docx_to_pdf
 
 router = APIRouter()
 
-@router.get("/docs/workspace/attachments/{attachment_id}/status")
+@router.get("/workspace/attachments/{attachment_id}/status")
 async def get_attachment_status(attachment_id: int):
     from app.legal_doc.text_extractor import get_status
     return get_status(attachment_id)
