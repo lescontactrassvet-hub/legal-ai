@@ -49,7 +49,7 @@ router = APIRouter()
 
 @router.get("/workspace/attachments/{attachment_id}/status")
 async def get_attachment_status(attachment_id: int):
-    from app.legal_doc.text_extractor import get_status
+    from app.legal_doc.utils import get_status
     return get_status(attachment_id)
 
 
