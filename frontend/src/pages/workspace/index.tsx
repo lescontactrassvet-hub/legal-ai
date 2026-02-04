@@ -299,6 +299,19 @@ const [draftOk, setDraftOk] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<any[]>([]);
   const [attachmentsLoading, setAttachmentsLoading] = useState(false);
   const [attachmentsError, setAttachmentsError] = useState<string | null>(null);
+
+  const handleDeleteAttachment = async (attachmentId: number) => {
+    if (!activeCaseId) return;
+    const base = (import.meta.env as any)?.env?.VITE_API_BASE?.toString?.() || "/api";
+    const baseClean = base.endsWith("/") ? base.slice(0, -1) : base;
+    const token = localStorage.getItem("access_token");
+    await fetch(`${baseClean}/docs/workspace/cases/${activeCaseId}/attachments/${attachmentId}`, {
+      method: "DELETE",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    setAttachments(prev => prev.filter(a => a.id !!== attachmentId));
+  };
+
 const [attachmentStatuses, setAttachmentStatuses] = useState<Record<number, any>>({});
 
 useEffect(() => {
@@ -1384,6 +1397,7 @@ const handleDownloadStub = (format: "pdf" | "docx") => {
                     {attachments.map((a) => (
                       <li key={a.id}>
                         {a.original_name}
+        <button style={{ marginLeft: "8px", color: "#c00" }} onClick={() => handleDeleteAttachment(a.id)}>Удалить</button>
           {attachmentStatuses[a.id] && attachmentStatuses[a.id].used === false ? (
             <div style={{ marginLeft: "8px", opacity: 0.75, fontSize: "11px" }}>
               Не использовано: {String(attachmentStatuses[a.id].reason || "")}
