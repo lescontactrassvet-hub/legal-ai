@@ -572,6 +572,7 @@ def list_case_attachments(
         .order_by(AttachmentModel.uploaded_at.desc())
         .all()
     )
+    return attachments
 @router.delete("/workspace/cases/{case_id}/attachments/{attachment_id}")
 def delete_case_attachment(
     case_id: int,
@@ -594,7 +595,6 @@ def delete_case_attachment(
     db.delete(att)
     db.commit()
     return {"ok": True}
-
     return attachments
 
 @router.get("/workspace/attachments/{attachment_id}/text")
