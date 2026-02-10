@@ -1,6 +1,6 @@
 LEGALAI REPOSITORY ANALYSIS
 ================================
-Generated (UTC): 2026-02-09T04:28:07Z
+Generated (UTC): 2026-02-10T04:31:50Z
 Root path: /home/runner/work/legal-ai/legal-ai
 
 1) Top-level directories summary
