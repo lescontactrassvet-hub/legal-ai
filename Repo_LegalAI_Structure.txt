@@ -1,252 +1,252 @@
 legal-ai/
-  doc_constructor_postman.json
-  cleanup_legalai_repo.sh
-  requirements.txt
-  repair_and_run.sh
-  server_report.txt
-  lighthouse.config.json
-  auth_check.sh
-  full_repo_diagnose_and_fix.sh
-  patch_security_and_retry.sh
-  README.md
-  auth_setup.sh
-  docker-compose.yml
-  setup_backend_ci.sh
   Repo_LegalAI_Analysis.txt
-  setup_ci_debug.sh
-  Repo_LegalAI_Structure.txt
-  auth_check_report.txt
-  auth_extend_phone_sms.sh
+  doc_constructor_postman.json
+  setup_backend_ci.sh
+  server_report.txt
+  README.md
+  docker-compose.yml
+  auth_setup.sh
+  requirements.txt
   ci_debug_python_multipart.sh
+  auth_extend_phone_sms.sh
+  repair_and_run.sh
+  auth_check_report.txt
+  Repo_LegalAI_Structure.txt
   auth_hotfix_pbkdf2.sh
+  cleanup_legalai_repo.sh
+  lighthouse.config.json
+  setup_ci_debug.sh
+  auth_check.sh
   prepare_migration.sh
-scripts/
-  backup.sh
-  ai_integration_setup.sh
-  rollback_ai.sh
+  patch_security_and_retry.sh
+  full_repo_diagnose_and_fix.sh
 deploy/
   infra/
     setup_laws_cron.sh
-tools/
-  update_readme.py
-  repo_analyzer.py
 backend/
-  Dockerfile
-  NOTICE
-  dev.db
-  requirements.txt
-  alembic.ini
-  init_db.py
-  requirements-termux.txt.bak_20251116_174534
   README.md
-  =1.13
+  requirements.txt
   main.py
-  __init_.py
   run_legalai.sh
-  auth_install_report.txt
-  config.py
+  alembic.ini
+  =1.13
   __init__.py
+  init_db.py
+  config.py
+  dev.db
+  requirements-termux.txt.bak_20251116_174534
+  Dockerfile
   requirements-termux.txt.bak_20251116_144041
-  ai/
-    tatyana_profile.py
-    router_rubert.py
-    core.py
-    __init__.py
-    verifiers/
-      safety.py
-      risk_checker.py
-      law_guard.py
-    nlp/
-      rubert_intent.py
-    generators/
-      gpt_adapter.py
-      gigachat_adapter.py
-      local_gen.py
-    rag/
-      citation.py
-      retriever.py
-      ranker.py
-      __init__.py
-    memory/
-      signals.py
-      sessions.py
-  routers/
-    ai.py
-    user.py
-    admin_laws.py
-    __init__.py
-    cases_documents.py
-  sql/
-    2025_cases_documents_versions.sql
-    2025_legalai_law_update_log.sql
-    2025_cases_documents_versions.sOT EXISTS cases (TEGER PRIMARY KEY AUTOINCREMENT,OT NULL, TEXT,OT NULL DEFAULT (datetime('now')),OT NULL DEFAULT (datetime('now'))ts)OT EXISTS documents (TEGER PRIMARY KEY AUTOINCREMENT,TEGER NOT NULL,OT NULL,
-    2025_legalai_law_documents.sql
-    2025_legalai_law_sources_seed.sql
-    2025_legalai_laws_schema.sql
-  legal_doc/
-    text_extractor.py
-    __init__.py
-  tasks/
-    update_laws.py
-    distill_local_llm.py
-    train_rubert.py
-  app/
-    main.py.bak_20251116_182734
-    cases_db.py
-    dependencies.py
-    database.py
-    main.py
-    main.py.bak_20251116_214733
-    db.py
-    security.py
-    config.py
-    __init__.py
-    db.py.bak_20251116_215923
-    main.py.bak
-    db/
-      database.py
-      session.py
-      __init__.py
-      base.py
-    laws/
-      fetch_full_text.py
-      sync.py
-      schemas.py
-      __init__.py
-      models.py
-      routes.py
-    api/
-      routes_users.py
-      routes_auth.py
-      __init__.py
-      routes_2fa.py
-      routes_devices.py
-    admin/
-      logo_upload.py
-    models/
-      refresh_token.py
-      sms_token.py
-      email_token.py
-      user.py
-      device.py
-      __init__.py
-      token.py
-    routers/
-      auth.py
-      admin_laws.py
-      __init__.py
-    services/
-      laws_common.py
-    migrations/
-      env.py
-      script.py.mako
-      README
-      versions/
-        32a02b0ba695_initial_auth_schema.py
-    legal_doc/
-      utils.py
-      schemas.py
-      pdf_utils.py
-      models.py
-      routes.py
-    notifications/
-      senders.py
-      __init__.py
-    auth/
-      utils.py
-      schemas.py
-      __init__.py
-      models.py
-      routes.py
-      reset/
-        service.py
-        schemas.py
-        router.py
-        __init__.py
-        models.py
-    schemas/
-      auth.py
-      user.py
-      admin_laws.py
-      device.py
-      __init__.py
-    core/
-      security.py
-      config.py
-    parsers/
-      pravo_gov_rss.py
-    updates/
-      __init__.py
-      routes.py
+  __init_.py
+  auth_install_report.txt
+  NOTICE
   auth/
     __init__.py
     routes/
-      reset_password.py
       phone_sms.py
       __init__.py
+      reset_password.py
   schemas/
     user.py
+  legal_doc/
+    text_extractor.py
+    __init__.py
   tests/
+    test_smoke.py
     test_api_basic.py
     test_health.py
-    test_smoke.py
+  app/
+    main.py.bak_20251116_214733
+    database.py
+    main.py
+    security.py
+    __init__.py
+    db.py
+    cases_db.py
+    config.py
+    dependencies.py
+    main.py.bak_20251116_182734
+    main.py.bak
+    db.py.bak_20251116_215923
+    auth/
+      models.py
+      utils.py
+      __init__.py
+      schemas.py
+      routes.py
+      reset/
+        service.py
+        models.py
+        __init__.py
+        schemas.py
+        router.py
+    schemas/
+      admin_laws.py
+      device.py
+      __init__.py
+      user.py
+      auth.py
+    legal_doc/
+      models.py
+      utils.py
+      pdf_utils.py
+      schemas.py
+      routes.py
+    services/
+      laws_common.py
+    laws/
+      fetch_full_text.py
+      models.py
+      __init__.py
+      schemas.py
+      routes.py
+      sync.py
+    api/
+      routes_users.py
+      routes_2fa.py
+      __init__.py
+      routes_devices.py
+      routes_auth.py
+    parsers/
+      pravo_gov_rss.py
+    admin/
+      logo_upload.py
+    updates/
+      __init__.py
+      routes.py
+    migrations/
+      README
+      env.py
+      script.py.mako
+      versions/
+        32a02b0ba695_initial_auth_schema.py
+    notifications/
+      __init__.py
+      senders.py
+    models/
+      sms_token.py
+      device.py
+      __init__.py
+      email_token.py
+      refresh_token.py
+      token.py
+      user.py
+    core/
+      security.py
+      config.py
+    routers/
+      admin_laws.py
+      __init__.py
+      auth.py
+    db/
+      base.py
+      database.py
+      __init__.py
+      session.py
+  sql/
+    2025_cases_documents_versions.sOT EXISTS cases (TEGER PRIMARY KEY AUTOINCREMENT,OT NULL, TEXT,OT NULL DEFAULT (datetime('now')),OT NULL DEFAULT (datetime('now'))ts)OT EXISTS documents (TEGER PRIMARY KEY AUTOINCREMENT,TEGER NOT NULL,OT NULL,
+    2025_legalai_law_update_log.sql
+    2025_legalai_law_documents.sql
+    2025_legalai_law_sources_seed.sql
+    2025_legalai_laws_schema.sql
+    2025_cases_documents_versions.sql
+  ai/
+    core.py
+    router_rubert.py
+    __init__.py
+    tatyana_profile.py
+    generators/
+      local_gen.py
+      gigachat_adapter.py
+      gpt_adapter.py
+    verifiers/
+      risk_checker.py
+      safety.py
+      law_guard.py
+    rag/
+      ranker.py
+      __init__.py
+      citation.py
+      retriever.py
+    memory/
+      signals.py
+      sessions.py
+    nlp/
+      rubert_intent.py
+  tasks/
+    train_rubert.py
+    distill_local_llm.py
+    update_laws.py
+  routers/
+    ai.py
+    cases_documents.py
+    admin_laws.py
+    __init__.py
+    user.py
+scripts/
+  ai_integration_setup.sh
+  backup.sh
+  rollback_ai.sh
 frontend/
-  tsconfig.node.json
-  dist.tar.gz
   index.html
-  package-lock.json
   README.md
-  legal-ai_backup_20251204_213556.tar.gz
-  eslint.config.js
-  package.json
-  vite.config.ts
   tsconfig.app.json
+  package.json
   tsconfig.json
-  scripts/
-    patch_chat_input_restore.sh
-    patch_chat_and_clean_css.sh
-    patch_full_fix.sh
-    patch_chat_final.sh
-    patch_workspace_textarea_fix.sh
-    patch_workspace_api_prep.sh
-    patch_chat_textarea_4rows.sh
-    patch_chat_autogrow.sh
-    patch_chat_v4.sh
-    patch_chat_v5.sh
+  eslint.config.js
+  vite.config.ts
+  package-lock.json
+  tsconfig.node.json
+  legal-ai_backup_20251204_213556.tar.gz
+  dist.tar.gz
   public/
     logo.png
     vite.svg
   src/
-    App.css.bak-20251203-040258
-    App.css.bak-20251203-041706
-    index.css
-    App.css
     main.tsx
+    index.css
     App.css.bak-20251203-041144
+    App.css.bak-20251203-041706
+    App.css
     App.cssx
     App.tsx
-    pages/
-      dashboard/
-        index.tsx
-      admin/
-        index.tsx
-      forgot/
-        index.tsx
-      landing/
-        index.tsx
-      documents/
-        index.tsx
-      login/
-        index.tsx
-      workspace/
-        index.tsx
-      profile/
-        index.tsx
-      reset/
-        index.tsx
-      register/
-        index.tsx
+    App.css.bak-20251203-040258
     components/
       DocumentEditor.tsx
     assets/
       react.svg
+    pages/
+      forgot/
+        index.tsx
+      reset/
+        index.tsx
+      dashboard/
+        index.tsx
+      register/
+        index.tsx
+      documents/
+        index.tsx
+      workspace/
+        index.tsx
+      admin/
+        index.tsx
+      login/
+        index.tsx
+      landing/
+        index.tsx
+      profile/
+        index.tsx
+  scripts/
+    patch_workspace_api_prep.sh
+    patch_chat_autogrow.sh
+    patch_chat_v5.sh
+    patch_chat_textarea_4rows.sh
+    patch_chat_input_restore.sh
+    patch_chat_v4.sh
+    patch_workspace_textarea_fix.sh
+    patch_chat_and_clean_css.sh
+    patch_chat_final.sh
+    patch_full_fix.sh
+tools/
+  repo_analyzer.py
+  update_readme.py
